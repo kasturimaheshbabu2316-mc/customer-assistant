@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support Hub App | OmniDesk AI RAG Portal</title>
+  <meta name="description" content="OmniDesk AI Enterprise Customer Support Application Portal. Powered by Google Gemini 3 Flash and ChromaDB.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="body-noscroll">
+
+  <!-- Ambient Glow for App -->
+  <div class="bg-ambient-glow" aria-hidden="true">
+    <div class="glow-orb glow-orb-1 orb-app-top"></div>
+    <div class="glow-orb glow-orb-2 orb-app-bottom"></div>
+  </div>
+
+  <div class="app-layout">
+    <!-- Left Navigation Sidebar -->
+    <aside class="app-sidebar" id="app-sidebar">
+      <a href="index.html" class="sidebar-brand">
+        <div class="brand-icon-box brand-icon-sm">
+          <i class="fa-solid fa-brain"></i>
+        </div>
+        <span>OmniDesk<span class="brand-secondary-text">Hub</span></span>
+      </a>
+
+      <!-- Navigation Views List -->
+      <ul class="sidebar-nav">
+        <li>
+          <button type="button" class="sidebar-item-btn active" id="btn-nav-chat" onclick="switchAppView('chat')">
+            <i class="fa-solid fa-messages"></i>
+            <span>Live Support Chat</span>
+          </button>
+        </li>
+        <li>
+          <button type="button" class="sidebar-item-btn" id="btn-nav-kb" onclick="switchAppView('kb')">
+            <i class="fa-solid fa-book-bookmark"></i>
+            <span>Knowledge Base Studio</span>
+          </button>
+        </li>
+        <li>
+          <button type="button" class="sidebar-item-btn" id="btn-nav-analytics" onclick="switchAppView('analytics')">
+            <i class="fa-solid fa-chart-pie"></i>
+            <span>Deflection &amp; Analytics</span>
+          </button>
+        </li>
+        <li>
+          <button type="button" class="sidebar-item-btn" id="btn-nav-settings" onclick="switchAppView('settings')">
+            <i class="fa-solid fa-sliders"></i>
+            <span>Pipeline Settings</span>
+          </button>
+        </li>
+      </ul>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <div class="backend-status-pill">
+          <div class="nav-actions">
+            <span class="pulse-dot" id="sidebar-status-dot"></span>
+            <span id="sidebar-status-text" class="status-text">Checking API...</span>
+          </div>
+          <button type="button" class="btn-icon status-btn-refresh" onclick="checkBackendHealth()" title="Refresh connection" aria-label="Refresh connection">
+            <i class="fa-solid fa-rotate-right"></i>
+          </button>
+        </div>
+
+        <a href="index.html" class="btn btn-secondary btn-sm sidebar-btn-back">
+          <i class="fa-solid fa-arrow-left"></i> Commercial Page
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Workspace Area -->
+    <div class="app-main">
+      <!-- Topbar Header -->
+      <header class="app-topbar">
+        <div class="topbar-title-wrap">
+          <button type="button" class="btn-icon mobile-menu-btn mobile-nav-toggle" id="app-sidebar-toggle" onclick="toggleAppSidebar()" title="Toggle Sidebar" aria-label="Toggle Sidebar">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="topbar-view-title" id="current-view-title">Live AI Support Chat</div>
+          <span class="badge badge-glow-primary" id="model-indicator-badge">
+            <i class="fa-solid fa-microchip"></i> Gemini 3 Flash &amp; text-embedding-004
+          </span>
+        </div>
+
+        <div class="topbar-actions">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="exportChatTranscript()" id="btn-export-chat" title="Export transcript as JSON">
+            <i class="fa-solid fa-download"></i> Export Chat
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="clearChatFeed()" id="btn-clear-chat" title="Clear current messages">
+            <i class="fa-solid fa-trash-can"></i> Clear
+          </button>
+        </div>
+      </header>
+
+      <!-- =========================================================================
+           VIEW 1: LIVE SUPPORT CHAT
+           ========================================================================= -->
+      <div class="app-view-container active-view" id="view-chat">
+        <div class="chat-view-layout">
+          <!-- Main Chat Stream -->
+          <div class="chat-center-pane">
+            <div class="chat-scroll-feed" id="chat-feed">
+              <!-- Initial Greeting from Assistant -->
+              <div class="chat-msg-row assistant-msg">
+                <div class="avatar-badge avatar-assistant">
+                  <i class="fa-solid fa-robot"></i>
+                </div>
+                <div class="msg-content-wrapper">
+                  <div class="msg-bubble-content">
+                    Hello! I am your AI Customer Support Assistant, grounded exclusively in your verified store policies. Ask me about returns, international shipping rates, warranty repairs, price matching, or order cancellations.
+                  </div>
+                  <div class="msg-actions-bar">
+                    <button type="button" class="msg-btn-action" onclick="copyMessageText(this)">
+                      <i class="fa-solid fa-copy"></i> Copy
+                    </button>
+                    <button type="button" class="msg-btn-action" onclick="speakMessageText(this)">
+                      <i class="fa-solid fa-volume-high"></i> Read Aloud
+                    </button>
+                    <button type="button" class="msg-btn-action" onclick="rateMessage(this, 'helpful')">
+                      <i class="fa-solid fa-thumbs-up"></i> Helpful
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chat Bottom Input -->
+            <div class="chat-bottom-input-wrap">
+              <div class="quick-prompts-bar">
+                <button type="button" class="preset-chip" onclick="sendAppQuickQuery('What is your 30-day return policy for electronics?')">
+                  📦 30-Day Return Policy
+                </button>
+                <button type="button" class="preset-chip" onclick="sendAppQuickQuery('Do you ship to Canada and how are customs duties handled?')">
+                  ✈️ Canada Shipping &amp; Duties
+                </button>
+                <button type="button" class="preset-chip" onclick="sendAppQuickQuery('How do I submit a 1-year warranty claim for a defective item?')">
+                  🛡️ Warranty Claim Process
+                </button>
+                <button type="button" class="preset-chip" onclick="sendAppQuickQuery('What is your order cancellation window?')">
+                  ⏱️ Order Cancellation Window
+                </button>
+                <button type="button" class="preset-chip" onclick="sendAppQuickQuery('What payment methods and installment plans do you accept?')">
+                  💳 Payment &amp; Installments
+                </button>
+              </div>
+
+              <div class="chat-input-row">
+                <textarea id="app-chat-input" class="chat-textarea" placeholder="Ask a question about store policies..." rows="1" onkeydown="handleChatKeyDown(event)"></textarea>
+                <button type="button" class="btn btn-primary chat-send-btn" id="btn-send-message" onclick="handleSendChat()" title="Send Message" aria-label="Send Message">
+                  <i class="fa-solid fa-paper-plane"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Information & Verified Context Pane -->
+          <div class="chat-right-pane">
+            <div class="context-info-card">
+              <h4><i class="fa-solid fa-shield-check icon-emerald"></i> RAG Guardrail Status</h4>
+              <p class="card-info-desc">
+                Cosine distance filtering threshold is active. Queries outside policy bounds will be gracefully escalated.
+              </p>
+              <div class="info-row">
+                <span class="text-muted">Max Allowed Distance:</span>
+                <span class="text-mono text-cyan" id="info-guardrail-threshold">1.20</span>
+              </div>
+              <div class="info-row">
+                <span class="text-muted">Embedding Dimensions:</span>
+                <span class="text-mono text-primary">768 (text-embedding-004)</span>
+              </div>
+            </div>
+
+            <div class="context-info-card">
+              <h4><i class="fa-solid fa-database icon-cyan"></i> Active Knowledge Index</h4>
+              <div class="card-info-desc">
+                Source file: <code>company_faq.txt</code>
+              </div>
+              <div class="info-subcard">
+                <div class="info-subcard-row-top">
+                  <span>Indexed Chunks:</span>
+                  <span class="text-emerald" id="info-chunk-count">6 Chunks</span>
+                </div>
+                <div class="info-subcard-row">
+                  <span>Chunk Strategy:</span>
+                  <span>400 chars / 80 overlap</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="context-info-card">
+              <h4><i class="fa-solid fa-headset icon-amber"></i> Live Agent Escalation</h4>
+              <p class="card-info-desc-nb">
+                Need human handoff? Inquiries flagged for escalation will automatically generate a ticket to <strong>support@company.com</strong>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW 2: KNOWLEDGE BASE & CHUNK STUDIO
+           ========================================================================= -->
+      <div class="app-view-container" id="view-kb">
+        <div class="kb-studio-container">
+          <div class="view-header-flex">
+            <div>
+              <h2 class="view-header-title">Knowledge Base &amp; Vector Chunks</h2>
+              <p class="view-header-subtitle">
+                Browse, search, and verify indexed store policy segments stored inside ChromaDB.
+              </p>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="openAddPolicyModal()">
+              <i class="fa-solid fa-plus"></i> Ingest New Policy Clause
+            </button>
+          </div>
+
+          <div class="kb-search-bar">
+            <i class="fa-solid fa-magnifying-glass kb-search-icon"></i>
+            <input type="text" id="kb-search-input" class="kb-search-input" placeholder="Search knowledge base chunks by keyword or semantic topic..." oninput="filterKbChunks()" aria-label="Search knowledge base chunks" title="Search knowledge base chunks">
+          </div>
+
+          <!-- Chunks Grid -->
+          <div class="chunks-grid" id="kb-chunks-list">
+            <!-- Dynamically populated by app.js -->
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW 3: DEFLECTION & ANALYTICS DASHBOARD
+           ========================================================================= -->
+      <div class="app-view-container" id="view-analytics">
+        <div class="dashboard-grid-container">
+          <div>
+            <h2 class="view-header-title">Resolution &amp; Deflection Intelligence</h2>
+            <p class="view-header-subtitle">
+              Real-time telemetry on autonomous policy resolutions and agent workload reduction.
+            </p>
+          </div>
+
+          <!-- KPI Summary Row -->
+          <div class="metrics-summary-row">
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <h5>Autonomous Deflection</h5>
+                <div class="kpi-num" id="kpi-deflection-rate">88.4%</div>
+                <div class="kpi-delta pos"><i class="fa-solid fa-arrow-up"></i> +4.2% this week</div>
+              </div>
+              <div class="feature-icon-wrap feature-icon-kpi">
+                <i class="fa-solid fa-robot"></i>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <h5>Avg Response Latency</h5>
+                <div class="kpi-num" id="kpi-avg-latency">0.42s</div>
+                <div class="kpi-delta pos"><i class="fa-solid fa-bolt"></i> 98ms ChromaDB</div>
+              </div>
+              <div class="feature-icon-wrap feature-icon-kpi feature-icon-cyan">
+                <i class="fa-solid fa-gauge-high"></i>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <h5>Total Inquiries Handled</h5>
+                <div class="kpi-num" id="kpi-total-inquiries">14,820</div>
+                <div class="kpi-delta pos"><i class="fa-solid fa-arrow-up"></i> +12.8% vs last mo</div>
+              </div>
+              <div class="feature-icon-wrap feature-icon-kpi feature-icon-purple">
+                <i class="fa-solid fa-comments"></i>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <h5>Customer CSAT Score</h5>
+                <div class="kpi-num" id="kpi-csat-score">4.92 / 5</div>
+                <div class="kpi-delta pos"><i class="fa-solid fa-star icon-amber"></i> 96% positive rating</div>
+              </div>
+              <div class="feature-icon-wrap feature-icon-kpi feature-icon-emerald">
+                <i class="fa-solid fa-heart"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Row -->
+          <div class="charts-row">
+            <!-- 7-Day Inquiries Chart -->
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <h4>7-Day Inquiry Volume &amp; Deflection</h4>
+                <div class="badge badge-cyan chart-badge">Last 7 Days</div>
+              </div>
+
+              <!-- SVG Bar Chart -->
+              <div class="chart-container-bars">
+                <div class="chart-bar-col">
+                  <div class="chart-bar chart-bar-primary chart-bar-h-65" title="Mon: 1,840 inquiries (88% deflected)"></div>
+                  <span class="chart-bar-lbl">Mon</span>
+                </div>
+                <div class="chart-bar-col">
+                  <div class="chart-bar chart-bar-primary chart-bar-h-78" title="Tue: 2,120 inquiries (89% deflected)"></div>
+                  <span class="chart-bar-lbl">Tue</span>
+                </div>
+                <div class="chart-bar-col">
+                  <div class="chart-bar chart-bar-primary chart-bar-h-72" title="Wed: 1,980 inquiries (87% deflected)"></div>
+                  <span class="chart-bar-lbl">Wed</span>
+                </div>
+                <div class="chart-bar-col">
+                  <div class="chart-bar chart-bar-primary chart-bar-h-85" title="Thu: 2,450 inquiries (90% deflected)"></div>
+                  <span class="chart-bar-lbl">Thu</span>
+                </div>
+                <div class="chart-bar-col">
+                  <div class="chart-bar chart-bar-primary chart-bar-h-95" title="Fri: 2,780 inquiries (88% deflected)"></div>
+                  <span class="chart-bar-lbl">Fri</span>
+                </div>
+                <div class="chart-bar-col">
+                  <div class="chart-bar chart-bar-cyan chart-bar-h-50" title="Sat: 1,420 inquiries (91% deflected)"></div>
+                  <span class="chart-bar-lbl">Sat</span>
+                </div>
+                <div class="chart-bar-col">
+                  <div class="chart-bar chart-bar-cyan chart-bar-h-42" title="Sun: 1,230 inquiries (92% deflected)"></div>
+                  <span class="chart-bar-lbl">Sun</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Categories Breakdown -->
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <h4>Inquiry Categories</h4>
+              </div>
+              <div class="progress-list">
+                <div>
+                  <div class="progress-lbl-row">
+                    <span>Returns &amp; Refunds</span>
+                    <span class="font-semibold">42%</span>
+                  </div>
+                  <div class="progress-track">
+                    <div class="progress-fill progress-fill-w42"></div>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="progress-lbl-row">
+                    <span>Shipping &amp; Delivery</span>
+                    <span class="font-semibold">28%</span>
+                  </div>
+                  <div class="progress-track">
+                    <div class="progress-fill progress-fill-w28"></div>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="progress-lbl-row">
+                    <span>Warranty &amp; Repairs</span>
+                    <span class="font-semibold">18%</span>
+                  </div>
+                  <div class="progress-track">
+                    <div class="progress-fill progress-fill-w18"></div>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="progress-lbl-row">
+                    <span>Billing &amp; Payment</span>
+                    <span class="font-semibold">12%</span>
+                  </div>
+                  <div class="progress-track">
+                    <div class="progress-fill progress-fill-w12"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Activity Log -->
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <h4>Recent Inquiries &amp; Citation Audit Log</h4>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="showToast('Audit stream refreshed', 'info')">
+                <i class="fa-solid fa-arrows-rotate"></i> Refresh
+              </button>
+            </div>
+
+            <div class="audit-list">
+              <div class="audit-row">
+                <div>
+                  <strong>&quot;Can I return open-box headphones?&quot;</strong>
+                  <div class="audit-subtext">Matched: Section 1 Return Policy &bull; Distance: 0.31</div>
+                </div>
+                <span class="badge badge-emerald chart-badge">Resolved (100% Grounded)</span>
+              </div>
+
+              <div class="audit-row">
+                <div>
+                  <strong>&quot;Do you ship to Toronto, Canada?&quot;</strong>
+                  <div class="audit-subtext">Matched: Section 2 Shipping Policy &bull; Distance: 0.28</div>
+                </div>
+                <span class="badge badge-emerald chart-badge">Resolved (DDP Duties Cited)</span>
+              </div>
+
+              <div class="audit-row">
+                <div>
+                  <strong>&quot;How long is the manufacturer warranty?&quot;</strong>
+                  <div class="audit-subtext">Matched: Section 4 Warranty &bull; Distance: 0.22</div>
+                </div>
+                <span class="badge badge-emerald chart-badge">Resolved (1-Year Limited Cited)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW 4: PIPELINE SETTINGS
+           ========================================================================= -->
+      <div class="app-view-container" id="view-settings">
+        <div class="settings-container">
+          <div>
+            <h2 class="view-header-title">RAG Pipeline Configuration</h2>
+            <p class="view-header-subtitle">
+              Fine-tune backend API connections, retrieval limits, and Gemini model parameters.
+            </p>
+          </div>
+
+          <div class="settings-card">
+            <h4 class="settings-section-title"><i class="fa-solid fa-server icon-primary"></i> Backend Endpoint Connection</h4>
+
+            <div class="form-group">
+              <label class="form-label" for="setting-backend-url">FastAPI Backend URL</label>
+              <div class="form-row-flex">
+                <input type="text" id="setting-backend-url" class="form-control" value="http://localhost:8000">
+                <button type="button" class="btn btn-secondary" onclick="testBackendConnection()">
+                  <i class="fa-solid fa-plug"></i> Test Connection
+                </button>
+              </div>
+              <div class="form-help">Default local endpoint for <code>server.py</code>. Cross-Origin Resource Sharing (CORS) is enabled.</div>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <h4 class="settings-section-title"><i class="fa-solid fa-sliders icon-cyan"></i> Retrieval &amp; Guardrail Parameters</h4>
+
+            <div class="form-group">
+              <label class="form-label" for="setting-model">Language Model</label>
+              <select id="setting-model" class="form-control">
+                <option value="gemini-3-flash">gemini-3-flash (Recommended - Ultra Low Latency)</option>
+                <option value="gemini-1.5-pro">gemini-1.5-pro (Extended Reasoning)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="setting-guardrail">
+                Guardrail Distance Threshold: <span id="val-guardrail-threshold" class="text-cyan">1.20</span>
+              </label>
+              <input type="range" id="setting-guardrail" class="custom-range" min="0.5" max="2.0" step="0.05" value="1.20" oninput="document.getElementById('val-guardrail-threshold').textContent = parseFloat(this.value).toFixed(2)" aria-label="Guardrail Distance Threshold" title="Guardrail Distance Threshold">
+              <div class="form-help">Queries with vector distance higher than this threshold will be flagged as out-of-scope.</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="setting-topk">Top-K Retrieved Context Chunks</label>
+              <input type="number" id="setting-topk" class="form-control" value="2" min="1" max="10">
+              <div class="form-help">Number of closest semantic chunks retrieved from ChromaDB for grounded synthesis.</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="setting-system-prompt">System Instruction Guardrail</label>
+              <textarea id="setting-system-prompt" class="form-control" rows="4">You are an empathetic, concise Customer Support Assistant. Strict Rule: Rely ONLY on the facts explicitly mentioned in the provided &lt;context&gt;. Do not extrapolate, assume, or fabricate any rules, dates, or prices. If the answer is not explicitly written in the context, output: 'I am sorry, but our documentation does not cover that. Please contact support@company.com.'</textarea>
+            </div>
+
+            <button type="button" class="btn btn-primary" onclick="savePipelineSettings()">
+              <i class="fa-solid fa-floppy-disk"></i> Save Settings
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Policy Modal -->
+  <div class="modal-overlay" id="add-policy-modal">
+    <div class="modal-card">
+      <button type="button" class="modal-close" onclick="closeAddPolicyModal()" title="Close dialog" aria-label="Close dialog">&times;</button>
+      <div class="modal-header-box">
+        <div class="brand-icon-box brand-icon-sm">
+          <i class="fa-solid fa-plus"></i>
+        </div>
+        <h3 class="brand-icon-sm">Add Knowledge Policy Clause</h3>
+      </div>
+      <p class="modal-desc">
+        Add a new policy rule or FAQ section to expand your store's verified vector database.
+      </p>
+
+      <form id="add-policy-form" onsubmit="handleAddPolicyClause(event)">
+        <div class="form-group">
+          <label class="form-label" for="policy-title">Section / Policy Title</label>
+          <input type="text" id="policy-title" class="form-control" placeholder="e.g. 7. Price Matching Guarantee" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="policy-content">Policy Clause Text</label>
+          <textarea id="policy-content" class="form-control" rows="5" placeholder="Enter detailed policy text..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-w-full">
+          <i class="fa-solid fa-vector-square"></i> Ingest &amp; Index Chunk
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- App Controller Script -->
+  <script src="js/app.js"></script>
+</body>
+</html>

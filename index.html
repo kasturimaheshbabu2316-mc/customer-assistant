@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniDesk AI | Enterprise RAG Customer Support Hub</title>
+  <meta name="description" content="Zero-hallucination AI customer service grounded in verified store policies and enterprise knowledge bases. Powered by Google Gemini 3 Flash and ChromaDB.">
+  <meta name="keywords" content="Customer Support AI, RAG, Gemini 3 Flash, ChromaDB, Vector Search, Automated Customer Service">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+  <!-- Ambient Glow Effects -->
+  <div class="bg-ambient-glow" aria-hidden="true">
+    <div class="glow-orb glow-orb-1"></div>
+    <div class="glow-orb glow-orb-2"></div>
+    <div class="glow-orb glow-orb-3"></div>
+  </div>
+
+  <!-- Navigation Bar -->
+  <header class="navbar" id="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="brand-logo" id="brand-logo-link">
+        <div class="brand-icon-box">
+          <i class="fa-solid fa-brain"></i>
+        </div>
+        <span>OmniDesk<span class="brand-secondary-text">AI</span></span>
+      </a>
+
+      <nav>
+        <ul class="nav-menu" id="nav-menu">
+          <li><a href="#features" class="nav-link">Capabilities</a></li>
+          <li><a href="#how-it-works" class="nav-link">Architecture</a></li>
+          <li><a href="#demo" class="nav-link">Live Demo</a></li>
+          <li><a href="#roi" class="nav-link">ROI Calculator</a></li>
+          <li><a href="#pricing" class="nav-link">Pricing</a></li>
+          <li><a href="#faq" class="nav-link">FAQ</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="app.html" class="btn btn-secondary btn-sm" id="nav-btn-app-portal">
+          <i class="fa-solid fa-headset"></i> Support Hub App
+        </a>
+        <button type="button" class="btn btn-primary btn-sm" id="nav-btn-book-demo" onclick="openDemoModal()">
+          <i class="fa-solid fa-sparkles"></i> Get Started
+        </button>
+        <button type="button" class="mobile-menu-btn" id="mobile-toggle-btn" aria-label="Toggle Navigation" title="Toggle Navigation">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero-section" id="hero">
+      <div class="container">
+        <div class="hero-badge-wrap">
+          <div class="badge badge-glow-primary">
+            <span class="pulse-dot"></span>
+            <span>Powered by Gemini 3 Flash &amp; ChromaDB RAG</span>
+          </div>
+        </div>
+
+        <h1 class="hero-title">
+          Zero-Hallucination AI Support Grounded in <span class="gradient-text">Your Exact Store Policies</span>
+        </h1>
+
+        <p class="hero-subtitle">
+          Eliminate fabricated answers and inconsistent support. OmniDesk AI combines dense vector embeddings with Gemini 3 Flash to resolve 85%+ of customer inquiries in under 500ms with 100% verified citations.
+        </p>
+
+        <div class="hero-cta-group">
+          <a href="app.html" class="btn btn-primary btn-lg" id="hero-btn-launch-app">
+            <i class="fa-solid fa-play"></i> Launch Support Hub Portal
+          </a>
+          <a href="#demo" class="btn btn-secondary btn-lg" id="hero-btn-explore-demo">
+            <i class="fa-solid fa-terminal"></i> Test Interactive Demo
+          </a>
+        </div>
+
+        <!-- Trust & Performance Badges -->
+        <div class="hero-trust-bar">
+          <div class="trust-item">
+            <i class="fa-solid fa-shield-check"></i>
+            <span>99.8% Grounded Accuracy</span>
+          </div>
+          <div class="trust-item">
+            <i class="fa-solid fa-bolt-lightning"></i>
+            <span>&lt;50ms Semantic Vector Retrieval</span>
+          </div>
+          <div class="trust-item">
+            <i class="fa-solid fa-lock"></i>
+            <span>SOC2 Type II &amp; GDPR Ready</span>
+          </div>
+          <div class="trust-item">
+            <i class="fa-solid fa-quote-left"></i>
+            <span>Transparent Verified Citations</span>
+          </div>
+        </div>
+
+        <!-- Hero Visual Showcase / Interactive Pipeline Visualizer -->
+        <div class="hero-visual-card">
+          <div class="window-header">
+            <div class="window-dots">
+              <span class="window-dot red"></span>
+              <span class="window-dot yellow"></span>
+              <span class="window-dot green"></span>
+            </div>
+            <span class="window-title">OmniDesk Autonomous RAG Pipeline Engine v2.4</span>
+            <div class="badge badge-emerald badge-xs">
+              <span class="pulse-dot"></span> Live Pipeline
+            </div>
+          </div>
+
+          <div class="rag-flow-visualizer">
+            <div class="rag-node active-step" id="node-ingest">
+              <div class="rag-node-header">
+                <div class="rag-node-icon feature-icon-wrap">
+                  <i class="fa-solid fa-file-invoice"></i>
+                </div>
+                <span>1. Knowledge Ingestion</span>
+              </div>
+              <p>Store policies, FAQs, &amp; warranty guides chunked with 80-token overlap.</p>
+            </div>
+
+            <div class="rag-node" id="node-embed">
+              <div class="rag-node-header">
+                <div class="rag-node-icon feature-icon-cyan">
+                  <i class="fa-solid fa-network-wired"></i>
+                </div>
+                <span>2. Vector Embedding</span>
+              </div>
+              <p>768-dimensional dense embeddings via Google <code>text-embedding-004</code>.</p>
+            </div>
+
+            <div class="rag-node" id="node-retrieve">
+              <div class="rag-node-header">
+                <div class="rag-node-icon feature-icon-purple">
+                  <i class="fa-solid fa-database"></i>
+                </div>
+                <span>3. ChromaDB Guardrail</span>
+              </div>
+              <p>Cosine distance threshold (1.2) stops out-of-domain hallucinations.</p>
+            </div>
+
+            <div class="rag-node" id="node-synthesis">
+              <div class="rag-node-header">
+                <div class="rag-node-icon feature-icon-emerald">
+                  <i class="fa-solid fa-robot"></i>
+                </div>
+                <span>4. Gemini 3 Flash</span>
+              </div>
+              <p>Empathetic, zero-hallucination grounded answer with exact context references.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Capabilities / Features Grid -->
+    <section class="section" id="features">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Enterprise Capabilities</span>
+          <h2 class="section-title">Engineered for Precision, Speed, and Customer Trust</h2>
+          <p class="section-desc">
+            Traditional AI chatbots hallucinate policies, causing costly customer disputes. OmniDesk AI enforces deterministic policy grounding.
+          </p>
+        </div>
+
+        <div class="features-grid">
+          <!-- Feature 1 -->
+          <div class="feature-card">
+            <div class="feature-icon-wrap">
+              <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h3>Zero-Hallucination Guardrails</h3>
+            <p>
+              Strict temperature controls (0.1) and system prompt constraints ensure the AI refuses to invent dates, return periods, or pricing not present in verified documents.
+            </p>
+            <a href="#how-it-works" class="feature-link">See Guardrail Architecture <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+
+          <!-- Feature 2 -->
+          <div class="feature-card">
+            <div class="feature-icon-wrap feature-icon-cyan">
+              <i class="fa-solid fa-bolt"></i>
+            </div>
+            <h3>ChromaDB Vector Indexing</h3>
+            <p>
+              Persistent vector search with sub-50ms query matching across thousands of policy clauses, technical manuals, and warranty rules.
+            </p>
+            <a href="app.html" class="feature-link">Explore Knowledge Base <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+
+          <!-- Feature 3 -->
+          <div class="feature-card">
+            <div class="feature-icon-wrap feature-icon-emerald">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <h3>Verified Citation Drawer</h3>
+            <p>
+              Every response is tagged with the exact context snippet retrieved from your database, giving agents and customers complete transparency.
+            </p>
+            <a href="#demo" class="feature-link">Test Live Citations <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+
+          <!-- Feature 4 -->
+          <div class="feature-card">
+            <div class="feature-icon-wrap feature-icon-purple">
+              <i class="fa-solid fa-arrows-rotate"></i>
+            </div>
+            <h3>Instant 1-Click Sync</h3>
+            <p>
+              Update your policy in plain text or markdown and our automated chunking engine re-indexes embeddings instantly without system downtime.
+            </p>
+            <a href="app.html" class="feature-link">Manage Knowledge Base <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+
+          <!-- Feature 5 -->
+          <div class="feature-card">
+            <div class="feature-icon-wrap feature-icon-amber">
+              <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <h3>Real-Time Deflection Analytics</h3>
+            <p>
+              Track autonomous resolution rate, category trends (Returns, Shipping, Warranty), and customer satisfaction with built-in audit metrics.
+            </p>
+            <a href="app.html" class="feature-link">View Live Analytics <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+
+          <!-- Feature 6 -->
+          <div class="feature-card">
+            <div class="feature-icon-wrap feature-icon-rose">
+              <i class="fa-solid fa-plug"></i>
+            </div>
+            <h3>FastAPI REST &amp; Embed SDK</h3>
+            <p>
+              Deploy anywhere in minutes using the provided high-performance asynchronous FastAPI endpoints or drop-in JavaScript chat widget.
+            </p>
+            <a href="#pricing" class="feature-link">View API Specs <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive Live Demo Section -->
+    <section class="section section-alt-bg" id="demo">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Interactive Simulator</span>
+          <h2 class="section-title">Test the Policy Resolution Engine in Real-Time</h2>
+          <p class="section-desc">
+            Click any sample customer query below or type your own question to see how OmniDesk answers with verified references.
+          </p>
+        </div>
+
+        <div class="interactive-demo-container">
+          <!-- Left: Feature details -->
+          <div>
+            <div class="badge badge-emerald">
+              <i class="fa-solid fa-circle-check"></i> Verified Grounded Simulation
+            </div>
+            <h3 class="view-header-title">
+              Experience Strict Grounded Intelligence
+            </h3>
+            <p class="card-info-desc">
+              Notice how the AI cites exact policy provisions (e.g. 30-day return window, DDP international customs, 15% open-box restocking fee) while gracefully refusing to speculate on out-of-scope requests.
+            </p>
+
+            <ul class="pricing-features-list">
+              <li>
+                <i class="fa-solid fa-check icon-emerald"></i>
+                <span><strong>No Hallucinations:</strong> Rejects fabricated return windows or unauthorized refund promises.</span>
+              </li>
+              <li>
+                <i class="fa-solid fa-check icon-emerald"></i>
+                <span><strong>Source Inspection:</strong> Click on the verified source drawer in each message.</span>
+              </li>
+              <li>
+                <i class="fa-solid fa-check icon-emerald"></i>
+                <span><strong>Full App Access:</strong> Ready to customize with your own documents? Launch the Hub.</span>
+              </li>
+            </ul>
+
+            <a href="app.html" class="btn btn-primary">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full Support Portal
+            </a>
+          </div>
+
+          <!-- Right: Interactive Chat Box -->
+          <div class="demo-chat-box">
+            <div class="demo-chat-header">
+              <div class="nav-actions">
+                <div class="avatar-badge avatar-assistant brand-icon-sm">
+                  <i class="fa-solid fa-robot"></i>
+                </div>
+                <strong>Store Policy Assistant</strong>
+              </div>
+              <div class="badge badge-emerald badge-sm">
+                <span class="pulse-dot"></span> Active
+              </div>
+            </div>
+
+            <div class="demo-chat-messages" id="demo-chat-messages">
+              <div class="chat-bubble bot">
+                👋 Hello! I am grounded in your verified store policies. Ask me about returns, shipping rates, warranties, or price matching!
+              </div>
+            </div>
+
+            <div class="demo-chat-input-area">
+              <div class="demo-presets">
+                <button type="button" class="preset-chip" onclick="sendDemoQuery('What is your return policy for electronics?')">
+                  📦 Return Policy
+                </button>
+                <button type="button" class="preset-chip" onclick="sendDemoQuery('Do you ship internationally and are duties included?')">
+                  ✈️ International Shipping
+                </button>
+                <button type="button" class="preset-chip" onclick="sendDemoQuery('How does the 1-year warranty claim work?')">
+                  🛡️ Warranty Claim
+                </button>
+                <button type="button" class="preset-chip" onclick="sendDemoQuery('Can I get a discount code for 90% off?')">
+                  🚫 Unverified Query Test
+                </button>
+              </div>
+
+              <div class="demo-input-bar">
+                <input type="text" id="demo-user-input" placeholder="Type a policy question..." onkeypress="handleDemoKeyPress(event)">
+                <button type="button" class="btn btn-primary btn-sm" onclick="handleDemoSubmit()" id="demo-submit-btn" title="Send Query" aria-label="Send Query">
+                  <i class="fa-solid fa-paper-plane"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive ROI & Savings Calculator -->
+    <section class="section" id="roi">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Business Impact</span>
+          <h2 class="section-title">Calculate Your Support Automation ROI</h2>
+          <p class="section-desc">
+            See how much time and operational budget OmniDesk AI saves your support team each year.
+          </p>
+        </div>
+
+        <div class="roi-calculator-wrap">
+          <div class="roi-grid">
+            <div>
+              <!-- Slider 1: Monthly Tickets -->
+              <div class="slider-group">
+                <div class="slider-label-row">
+                  <label for="slider-tickets">Monthly Support Inquiries</label>
+                  <span class="slider-val-badge" id="val-tickets">8,000 / mo</span>
+                </div>
+                <input type="range" id="slider-tickets" class="custom-range" min="1000" max="50000" step="500" value="8000" oninput="updateRoiCalc()">
+              </div>
+
+              <!-- Slider 2: Current Cost per Ticket -->
+              <div class="slider-group">
+                <div class="slider-label-row">
+                  <label for="slider-cost">Current Cost Per Live Ticket ($)</label>
+                  <span class="slider-val-badge" id="val-cost">$7.50</span>
+                </div>
+                <input type="range" id="slider-cost" class="custom-range" min="2" max="25" step="0.5" value="7.5" oninput="updateRoiCalc()">
+              </div>
+
+              <!-- Slider 3: Expected Deflection Rate -->
+              <div class="slider-group no-mb">
+                <div class="slider-label-row">
+                  <label for="slider-deflection">Target Autonomous Deflection Rate</label>
+                  <span class="slider-val-badge" id="val-deflection">85%</span>
+                </div>
+                <input type="range" id="slider-deflection" class="custom-range" min="50" max="95" step="1" value="85" oninput="updateRoiCalc()">
+              </div>
+            </div>
+
+            <!-- ROI Results Card -->
+            <div class="roi-results-card">
+              <span class="badge badge-emerald">Estimated Annual Savings</span>
+              <div class="roi-highlight-number" id="roi-annual-savings">$612,000</div>
+              <p class="card-info-desc">Calculated based on 85% deflection of standard policy inquiries.</p>
+
+              <div class="roi-metrics-subgrid">
+                <div>
+                  <div class="roi-submetric-val" id="roi-monthly-tickets-saved">6,800</div>
+                  <div class="roi-submetric-lbl">Deflected Monthly Inquiries</div>
+                </div>
+                <div>
+                  <div class="roi-submetric-val" id="roi-agent-hours-saved">1,130 hrs</div>
+                  <div class="roi-submetric-lbl">Agent Hours Freed / Month</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="section section-alt-bg" id="pricing">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Simple &amp; Transparent</span>
+          <h2 class="section-title">Plans Scaled for Growing Storefronts &amp; Global Enterprises</h2>
+          <p class="section-desc">
+            No per-seat penalties. Pay for the volume you resolve with guaranteed SLA.
+          </p>
+        </div>
+
+        <!-- Billing Period Toggle -->
+        <div class="pricing-toggle-wrap">
+          <span class="font-semibold" id="label-monthly">Monthly</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="pricing-toggle" onchange="togglePricingCycle()" aria-label="Toggle Annual Billing Discount" title="Toggle Annual Billing Discount">
+            <span class="toggle-slider"></span>
+          </label>
+          <span id="label-annual" class="font-semibold text-muted">
+            Annual <span class="badge badge-emerald badge-xs">Save 20%</span>
+          </span>
+        </div>
+
+        <div class="pricing-grid">
+          <!-- Starter Tier -->
+          <div class="pricing-card">
+            <h4>Starter Storefront</h4>
+            <p class="card-info-desc">For emerging e-commerce brands</p>
+            <div class="price-box">
+              <span class="price-currency">$</span>
+              <span class="price-amount" id="price-starter">49</span>
+              <span class="price-period" id="period-starter">/month</span>
+            </div>
+            <ul class="pricing-features-list">
+              <li><i class="fa-solid fa-check"></i> Up to 2,500 queries / month</li>
+              <li><i class="fa-solid fa-check"></i> Google text-embedding-004</li>
+              <li><i class="fa-solid fa-check"></i> ChromaDB Vector Storage</li>
+              <li><i class="fa-solid fa-check"></i> Verified Context Citations</li>
+              <li><i class="fa-solid fa-check"></i> Standard Email Support</li>
+            </ul>
+            <button type="button" class="btn btn-secondary" onclick="openDemoModal('Starter')">Get Started</button>
+          </div>
+
+          <!-- Growth Tier (Popular) -->
+          <div class="pricing-card popular">
+            <div class="popular-badge">Most Popular</div>
+            <h4>Pro Growth</h4>
+            <p class="card-info-desc">For high-volume retail &amp; SaaS</p>
+            <div class="price-box">
+              <span class="price-currency">$</span>
+              <span class="price-amount" id="price-growth">199</span>
+              <span class="price-period" id="period-growth">/month</span>
+            </div>
+            <ul class="pricing-features-list">
+              <li><i class="fa-solid fa-check"></i> Up to 35,000 queries / month</li>
+              <li><i class="fa-solid fa-check"></i> Gemini 3 Flash Low-Latency RAG</li>
+              <li><i class="fa-solid fa-check"></i> Multi-document knowledge base</li>
+              <li><i class="fa-solid fa-check"></i> Real-time Deflection Analytics</li>
+              <li><i class="fa-solid fa-check"></i> Custom Guardrails &amp; Escalations</li>
+              <li><i class="fa-solid fa-check"></i> Priority 24/7 Support</li>
+            </ul>
+            <button type="button" class="btn btn-primary" onclick="openDemoModal('Pro Growth')">Start 14-Day Free Trial</button>
+          </div>
+
+          <!-- Enterprise Tier -->
+          <div class="pricing-card">
+            <h4>Global Enterprise</h4>
+            <p class="card-info-desc">For mission-critical omnichannel support</p>
+            <div class="price-box">
+              <span class="price-currency">$</span>
+              <span class="price-amount" id="price-enterprise">599</span>
+              <span class="price-period" id="period-enterprise">/month</span>
+            </div>
+            <ul class="pricing-features-list">
+              <li><i class="fa-solid fa-check"></i> Unlimited queries with custom SLA</li>
+              <li><i class="fa-solid fa-check"></i> Dedicated ChromaDB Cluster</li>
+              <li><i class="fa-solid fa-check"></i> Custom Fine-Tuned System Prompts</li>
+              <li><i class="fa-solid fa-check"></i> SOC2 Type II, HIPAA, GDPR Audits</li>
+              <li><i class="fa-solid fa-check"></i> Dedicated Solutions Architect</li>
+            </ul>
+            <button type="button" class="btn btn-secondary" onclick="openDemoModal('Enterprise')">Contact Sales</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="section" id="faq">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Frequently Asked Questions</span>
+          <h2 class="section-title">Everything You Need to Know About OmniDesk RAG</h2>
+        </div>
+
+        <div class="faq-accordion" id="faq-accordion">
+          <!-- FAQ 1 -->
+          <div class="faq-item active">
+            <button type="button" class="faq-question">
+              <span>How does OmniDesk prevent AI hallucinations?</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer">
+              OmniDesk operates on a strict deterministic RAG protocol. First, the user inquiry is vectorized and searched against your verified ChromaDB vector store. A strict distance threshold (1.2) discards non-matching queries. Then, Gemini 3 Flash is executed with temperature 0.1 and strict system constraints: if a fact is not in the context, it gracefully refuses rather than inventing details.
+            </div>
+          </div>
+
+          <!-- FAQ 2 -->
+          <div class="faq-item">
+            <button type="button" class="faq-question">
+              <span>Can I connect my live FastAPI backend to the web app?</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer">
+              Yes! The application portal is configured out-of-the-box to communicate with <code>http://localhost:8000/ask</code> with full CORS support. You can also configure custom remote endpoints directly in the Settings view.
+            </div>
+          </div>
+
+          <!-- FAQ 3 -->
+          <div class="faq-item">
+            <button type="button" class="faq-question">
+              <span>What document formats are supported for policy ingestion?</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer">
+              We support plain text, markdown, HTML, and structured FAQ files. Our chunking engine splits long policy documents into 400-character segments with 80-character semantic overlaps to preserve cross-sentence context.
+            </div>
+          </div>
+
+          <!-- FAQ 4 -->
+          <div class="faq-item">
+            <button type="button" class="faq-question">
+              <span>How fast does the AI respond to customer inquiries?</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer">
+              Thanks to ChromaDB's in-memory indexing and the sub-second inference speeds of Gemini 3 Flash, the full pipeline retrieval and grounded generation lifecycle typically completes in under 350 to 500 milliseconds.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="section">
+      <div class="container">
+        <div class="cta-banner">
+          <h2 class="hero-title">
+            Ready to Automate Customer Support with Verified Confidence?
+          </h2>
+          <p class="lead-text">
+            Launch the interactive Support Hub application or schedule a personalized architecture review with our engineers.
+          </p>
+          <div class="hero-cta-group">
+            <a href="app.html" class="btn btn-primary btn-lg" id="cta-btn-launch-app">
+              <i class="fa-solid fa-headset"></i> Open Support Hub Portal
+            </a>
+            <button type="button" class="btn btn-secondary btn-lg" onclick="openDemoModal('Enterprise Demo')" id="cta-btn-demo">
+              <i class="fa-solid fa-calendar"></i> Book Enterprise Walkthrough
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="brand-logo">
+            <div class="brand-icon-box">
+              <i class="fa-solid fa-brain"></i>
+            </div>
+            <span>OmniDesk<span class="brand-secondary-text">AI</span></span>
+          </a>
+          <p>
+            The enterprise-grade zero-hallucination customer support platform powered by Gemini 3 Flash and ChromaDB vector retrieval.
+          </p>
+          <div class="nav-actions">
+            <a href="#" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
+            <a href="#" aria-label="X Twitter"><i class="fa-brands fa-x-twitter"></i></a>
+            <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>
+            <a href="#" aria-label="Discord"><i class="fa-brands fa-discord"></i></a>
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h4>Product</h4>
+          <ul class="footer-links">
+            <li><a href="app.html">Support Hub App</a></li>
+            <li><a href="#features">Capabilities</a></li>
+            <li><a href="#demo">Interactive Demo</a></li>
+            <li><a href="#roi">ROI Calculator</a></li>
+            <li><a href="#pricing">Pricing Plans</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Architecture</h4>
+          <ul class="footer-links">
+            <li><a href="#how-it-works">RAG Pipeline</a></li>
+            <li><a href="#features">Gemini 3 Flash</a></li>
+            <li><a href="#features">ChromaDB Vector Store</a></li>
+            <li><a href="http://localhost:8000/docs" target="_blank" rel="noopener">FastAPI Swagger Docs</a></li>
+            <li><a href="#faq">Security &amp; Privacy</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Company</h4>
+          <ul class="footer-links">
+            <li><a href="#" onclick="openDemoModal('Contact')">Contact Support</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+            <li><a href="#">Security Overview</a></li>
+            <li><a href="#">System Status</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>&copy; 2026 OmniDesk AI Inc. All rights reserved.</div>
+        <div class="nav-actions">
+          <span class="pulse-dot"></span>
+          <span>FastAPI Engine &amp; Vector Store Online</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Lead Capture / Demo Modal -->
+  <div class="modal-overlay" id="demo-modal">
+    <div class="modal-card">
+      <button type="button" class="modal-close" onclick="closeDemoModal()" title="Close dialog" aria-label="Close dialog">&times;</button>
+      <div class="modal-header-box">
+        <div class="brand-icon-box brand-icon-sm">
+          <i class="fa-solid fa-sparkles"></i>
+        </div>
+        <h3 id="modal-title">Get Started with OmniDesk AI</h3>
+      </div>
+      <p class="modal-desc">
+        Connect your store policies and test automated resolution in your test environment.
+      </p>
+
+      <form id="lead-capture-form" onsubmit="handleLeadSubmit(event)">
+        <div class="form-group">
+          <label class="form-label" for="lead-name">Full Name</label>
+          <input type="text" id="lead-name" class="form-control" placeholder="e.g. Sarah Jenkins" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="lead-email">Work Email</label>
+          <input type="email" id="lead-email" class="form-control" placeholder="sarah@company.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="lead-company">Store / Company Name</label>
+          <input type="text" id="lead-company" class="form-control" placeholder="Apex Retail Global" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-w-full-mt">
+          <i class="fa-solid fa-paper-plane"></i> Request Sandbox Access
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="js/landing.js"></script>
+</body>
+</html>
