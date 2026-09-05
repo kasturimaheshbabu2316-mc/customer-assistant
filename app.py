@@ -3,7 +3,18 @@ import requests
 
 st.set_page_config(page_title="Support Hub", page_icon="💬", layout="centered")
 
-BACKEND_URL = st.sidebar.text_input("Backend URL", value="http://localhost:8000")
+with st.sidebar:
+    st.title("Settings")
+    BACKEND_URL = st.text_input("Backend URL", value="http://127.0.0.1:8000")
+    try:
+        health_res = requests.get(f"{BACKEND_URL}/health", timeout=2)
+        if health_res.status_code == 200:
+            h_data = health_res.json()
+            st.success(f"Backend Connected ({h_data.get('vector_count', 0)} chunks indexed)")
+        else:
+            st.warning(f"Backend status: {health_res.status_code}")
+    except Exception:
+        st.error("Backend Offline\nStart with: `python server.py`")
 
 st.title("Customer Service Portal")
 st.caption("Powered by Gemini 3 Flash & RAG. Ask about returns, shipping, or support.")
@@ -53,6 +64,6 @@ if user_input := st.chat_input("Type your question here..."):
                         "sources": sources
                     })
                 else:
-                    st.error("Service temporarily unavailable. Please try again.")
+                    st.error(f"Service returned error ({res.status_code}): {res.text}")
             except Exception as e:
-                st.error(f"Failed to connect to backend: {e}")
+                st.error(f"Failed to connect to backend at {BACKEND_URL}: {e}\n\nPlease ensure the backend server is running via `python server.py`.")

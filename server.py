@@ -13,7 +13,21 @@ from rag_engine import (
     DEFAULT_KB_PATH
 )
 
-app = FastAPI(title="OmniDesk Customer Support RAG Agent API")
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        if os.path.exists(DEFAULT_KB_PATH):
+            ingest_faq(DEFAULT_KB_PATH)
+            print(f"Knowledge base ({DEFAULT_KB_PATH}) ingested successfully.")
+        else:
+            print(f"{DEFAULT_KB_PATH} not found, skipping startup ingestion.")
+    except Exception as e:
+        print(f"Startup ingestion note: {e}")
+    yield
+
+app = FastAPI(title="OmniDesk Customer Support RAG Agent API", lifespan=lifespan)
 
 # Enable CORS for web frontends (index.html & app.html)
 app.add_middleware(
@@ -23,17 +37,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.on_event("startup")
-def startup():
-    try:
-        if os.path.exists(DEFAULT_KB_PATH):
-            ingest_faq(DEFAULT_KB_PATH)
-            print(f"Knowledge base ({DEFAULT_KB_PATH}) ingested successfully.")
-        else:
-            print(f"{DEFAULT_KB_PATH} not found, skipping startup ingestion.")
-    except Exception as e:
-        print(f"Startup ingestion note: {e}")
 
 class QueryRequest(BaseModel):
     query: str

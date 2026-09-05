@@ -8,8 +8,8 @@ if os.path.exists("doc/.env"):
     load_dotenv("doc/.env")
 
 # Configuration Variables
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-004")
-GENERATION_MODEL = os.getenv("GENERATION_MODEL", "gemini-3-flash")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "gemini-embedding-001")
+GENERATION_MODEL = os.getenv("GENERATION_MODEL", "gemini-3.6-flash")
 GUARDRAIL_THRESHOLD = float(os.getenv("GUARDRAIL_DISTANCE_THRESHOLD", "1.2"))
 TOP_K_CHUNKS = int(os.getenv("TOP_K_CHUNKS", "2"))
 TEMPERATURE = float(os.getenv("GENERATION_TEMPERATURE", "0.1"))
