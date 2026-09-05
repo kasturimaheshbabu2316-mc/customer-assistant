@@ -17,7 +17,7 @@
 
 ## 📁 Repository Structure
 
-```
+```text
 ├── index.html                  # Commercial SaaS marketing landing page
 ├── app.html                    # Support Hub Single Page Application portal
 ├── css/
