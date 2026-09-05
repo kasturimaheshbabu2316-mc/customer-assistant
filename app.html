@@ -82,7 +82,7 @@
           </button>
           <div class="topbar-view-title" id="current-view-title">Live AI Support Chat</div>
           <span class="badge badge-glow-primary" id="model-indicator-badge">
-            <i class="fa-solid fa-microchip"></i> Gemini 3 Flash &amp; text-embedding-004
+            <i class="fa-solid fa-microchip"></i> Gemini 3 Flash &amp; gemini-embedding-001
           </span>
         </div>
 
@@ -170,7 +170,7 @@
               </div>
               <div class="info-row">
                 <span class="text-muted">Embedding Dimensions:</span>
-                <span class="text-mono text-primary">768 (text-embedding-004)</span>
+                <span class="text-mono text-primary">3,072 (gemini-embedding-001)</span>
               </div>
             </div>
 
@@ -451,8 +451,9 @@
             <div class="form-group">
               <label class="form-label" for="setting-model">Language Model</label>
               <select id="setting-model" class="form-control">
-                <option value="gemini-3-flash">gemini-3-flash (Recommended - Ultra Low Latency)</option>
-                <option value="gemini-1.5-pro">gemini-1.5-pro (Extended Reasoning)</option>
+                <option value="gemini-3.6-flash">gemini-3.6-flash (Recommended - Ultra Low Latency)</option>
+                <option value="gemini-3-flash-preview">gemini-3-flash-preview (Preview)</option>
+                <option value="gemini-flash-latest">gemini-flash-latest (Latest Flash)</option>
               </select>
             </div>
 

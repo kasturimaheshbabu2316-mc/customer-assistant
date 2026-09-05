@@ -1,13 +1,13 @@
 # OmniDesk AI | Customer Support RAG Hub
 
-> Zero-hallucination AI customer service grounded in verified store policies and enterprise knowledge bases. Powered by Google Gemini 3 Flash, dense embeddings (`text-embedding-004`), and ChromaDB vector search.
+> Zero-hallucination AI customer service grounded in verified store policies and enterprise knowledge bases. Powered by Google Gemini 3.6 Flash, dense embeddings (`gemini-embedding-001`), and ChromaDB vector search.
 
 ---
 
 ## 🌟 Key Features
 
 - **🛡️ Zero-Hallucination Guardrails**: Strict distance threshold enforcement (`1.2`) and low temperature (`0.1`) ensure the AI never fabricates dates, return windows, or pricing.
-- **⚡ Sub-Second Vector Retrieval**: Dense vector indexing with Google `text-embedding-004` and ChromaDB persistent storage.
+- **⚡ Sub-Second Vector Retrieval**: 3,072-dimensional dense vector indexing with Google `gemini-embedding-001` and ChromaDB persistent storage.
 - **🔍 Verified Policy Citations**: Every response references exact policy clauses from the knowledge base.
 - **🚀 Commercial Landing Page (`index.html`)**: Modern glassmorphic SaaS showcase with interactive RAG visualizer, live demo simulator, ROI savings calculator, and transparent pricing.
 - **💬 Support Hub App Portal (`app.html`)**: Full-featured Single Page Application (SPA) with Live Chat, Text-to-Speech audio read-aloud, Knowledge Base Studio, Deflection & SLA Analytics Dashboard, and RAG Pipeline Settings.
@@ -43,7 +43,7 @@
 Clone the repository and install required dependencies:
 
 ```bash
-pip install fastapi uvicorn chromadb google-genai python-dotenv streamlit requests
+pip install -r requirements.txt
 ```
 
 ### 2. Configure API Key

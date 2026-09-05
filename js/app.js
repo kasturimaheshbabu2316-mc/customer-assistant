@@ -7,7 +7,7 @@ const AppState = {
   currentView: 'chat',
   backendUrl: localStorage.getItem('omni_backend_url') || 'http://localhost:8000',
   guardrailThreshold: parseFloat(localStorage.getItem('omni_threshold')) || 1.2,
-  model: localStorage.getItem('omni_model') || 'gemini-3-flash',
+  model: localStorage.getItem('omni_model') || 'gemini-3.6-flash',
   isBackendOnline: false,
   messages: [
     {
@@ -575,7 +575,7 @@ function savePipelineSettings() {
     localStorage.setItem('omni_model', AppState.model);
     const modelBadge = document.getElementById('model-indicator-badge');
     if (modelBadge) {
-      modelBadge.innerHTML = `<i class="fa-solid fa-microchip"></i> ${AppState.model} &amp; text-embedding-004`;
+      modelBadge.innerHTML = `<i class="fa-solid fa-microchip"></i> ${AppState.model} &amp; gemini-embedding-001`;
     }
   }
 
