@@ -39,17 +39,23 @@
 ## 🚀 Quick Start Guide
 
 ### 1. Installation
+
 Clone the repository and install required dependencies:
+
 ```bash
 pip install fastapi uvicorn chromadb google-genai python-dotenv streamlit requests
 ```
 
 ### 2. Configure API Key
+
 Copy the `.env.example` template to `.env`:
+
 ```bash
 cp .env.example .env
 ```
+
 Add your Google Gemini API Key:
+
 ```env
 GEMINI_API_KEY=your_actual_api_key_here
 ```
@@ -57,25 +63,31 @@ GEMINI_API_KEY=your_actual_api_key_here
 ### 3. Launch Services
 
 #### Option A: Open Web Pages Directly
+
 - Open `index.html` in any browser to explore the commercial website.
 - Open `app.html` in any browser to use the Support Hub portal.
 *(Both pages feature intelligent fallback simulation even if the backend is offline)*.
 
 #### Option B: Start FastAPI Backend
+
 ```bash
 python server.py
 ```
+
 - API Endpoint: `http://localhost:8000`
 - Swagger API Docs: `http://localhost:8000/docs`
 - Health Check: `http://localhost:8000/health`
 
 #### Option C: Start Streamlit Application
+
 ```bash
 python -m streamlit run app.py
 ```
+
 - Streamlit Interface: `http://localhost:8501`
 
 ---
 
 ## 📄 License
+
 MIT License. Developed for enterprise customer support automation.
