@@ -12,6 +12,7 @@ import csv
 import io
 from contextlib import asynccontextmanager
 
+import database
 from rag_engine import (
     run_rag_pipeline,
     query_rag_pipeline,
@@ -35,12 +36,23 @@ from rag_engine import (
 )
 
 SERVER_START_TIME = time.time()
-ADMIN_API_KEY = os.getenv("ADMIN_API_KEY", "").strip()
+ADMIN_API_KEY = os.getenv("ADMIN_API_KEY", "admin-secret-key-2026").strip()
 RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
 
 # ==============================================================================
-# SLIDING-WINDOW RATE LIMITER
+# SAFE PROXY IP EXTRACTION & SLIDING-WINDOW RATE LIMITER
 # ==============================================================================
+def get_client_ip(request: Request) -> str:
+    """Safely extracts the client IP address considering proxy headers."""
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        # First IP in X-Forwarded-For is the originating client
+        return forwarded.split(",")[0].strip()
+    real_ip = request.headers.get("X-Real-IP") or request.headers.get("CF-Connecting-IP")
+    if real_ip:
+        return real_ip.strip()
+    return request.client.host if request.client else "127.0.0.1"
+
 class SlidingWindowRateLimiter:
     def __init__(self, requests_per_minute: int = 60):
         self.rpm = requests_per_minute
@@ -66,7 +78,7 @@ class SlidingWindowRateLimiter:
 rate_limiter = SlidingWindowRateLimiter(requests_per_minute=RATE_LIMIT_PER_MINUTE)
 
 def check_rate_limit(request: Request):
-    client_ip = request.client.host if request.client else "127.0.0.1"
+    client_ip = get_client_ip(request)
     allowed, retry_after = rate_limiter.is_allowed(client_ip)
     if not allowed:
         raise HTTPException(
@@ -82,10 +94,6 @@ def verify_admin_key(
     x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
     authorization: Optional[str] = Header(None, alias="Authorization")
 ):
-    if not ADMIN_API_KEY:
-        # Open developer mode: no key required
-        return True
-    
     token = x_api_key
     if not token and authorization:
         if authorization.startswith("Bearer "):
@@ -101,147 +109,12 @@ def verify_admin_key(
         )
     return True
 
-# ==============================================================================
-# TICKETS & ESCALATION DATABASE
-# ==============================================================================
-TICKETS_DB = [
-    {
-        "id": "TCK-1042",
-        "customer_id": "CUST-8492",
-        "customer_name": "Elena Rostova",
-        "customer_email": "elena.r@techcorp.io",
-        "customer_tier": "VIP Enterprise",
-        "intent": "Billing & Payment",
-        "sentiment": "VIP / Commercial",
-        "subject": "Custom enterprise bulk discount inquiry",
-        "query": "We are looking to order 250 units for our corporate team. Are custom volume pricing tiers available?",
-        "priority": "High",
-        "status": "Open",
-        "created_at": time.strftime("%b %d, %H:%M"),
-        "created_ts": time.time() - 3600,  # 1 hour ago
-        "assigned_agent": "Unassigned",
-        "transcript_snippet": "Customer asked for bulk volume tier pricing outside standard retail catalog.",
-        "messages": [
-            {
-                "id": "msg_1",
-                "sender": "Elena Rostova",
-                "text": "We are looking to order 250 units for our corporate team. Are custom volume pricing tiers available?",
-                "is_internal_note": False,
-                "timestamp": time.strftime("%b %d, %H:%M")
-            }
-        ]
-    },
-    {
-        "id": "TCK-1039",
-        "customer_id": "CUST-6310",
-        "customer_name": "Marcus Vance",
-        "customer_email": "m.vance@vertex.com",
-        "customer_tier": "Pro Business",
-        "intent": "Billing & Payment",
-        "sentiment": "High Urgency",
-        "subject": "Missing commercial tax exemption invoice",
-        "query": "Where can I upload our state resale tax exemption certificate for order #88412?",
-        "priority": "Urgent",
-        "status": "In Progress",
-        "created_at": time.strftime("%b %d, %H:%M"),
-        "created_ts": time.time() - 1200,  # 20 mins ago
-        "assigned_agent": "Sarah Chen",
-        "transcript_snippet": "Deflected tax exemption form request.",
-        "messages": [
-            {
-                "id": "msg_1",
-                "sender": "Marcus Vance",
-                "text": "Where can I upload our state resale tax exemption certificate for order #88412?",
-                "is_internal_note": False,
-                "timestamp": time.strftime("%b %d, %H:%M")
-            },
-            {
-                "id": "msg_2",
-                "sender": "Sarah Chen",
-                "text": "Reviewing order #88412 against the Washington state sales tax exemption registry.",
-                "is_internal_note": True,
-                "timestamp": time.strftime("%b %d, %H:%M")
-            }
-        ]
-    },
-    {
-        "id": "TCK-1031",
-        "customer_id": "CUST-4195",
-        "customer_name": "David Kim",
-        "customer_email": "dkim@ventures.com",
-        "customer_tier": "Standard Retail",
-        "intent": "Shipping & Logistics",
-        "sentiment": "Standard",
-        "subject": "Freight shipping to Antarctica research station",
-        "query": "Do you offer specialized freight shipping to McMurdo Station?",
-        "priority": "Low",
-        "status": "Resolved",
-        "created_at": "Sep 16, 14:15",
-        "created_ts": time.time() - 86400,
-        "assigned_agent": "Alex Morgan",
-        "transcript_snippet": "Inquiry on non-standard remote geography delivery.",
-        "messages": [
-            {
-                "id": "msg_1",
-                "sender": "David Kim",
-                "text": "Do you offer specialized freight shipping to McMurdo Station?",
-                "is_internal_note": False,
-                "timestamp": "Sep 16, 14:15"
-            },
-            {
-                "id": "msg_2",
-                "sender": "Alex Morgan",
-                "text": "Provided freight courier quote via DHL Global Forwarding charter.",
-                "is_internal_note": False,
-                "timestamp": "Sep 16, 15:30"
-            }
-        ]
-    }
-]
-
-# In-memory analytics & audit tracker
-AUDIT_LOGS = [
-    {
-        "id": "audit_1",
-        "query": "Can I return open-box headphones?",
-        "status": "Resolved (100% Grounded)",
-        "distance": 0.31,
-        "matched": "Section 1: Return and Exchange Policy",
-        "latency_ms": 240,
-        "timestamp": time.strftime("%H:%M:%S")
-    },
-    {
-        "id": "audit_2",
-        "query": "Do you ship to Toronto, Canada?",
-        "status": "Resolved (DDP Duties Cited)",
-        "distance": 0.28,
-        "matched": "Section 2: Shipping and Delivery Options",
-        "latency_ms": 195,
-        "timestamp": time.strftime("%H:%M:%S")
-    },
-    {
-        "id": "audit_3",
-        "query": "How long is the manufacturer warranty?",
-        "status": "Resolved (1-Year Limited Cited)",
-        "distance": 0.22,
-        "matched": "Section 4: Warranty & Repair Coverage",
-        "latency_ms": 180,
-        "timestamp": time.strftime("%H:%M:%S")
-    }
-]
-
+# Query Stats tracking
 QUERY_STATS = {
     "total_queries": 14820,
     "deflected_queries": 13100,
     "total_latency_ms": 14820 * 420
 }
-
-# In-memory customer feedback & CSAT tracking
-FEEDBACK_DB = [
-    {"id": "fb_1", "query": "Can I return open-box items?", "rating": 5, "is_positive": True, "comment": "Clear return policy breakdown!", "language": "English", "timestamp": time.strftime("%H:%M:%S")},
-    {"id": "fb_2", "query": "Do you ship to Toronto Canada?", "rating": 5, "is_positive": True, "comment": "DDP customs duties detail was super helpful.", "language": "English", "timestamp": time.strftime("%H:%M:%S")},
-    {"id": "fb_3", "query": "¿Cuál es la garantía del producto?", "rating": 5, "is_positive": True, "comment": "Excelente respuesta en español.", "language": "Spanish", "timestamp": time.strftime("%H:%M:%S")}
-]
 
 # Standard Agent Response Macros
 MACROS_DB = [
@@ -271,46 +144,16 @@ MACROS_DB = [
     }
 ]
 
-# Outbound Incident Webhook Logs & Dispatcher
-WEBHOOK_LOGS_DB = [
-    {
-        "id": "wh_101",
-        "event_type": "sla_warning",
-        "title": "⏱️ SLA Warning (< 30m) — Ticket #TCK-1021",
-        "severity": "high",
-        "destination": "Slack #support-urgent",
-        "payload": {"ticket_id": "TCK-1021", "customer": "Elena Rostova", "tier": "VIP Enterprise", "remaining_minutes": 25},
-        "status": "delivered",
-        "timestamp": time.strftime("%H:%M:%S")
-    },
-    {
-        "id": "wh_102",
-        "event_type": "csat_alert",
-        "title": "⚠️ Low CSAT Rating Received (2/5)",
-        "severity": "medium",
-        "destination": "PagerDuty / Support Leads",
-        "payload": {"rating": 2, "query": "How to ship heavy electronics?", "language": "English"},
-        "status": "delivered",
-        "timestamp": time.strftime("%H:%M:%S")
-    }
-]
-
 def dispatch_webhook_alert(event_type: str, title: str, payload: dict, severity: str = "medium", destination: str = "Slack #support-alerts") -> dict:
-    """Dispatches a simulated Slack / PagerDuty webhook incident alert."""
-    log_entry = {
-        "id": f"wh_{random.randint(1000, 9999)}",
-        "event_type": event_type,
-        "title": title,
-        "severity": severity,
-        "destination": destination,
-        "payload": payload,
-        "status": "delivered",
-        "timestamp": time.strftime("%H:%M:%S")
-    }
-    WEBHOOK_LOGS_DB.insert(0, log_entry)
-    if len(WEBHOOK_LOGS_DB) > 50:
-        WEBHOOK_LOGS_DB.pop()
-    return log_entry
+    """Dispatches a simulated Slack / PagerDuty webhook incident alert to persistent DB."""
+    return database.add_webhook_log(
+        event_type=event_type,
+        title=title,
+        severity=severity,
+        destination=destination,
+        payload=payload,
+        status="delivered"
+    )
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -326,17 +169,17 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="OmniDesk Customer Support RAG Agent API", lifespan=lifespan)
 
-# Enable CORS for web frontends (index.html & app.html)
+# Configurable CORS
+cors_env = os.getenv("CORS_ALLOWED_ORIGINS", "*")
+allowed_origins = [o.strip() for o in cors_env.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins if allowed_origins else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ==============================================================================
-# REQUEST & RESPONSE MODELS
 # ==============================================================================
 # REQUEST & RESPONSE MODELS
 # ==============================================================================
@@ -412,7 +255,8 @@ def health():
     except Exception:
         pass
     has_api_key = bool(get_gemini_api_key())
-    open_tickets = sum(1 for t in TICKETS_DB if t["status"] == "Open")
+    tickets = database.get_all_tickets()
+    open_tickets = sum(1 for t in tickets if t["status"] == "Open")
     return {
         "status": "healthy",
         "service": "OmniDesk RAG Backend",
@@ -461,18 +305,14 @@ def ask(req: QueryRequest):
             QUERY_STATS["deflected_queries"] += 1
         QUERY_STATS["total_latency_ms"] += res.get("latency_ms", 300)
         
-        # Record audit log
-        AUDIT_LOGS.insert(0, {
-            "id": f"audit_{len(AUDIT_LOGS) + 1}",
-            "query": req.query[:80],
-            "status": "Deflected (Escalated)" if res.get("deflected") else "Resolved (100% Grounded)",
-            "distance": round(res["distances"][0], 2) if res.get("distances") else 0.0,
-            "matched": res["sources"][0][:50] if res.get("sources") else "None",
-            "latency_ms": res.get("latency_ms", 0),
-            "timestamp": time.strftime("%H:%M:%S")
-        })
-        if len(AUDIT_LOGS) > 30:
-            AUDIT_LOGS.pop()
+        # Record persistent audit log
+        database.add_audit_log(
+            query=req.query[:80],
+            status="Deflected (Escalated)" if res.get("deflected") else "Resolved (100% Grounded)",
+            distance=round(res["distances"][0], 2) if res.get("distances") else 0.0,
+            matched=res["sources"][0][:50] if res.get("sources") else "None",
+            latency_ms=res.get("latency_ms", 0)
+        )
             
         return res
     except Exception as e:
@@ -502,7 +342,6 @@ def calculate_sla_details(ticket: dict) -> dict:
     created_ts = ticket.get("created_ts") or time.time()
     priority = (ticket.get("priority") or "Medium").capitalize()
     
-    # SLA target window in minutes
     sla_targets = {
         "Urgent": 60,       # 1 hour
         "High": 240,        # 4 hours
@@ -545,15 +384,10 @@ def list_tickets(
     status: Optional[str] = Query(None, description="Filter by status: Open, In Progress, Resolved"),
     priority: Optional[str] = Query(None, description="Filter by priority: Urgent, High, Medium, Low")
 ):
-    results = TICKETS_DB
-    if status and status.lower() != "all":
-        results = [t for t in results if t["status"].lower() == status.lower()]
-    if priority and priority.lower() != "all":
-        results = [t for t in results if t["priority"].lower() == priority.lower()]
+    tickets = database.get_all_tickets(status=status, priority=priority)
     
-    # Calculate live SLA details for each ticket
     enriched = []
-    for t in results:
+    for t in tickets:
         t_copy = dict(t)
         t_copy["sla_details"] = calculate_sla_details(t)
         enriched.append(t_copy)
@@ -583,7 +417,7 @@ def create_ticket(req: CreateTicketRequest):
         }
     ]
 
-    new_ticket = {
+    new_ticket_data = {
         "id": ticket_id,
         "customer_id": cust_id,
         "customer_name": req.customer_name.strip(),
@@ -601,20 +435,21 @@ def create_ticket(req: CreateTicketRequest):
         "transcript_snippet": req.transcript_snippet.strip() if req.transcript_snippet else req.query[:120],
         "messages": initial_messages
     }
-    TICKETS_DB.insert(0, new_ticket)
+    
+    created = database.create_ticket(new_ticket_data)
     
     # Phase 7: Trigger Outbound Incident Webhook for Urgent or VIP Escalations
-    if new_ticket["priority"] == "Urgent" or "VIP" in new_ticket["customer_tier"]:
+    if created["priority"] == "Urgent" or "VIP" in created["customer_tier"]:
         dispatch_webhook_alert(
             event_type="urgent_ticket_escalated",
-            title=f"🚨 Urgent Escalation: Ticket #{ticket_id} ({new_ticket['customer_name']})",
-            payload={"ticket_id": ticket_id, "customer_name": new_ticket["customer_name"], "priority": new_ticket["priority"], "tier": new_ticket["customer_tier"], "subject": new_ticket["subject"]},
+            title=f"🚨 Urgent Escalation: Ticket #{ticket_id} ({created['customer_name']})",
+            payload={"ticket_id": ticket_id, "customer_name": created["customer_name"], "priority": created["priority"], "tier": created["customer_tier"], "subject": created["subject"]},
             severity="high",
             destination="Slack #support-tier2-urgent"
         )
     
-    returned_ticket = dict(new_ticket)
-    returned_ticket["sla_details"] = calculate_sla_details(new_ticket)
+    returned_ticket = dict(created)
+    returned_ticket["sla_details"] = calculate_sla_details(created)
     
     return {
         "status": "success",
@@ -624,15 +459,15 @@ def create_ticket(req: CreateTicketRequest):
 
 @app.get("/api/tickets/export")
 def export_tickets(format: str = Query("csv", description="csv or json")):
+    tickets = database.get_all_tickets()
     if format.lower() == "json":
-        json_str = json.dumps(TICKETS_DB, indent=2)
+        json_str = json.dumps(tickets, indent=2)
         return Response(
             content=json_str,
             media_type="application/json",
             headers={"Content-Disposition": 'attachment; filename="omnidesk_tickets_export.json"'}
         )
     
-    # Default CSV
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow([
@@ -641,7 +476,7 @@ def export_tickets(format: str = Query("csv", description="csv or json")):
         "Assigned Agent", "Created At", "Subject", "Query Context"
     ])
     
-    for t in TICKETS_DB:
+    for t in tickets:
         writer.writerow([
             t.get("id", ""),
             t.get("customer_id", ""),
@@ -680,10 +515,11 @@ def export_knowledge_base():
 
 @app.get("/api/tickets/stats")
 def get_ticket_stats():
-    total = len(TICKETS_DB)
-    open_c = sum(1 for t in TICKETS_DB if t["status"] == "Open")
-    in_prog_c = sum(1 for t in TICKETS_DB if t["status"] == "In Progress")
-    resolved_c = sum(1 for t in TICKETS_DB if t["status"] == "Resolved")
+    tickets = database.get_all_tickets()
+    total = len(tickets)
+    open_c = sum(1 for t in tickets if t["status"] == "Open")
+    in_prog_c = sum(1 for t in tickets if t["status"] == "In Progress")
+    resolved_c = sum(1 for t in tickets if t["status"] == "Resolved")
     rate = round((resolved_c / total * 100), 1) if total > 0 else 100.0
 
     return {
@@ -696,90 +532,93 @@ def get_ticket_stats():
 
 @app.get("/api/tickets/{ticket_id}")
 def get_ticket(ticket_id: str):
-    for t in TICKETS_DB:
-        if t["id"].upper() == ticket_id.upper():
-            t_copy = dict(t)
-            t_copy["sla_details"] = calculate_sla_details(t)
-            return {
-                "status": "success",
-                "ticket": t_copy,
-                **t_copy
-            }
-    raise HTTPException(status_code=404, detail=f"Ticket {ticket_id} not found")
+    ticket = database.get_ticket_by_id(ticket_id.upper())
+    if not ticket:
+        raise HTTPException(status_code=404, detail=f"Ticket {ticket_id} not found")
+    
+    t_copy = dict(ticket)
+    t_copy["sla_details"] = calculate_sla_details(ticket)
+    return {
+        "status": "success",
+        "ticket": t_copy,
+        **t_copy
+    }
 
 @app.post("/api/tickets/{ticket_id}/suggest-reply")
 def suggest_agent_reply(ticket_id: str):
-    for t in TICKETS_DB:
-        if t["id"].upper() == ticket_id.upper():
-            copilot_res = generate_agent_reply_draft(
-                ticket_query=t.get("query", ""),
-                customer_name=t.get("customer_name", "Valued Customer"),
-                customer_tier=t.get("customer_tier", "Standard Retail"),
-                intent=t.get("intent", "General Inquiry")
-            )
-            return {
-                "ticket_id": t["id"],
-                "customer_name": t.get("customer_name"),
-                "customer_tier": t.get("customer_tier"),
-                "intent": t.get("intent"),
-                "suggested_reply": copilot_res["suggested_reply"],
-                "sources": copilot_res["sources"],
-                "latency_ms": copilot_res["latency_ms"]
-            }
-    raise HTTPException(status_code=404, detail=f"Ticket {ticket_id} not found")
+    t = database.get_ticket_by_id(ticket_id.upper())
+    if not t:
+        raise HTTPException(status_code=404, detail=f"Ticket {ticket_id} not found")
+        
+    copilot_res = generate_agent_reply_draft(
+        ticket_query=t.get("query", ""),
+        customer_name=t.get("customer_name", "Valued Customer"),
+        customer_tier=t.get("customer_tier", "Standard Retail"),
+        intent=t.get("intent", "General Inquiry")
+    )
+    return {
+        "ticket_id": t["id"],
+        "customer_name": t.get("customer_name"),
+        "customer_tier": t.get("customer_tier"),
+        "intent": t.get("intent"),
+        "suggested_reply": copilot_res["suggested_reply"],
+        "sources": copilot_res["sources"],
+        "latency_ms": copilot_res["latency_ms"]
+    }
 
 @app.post("/api/tickets/{ticket_id}/messages")
-def add_ticket_message(ticket_id: str, req: TicketMessageRequest):
-    for t in TICKETS_DB:
-        if t["id"].upper() == ticket_id.upper():
-            if "messages" not in t:
-                t["messages"] = []
-            new_msg = {
-                "id": f"msg_{len(t['messages']) + 1}",
-                "sender": req.sender.strip(),
-                "text": req.text.strip(),
-                "is_internal_note": bool(req.is_internal_note),
-                "timestamp": time.strftime("%b %d, %H:%M")
-            }
-            t["messages"].append(new_msg)
-            if not req.is_internal_note and t["status"] == "Open":
-                t["status"] = "In Progress"
-            
-            t_copy = dict(t)
-            t_copy["sla_details"] = calculate_sla_details(t)
-            return {
-                "status": "success",
-                "message": "Message appended to ticket thread",
-                "ticket_message": new_msg,
-                "ticket": t_copy
-            }
-    raise HTTPException(status_code=404, detail=f"Ticket {ticket_id} not found")
+def add_ticket_message_endpoint(ticket_id: str, req: TicketMessageRequest):
+    t = database.get_ticket_by_id(ticket_id.upper())
+    if not t:
+        raise HTTPException(status_code=404, detail=f"Ticket {ticket_id} not found")
+        
+    new_msg = database.add_ticket_message(
+        ticket_id=ticket_id.upper(),
+        sender=req.sender.strip(),
+        text=req.text.strip(),
+        is_internal_note=bool(req.is_internal_note)
+    )
+    
+    if not req.is_internal_note and t["status"] == "Open":
+        database.update_ticket(ticket_id.upper(), {"status": "In Progress"})
+        
+    updated_ticket = database.get_ticket_by_id(ticket_id.upper())
+    t_copy = dict(updated_ticket)
+    t_copy["sla_details"] = calculate_sla_details(updated_ticket)
+    return {
+        "status": "success",
+        "message": "Message appended to ticket thread",
+        "ticket_message": new_msg,
+        "ticket": t_copy
+    }
 
 @app.patch("/api/tickets/{ticket_id}")
-def update_ticket(ticket_id: str, req: UpdateTicketRequest):
-    for t in TICKETS_DB:
-        if t["id"].upper() == ticket_id.upper():
-            if req.status:
-                t["status"] = req.status.title()
-            if req.assigned_agent:
-                t["assigned_agent"] = req.assigned_agent.strip()
-            if req.priority:
-                t["priority"] = req.priority.title()
-            t_copy = dict(t)
-            t_copy["sla_details"] = calculate_sla_details(t)
-            return {
-                "status": "success",
-                "message": f"Ticket {ticket_id} updated",
-                "ticket": t_copy
-            }
-    raise HTTPException(status_code=404, detail=f"Ticket {ticket_id} not found")
+def update_ticket_endpoint(ticket_id: str, req: UpdateTicketRequest):
+    t = database.get_ticket_by_id(ticket_id.upper())
+    if not t:
+        raise HTTPException(status_code=404, detail=f"Ticket {ticket_id} not found")
+        
+    updates = {}
+    if req.status:
+        updates["status"] = req.status.title()
+    if req.assigned_agent:
+        updates["assigned_agent"] = req.assigned_agent.strip()
+    if req.priority:
+        updates["priority"] = req.priority.title()
+        
+    updated = database.update_ticket(ticket_id.upper(), updates)
+    t_copy = dict(updated)
+    t_copy["sla_details"] = calculate_sla_details(updated)
+    return {
+        "status": "success",
+        "message": f"Ticket {ticket_id} updated",
+        "ticket": t_copy
+    }
 
 @app.delete("/api/tickets/{ticket_id}", dependencies=[Depends(verify_admin_key)])
-def delete_ticket(ticket_id: str):
-    global TICKETS_DB
-    initial_len = len(TICKETS_DB)
-    TICKETS_DB = [t for t in TICKETS_DB if t["id"].upper() != ticket_id.upper()]
-    if len(TICKETS_DB) == initial_len:
+def delete_ticket_endpoint(ticket_id: str):
+    deleted = database.delete_ticket(ticket_id.upper())
+    if not deleted:
         raise HTTPException(status_code=404, detail=f"Ticket {ticket_id} not found")
     return {
         "status": "success",
@@ -858,18 +697,13 @@ def update_settings(req: SettingsUpdateRequest):
 
 @app.post("/api/feedback")
 def submit_feedback(req: FeedbackRequest):
-    fb_entry = {
-        "id": f"fb_{len(FEEDBACK_DB) + 1}",
-        "query": req.query[:100] if req.query else "Live Assistant Query",
-        "rating": req.rating,
-        "is_positive": req.is_positive,
-        "comment": req.comment.strip() if req.comment else "",
-        "language": req.language or "English",
-        "timestamp": time.strftime("%H:%M:%S")
-    }
-    FEEDBACK_DB.insert(0, fb_entry)
-    if len(FEEDBACK_DB) > 50:
-        FEEDBACK_DB.pop()
+    fb_entry = database.add_feedback(
+        query=req.query[:100] if req.query else "Live Assistant Query",
+        rating=req.rating,
+        is_positive=req.is_positive,
+        comment=req.comment.strip() if req.comment else "",
+        language=req.language or "English"
+    )
         
     # Phase 7: Trigger Outbound Webhook on Low CSAT rating
     if req.rating <= 2 or not req.is_positive:
@@ -916,9 +750,10 @@ def trigger_test_webhook(req: TestWebhookRequest = None):
 
 @app.get("/api/webhooks/logs")
 def get_webhook_logs():
+    logs = database.get_webhook_logs()
     return {
-        "total": len(WEBHOOK_LOGS_DB),
-        "logs": WEBHOOK_LOGS_DB
+        "total": len(logs),
+        "logs": logs
     }
 
 @app.post("/api/benchmark/simulate")
@@ -940,39 +775,37 @@ def apply_ticket_macro(ticket_id: str, req: ApplyMacroRequest):
     if not selected_macro:
         raise HTTPException(status_code=404, detail=f"Macro {req.macro_id} not found")
         
-    for t in TICKETS_DB:
-        if t["id"].upper() == ticket_id.upper():
-            cust_name = t.get("customer_name", "Valued Customer")
-            agent = t.get("assigned_agent", req.sender or "OmniDesk Support")
-            if agent == "Unassigned":
-                agent = req.sender or "OmniDesk Support"
-                
-            resolved_text = selected_macro["template"]
-            resolved_text = resolved_text.replace("{{customer_name}}", cust_name)
-            resolved_text = resolved_text.replace("{{ticket_id}}", t["id"])
-            resolved_text = resolved_text.replace("{{assigned_agent}}", agent)
-            
-            new_msg = {
-                "id": f"msg_{len(t.get('messages', [])) + 1}",
-                "sender": agent,
-                "text": resolved_text,
-                "is_internal_note": False,
-                "timestamp": time.strftime("%b %d, %H:%M")
-            }
-            if "messages" not in t:
-                t["messages"] = []
-            t["messages"].append(new_msg)
-            t["status"] = "In Progress"
-            
-            t_copy = dict(t)
-            t_copy["sla_details"] = calculate_sla_details(t)
-            return {
-                "status": "success",
-                "message": f"Macro '{selected_macro['title']}' applied to ticket",
-                "applied_text": resolved_text,
-                "ticket": t_copy
-            }
-    raise HTTPException(status_code=404, detail=f"Ticket {ticket_id} not found")
+    t = database.get_ticket_by_id(ticket_id.upper())
+    if not t:
+        raise HTTPException(status_code=404, detail=f"Ticket {ticket_id} not found")
+        
+    cust_name = t.get("customer_name", "Valued Customer")
+    agent = t.get("assigned_agent", req.sender or "OmniDesk Support")
+    if agent == "Unassigned":
+        agent = req.sender or "OmniDesk Support"
+        
+    resolved_text = selected_macro["template"]
+    resolved_text = resolved_text.replace("{{customer_name}}", cust_name)
+    resolved_text = resolved_text.replace("{{ticket_id}}", t["id"])
+    resolved_text = resolved_text.replace("{{assigned_agent}}", agent)
+    
+    database.add_ticket_message(
+        ticket_id=ticket_id.upper(),
+        sender=agent,
+        text=resolved_text,
+        is_internal_note=False
+    )
+    database.update_ticket(ticket_id.upper(), {"status": "In Progress"})
+    
+    updated_t = database.get_ticket_by_id(ticket_id.upper())
+    t_copy = dict(updated_t)
+    t_copy["sla_details"] = calculate_sla_details(updated_t)
+    return {
+        "status": "success",
+        "message": f"Macro '{selected_macro['title']}' applied to ticket",
+        "applied_text": resolved_text,
+        "ticket": t_copy
+    }
 
 @app.get("/api/analytics")
 def get_analytics():
@@ -981,26 +814,22 @@ def get_analytics():
     avg_latency = round((QUERY_STATS["total_latency_ms"] / total_q) / 1000, 2) if total_q > 0 else 0.42
     rate = round((deflected_q / total_q) * 100, 1) if total_q > 0 else 88.4
 
-    # Compute live CSAT from feedback database
-    if FEEDBACK_DB:
-        csat_avg = round(sum(f["rating"] for f in FEEDBACK_DB) / len(FEEDBACK_DB), 2)
-        pos_count = sum(1 for f in FEEDBACK_DB if f["is_positive"] or f["rating"] >= 4)
-        pos_pct = round((pos_count / len(FEEDBACK_DB)) * 100, 1)
-    else:
-        csat_avg = 4.92
-        pos_pct = 98.4
+    metrics = database.get_analytics_metrics()
+    feedbacks = database.get_all_feedback()
+    webhooks = database.get_webhook_logs(limit=5)
+    audits = database.get_audit_logs(limit=10)
 
     return {
         "deflection_rate": rate,
         "avg_latency_s": avg_latency,
         "total_inquiries": total_q,
-        "csat_score": csat_avg,
-        "csat_positive_percent": pos_pct,
-        "total_feedbacks": len(FEEDBACK_DB),
-        "feedback_count": len(FEEDBACK_DB),
-        "recent_feedback": FEEDBACK_DB[:5],
-        "recent_webhooks": WEBHOOK_LOGS_DB[:5],
-        "audit_logs": AUDIT_LOGS[:10]
+        "csat_score": metrics["average_rating"],
+        "csat_positive_percent": metrics["csat_score_percent"],
+        "total_feedbacks": metrics["total_feedback"],
+        "feedback_count": metrics["total_feedback"],
+        "recent_feedback": feedbacks[:5],
+        "recent_webhooks": webhooks,
+        "audit_logs": audits
     }
 
 # ==============================================================================
@@ -1013,7 +842,7 @@ class HybridSearchRequest(BaseModel):
     rrf_k: Optional[int] = Field(60, ge=1, le=200)
 
 class VisionClaimRequest(BaseModel):
-    image_base64: Optional[str] = Field("", description="Base64-encoded image string")
+    image_base64: Optional[str] = Field("", max_length=7000000, description="Base64 image string (max ~5MB)")
     claim_description: str = Field(..., min_length=1, max_length=2000, description="Customer claim explanation")
     mime_type: Optional[str] = Field("image/jpeg", max_length=50)
 

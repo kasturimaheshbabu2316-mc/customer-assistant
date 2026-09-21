@@ -31,9 +31,12 @@ ENV/
 *.env
 doc/.env
 
-# Local Vector Databases
+# Local Vector & SQLite Databases
 chroma_db/
 *.chroma
+*.db
+data/*.db
+data/
 
 # IDE & OS
 .vscode/
