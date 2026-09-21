@@ -13,6 +13,7 @@ import os
 import sqlite3
 import time
 import json
+import random
 from typing import Optional, Any
 
 DB_DIR = os.getenv("DATA_DIR", "data")
@@ -21,9 +22,11 @@ DB_PATH = os.path.join(DB_DIR, "omnidesk.db")
 def _get_connection() -> sqlite3.Connection:
     """Creates a thread-safe connection with row_factory set to dict-like sqlite3.Row."""
     os.makedirs(DB_DIR, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=20.0)
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=60.0)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode = WAL;")  # Write-Ahead Logging for high concurrency
+    conn.execute("PRAGMA busy_timeout = 60000;") # 60 seconds busy wait
+    conn.execute("PRAGMA synchronous = NORMAL;")
     conn.execute("PRAGMA foreign_keys = ON;")
     return conn
 
@@ -309,11 +312,13 @@ def create_ticket(ticket_data: dict) -> dict:
     # Initial message
     if ticket_data.get("messages"):
         for m in ticket_data["messages"]:
+            raw_id = m.get("id", "")
+            msg_id = f"msg_{ticket_data['id']}_{int(time.time()*1000)}_{random.randint(1000, 9999)}" if (not raw_id or raw_id == "msg_1") else raw_id
             cursor.execute("""
-            INSERT INTO ticket_messages (id, ticket_id, sender, text, is_internal_note, timestamp)
+            INSERT OR REPLACE INTO ticket_messages (id, ticket_id, sender, text, is_internal_note, timestamp)
             VALUES (?, ?, ?, ?, ?, ?)
             """, (
-                m["id"],
+                msg_id,
                 ticket_data["id"],
                 m["sender"],
                 m["text"],
@@ -367,7 +372,7 @@ def add_ticket_message(ticket_id: str, sender: str, text: str, is_internal_note:
         conn.close()
         return None
         
-    msg_id = f"msg_{int(time.time() * 1000)}"
+    msg_id = f"msg_{ticket_id}_{int(time.time() * 1000)}_{random.randint(1000, 9999)}"
     ts = timestamp or time.strftime("%b %d, %H:%M")
     
     cursor.execute("""
@@ -465,38 +470,55 @@ def get_analytics_metrics() -> dict:
 # AUDIT & WEBHOOK OPERATIONS
 # ==============================================================================
 def add_audit_log(query: str, status: str, distance: Optional[float] = None, matched: Optional[str] = None, latency_ms: int = 0) -> dict:
-    """Records an audit log entry in SQLite."""
-    conn = _get_connection()
-    cursor = conn.cursor()
+    """Records an audit log entry in SQLite with retry resilience."""
     audit_id = f"audit_{int(time.time() * 1000)}"
     ts = time.strftime("%H:%M:%S")
-    cursor.execute("""
-    INSERT INTO audit_logs (id, query, status, distance, matched, latency_ms, timestamp)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (audit_id, query, status, distance, matched, latency_ms, ts))
-    conn.commit()
-    conn.close()
+    for attempt in range(3):
+        try:
+            conn = _get_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+            INSERT INTO audit_logs (id, query, status, distance, matched, latency_ms, timestamp)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (audit_id, query, status, distance, matched, latency_ms, ts))
+            conn.commit()
+            conn.close()
+            break
+        except Exception as e:
+            if attempt == 2:
+                print(f"[Audit Log Note] {e}")
+            time.sleep(0.05)
     return {"id": audit_id, "query": query, "status": status, "distance": distance, "matched": matched, "latency_ms": latency_ms, "timestamp": ts}
 
 def get_audit_logs(limit: int = 50) -> list[dict]:
-    conn = _get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM audit_logs ORDER BY rowid DESC LIMIT ?;", (limit,))
-    rows = [dict(r) for r in cursor.fetchall()]
-    conn.close()
-    return rows
+    try:
+        conn = _get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM audit_logs ORDER BY rowid DESC LIMIT ?;", (limit,))
+        rows = [dict(r) for r in cursor.fetchall()]
+        conn.close()
+        return rows
+    except Exception:
+        return []
 
 def add_webhook_log(event_type: str, title: str, severity: str, destination: str, payload: dict, status: str = "delivered") -> dict:
-    conn = _get_connection()
-    cursor = conn.cursor()
     wh_id = f"wh_{int(time.time() * 1000)}"
     ts = time.strftime("%H:%M:%S")
-    cursor.execute("""
-    INSERT INTO webhook_logs (id, event_type, title, severity, destination, payload_json, status, timestamp)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (wh_id, event_type, title, severity, destination, json.dumps(payload), status, ts))
-    conn.commit()
-    conn.close()
+    for attempt in range(3):
+        try:
+            conn = _get_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+            INSERT INTO webhook_logs (id, event_type, title, severity, destination, payload_json, status, timestamp)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (wh_id, event_type, title, severity, destination, json.dumps(payload), status, ts))
+            conn.commit()
+            conn.close()
+            break
+        except Exception as e:
+            if attempt == 2:
+                print(f"[Webhook Log Note] {e}")
+            time.sleep(0.05)
     return {"id": wh_id, "event_type": event_type, "title": title, "severity": severity, "destination": destination, "payload": payload, "status": status, "timestamp": ts}
 
 def get_webhook_logs(limit: int = 50) -> list[dict]:

@@ -109,7 +109,11 @@ def run_all_tests():
     print(f" /api/kb/chunks: {len(kb_list.json()['chunks'])} chunks listed")
 
     # /api/settings
-    update_res = client.post("/api/settings", json={"guardrail_threshold": 1.15, "top_k_chunks": 3})
+    update_res = client.post(
+        "/api/settings",
+        headers={"X-API-Key": os.getenv("ADMIN_API_KEY", "admin-secret-key-2026")},
+        json={"guardrail_threshold": 1.15, "top_k_chunks": 3}
+    )
     assert update_res.status_code == 200, f"Settings update failed: {update_res.status_code}"
     assert update_res.json()["settings"]["guardrail_threshold"] == 1.15, "Settings threshold mismatch"
     print(" /api/settings: runtime settings updated successfully")
