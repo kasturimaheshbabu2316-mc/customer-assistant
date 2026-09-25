@@ -23,7 +23,7 @@ const CustomerState = {
     enable_announcement_banner: false,
     announcement_banner_text: "Special Notice: Free expedited delivery on all verified warranty replacements this week.",
     welcome_greeting: "Hello! I am your AI Customer Support Assistant, grounded exclusively in verified store policies. Ask me about returns, international shipping rates, warranty repairs, price matching, or order cancellations.",
-    theme_mode: "cyber_dark"
+    theme_mode: "clay_porcelain"
   },
   messages: [],
   policies: [
@@ -135,10 +135,12 @@ function applyFeaturesToUI() {
   }
 
   // Theme
-  if (feat.theme_mode === 'light') {
-    document.documentElement.setAttribute('data-theme', 'light');
+  const themeKey = (feat.theme_mode || 'clay_porcelain').replace('clay_', '');
+  if (window.ClayTheme && typeof window.ClayTheme.setTheme === 'function') {
+    window.ClayTheme.setTheme(themeKey);
   } else {
-    document.documentElement.removeAttribute('data-theme');
+    document.documentElement.setAttribute('data-clay-palette', themeKey);
+    document.documentElement.classList.add('clay-mode');
   }
 }
 

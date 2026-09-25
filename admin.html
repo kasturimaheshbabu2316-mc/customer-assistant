@@ -275,12 +275,15 @@
             <textarea id="feat-welcome-greeting" class="form-textarea" rows="2" placeholder="Greeting displayed to customers when opening support chat...">Hello! I am your AI Customer Support Assistant, grounded exclusively in verified store policies. Ask me about returns, international shipping rates, warranty repairs, price matching, or order cancellations.</textarea>
           </div>
 
-          <div class="form-grid-2col">
+            <div class="form-grid-2col">
             <div class="form-group">
-              <label for="feat-theme-mode" class="form-label">Default Customer Portal Theme</label>
-              <select id="feat-theme-mode" class="form-select" title="Select default customer portal theme" aria-label="Select default customer portal theme">
-                <option value="cyber_dark">Cyber Obsidian Dark (Default)</option>
-                <option value="light">Clean Light Mode</option>
+              <label for="feat-theme-mode" class="form-label">Default Customer Portal Clay Theme</label>
+              <select id="feat-theme-mode" class="form-select" title="Select default customer portal clay theme" aria-label="Select default customer portal clay theme">
+                <option value="clay_porcelain" selected>🫧 Porcelain Cloud (Default Clay)</option>
+                <option value="clay_marshmallow">🍬 Candy Marshmallow</option>
+                <option value="clay_mint">🌱 Mint Sage</option>
+                <option value="clay_peach">🍑 Warm Peach</option>
+                <option value="clay_midnight">🌌 Midnight Velvet Slate</option>
               </select>
             </div>
           </div>
@@ -492,20 +495,19 @@
 
           <div class="form-grid-2col settings-row-spaced">
             <div class="form-group">
-              <label for="feat-theme-mode" class="form-label"><i class="fa-solid fa-palette text-primary"></i> Theme &amp; Aesthetic Style</label>
-              <select id="feat-theme-mode" class="form-select" onchange="window.RetroEngine && window.RetroEngine.applyTheme(this.value, true)" title="Select Theme Style" aria-label="Select Theme Style">
-                <option value="cyber_dark">Cyber Modern (Obsidian Glass)</option>
-                <option value="synthwave">Retro Synthwave 80s (Neon Outrun)</option>
-                <option value="terminal">Retro CRT Terminal (Phosphor Green)</option>
-                <option value="win95">Retro Windows 95 (Classic Desktop OS)</option>
-                <option value="arcade">Retro Arcade 90s (Neo-Brutalist Pop)</option>
-                <option value="light">Clean Light (Enterprise)</option>
+              <label for="setting-clay-theme-palette" class="form-label"><i class="fa-solid fa-palette text-primary"></i> Claymorphism Palette</label>
+              <select id="setting-clay-theme-palette" class="form-select" onchange="window.ClayEngine && window.ClayEngine.applyTheme(this.value, true)" title="Select Clay Theme Style" aria-label="Select Clay Theme Style">
+                <option value="porcelain">Porcelain Cloud (Default Clay)</option>
+                <option value="marshmallow">Candy Marshmallow (Pastel Pink/Lilac)</option>
+                <option value="mint">Mint &amp; Eucalyptus (Fresh Sage)</option>
+                <option value="peach">Warm Peach &amp; Coral (Warm Bisque)</option>
+                <option value="midnight">Midnight Velvet (Dark Clay)</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label"><i class="fa-solid fa-sliders text-cyan"></i> Retro Suite HUD</label>
-              <p class="customization-helper-text" style="margin-top: 8px;">
-                Use the floating 🕹️ <strong>Retro Themes</strong> widget at the bottom right corner of any page to test 8-bit sound chip FX, CRT scanlines, and screen flicker in real-time.
+              <label class="form-label"><i class="fa-solid fa-wand-magic-sparkles text-cyan"></i> Tactile Clay Studio</label>
+              <p class="customization-helper-text customization-helper-spaced">
+                Use the floating 🫧 <strong>Clay Studio</strong> pill in the bottom-right corner to customize palettes and test synthesized tactile bubble audio effects in real-time.
               </p>
             </div>
           </div>
@@ -551,6 +553,6 @@
   </div>
 
   <script src="js/admin.js"></script>
-  <script src="js/retro-theme.js"></script>
+  <script src="js/clay-theme.js"></script>
 </body>
 </html>

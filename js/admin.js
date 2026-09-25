@@ -182,7 +182,10 @@ async function saveFeatureSettings() {
     });
 
     if (res.ok) {
-      alert('🎉 UX & Feature configuration updated successfully! Customer portal will reflect these changes immediately.');
+      if (window.ClayTheme && typeof window.ClayTheme.setTheme === 'function') {
+        window.ClayTheme.setTheme(payload.theme_mode.replace('clay_', ''));
+      }
+      alert('🎉 UX & Feature configuration updated successfully! Claymorphism palette applied.');
     } else {
       const err = await res.json();
       alert(`Error updating features: ${err.detail || 'Unauthorized'}`);

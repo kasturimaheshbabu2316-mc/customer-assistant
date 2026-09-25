@@ -558,7 +558,7 @@ DEFAULT_FEATURE_FLAGS = {
     "enable_announcement_banner": False,
     "announcement_banner_text": "Special Announcement: Free expedited delivery on all warranty claims this week.",
     "welcome_greeting": "Hello! I am your AI Customer Support Assistant, grounded exclusively in verified store policies. Ask me about returns, international shipping rates, warranty repairs, price matching, or order cancellations.",
-    "theme_mode": "cyber_dark",
+    "theme_mode": "clay_porcelain",
     "auto_escalate_vip": True
 }
 
@@ -566,6 +566,13 @@ def get_feature_flags() -> dict:
     """Retrieves all UX and system feature flags, merged with defaults."""
     conn = _get_connection()
     cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS features (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        );
+    """)
+    conn.commit()
     cursor.execute("SELECT key, value FROM features;")
     rows = cursor.fetchall()
     conn.close()
