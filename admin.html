@@ -490,6 +490,26 @@
             </div>
           </div>
 
+          <div class="form-grid-2col settings-row-spaced">
+            <div class="form-group">
+              <label for="feat-theme-mode" class="form-label"><i class="fa-solid fa-palette text-primary"></i> Theme &amp; Aesthetic Style</label>
+              <select id="feat-theme-mode" class="form-select" onchange="window.RetroEngine && window.RetroEngine.applyTheme(this.value, true)" title="Select Theme Style" aria-label="Select Theme Style">
+                <option value="cyber_dark">Cyber Modern (Obsidian Glass)</option>
+                <option value="synthwave">Retro Synthwave 80s (Neon Outrun)</option>
+                <option value="terminal">Retro CRT Terminal (Phosphor Green)</option>
+                <option value="win95">Retro Windows 95 (Classic Desktop OS)</option>
+                <option value="arcade">Retro Arcade 90s (Neo-Brutalist Pop)</option>
+                <option value="light">Clean Light (Enterprise)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label"><i class="fa-solid fa-sliders text-cyan"></i> Retro Suite HUD</label>
+              <p class="customization-helper-text" style="margin-top: 8px;">
+                Use the floating 🕹️ <strong>Retro Themes</strong> widget at the bottom right corner of any page to test 8-bit sound chip FX, CRT scanlines, and screen flicker in real-time.
+              </p>
+            </div>
+          </div>
+
           <div class="form-group settings-row-spaced">
             <label for="setting-system-prompt" class="form-label">Grounded System Instruction Prompt</label>
             <textarea id="setting-system-prompt" class="form-textarea" rows="4" placeholder="System prompt instructions..." title="Grounded system instruction prompt" aria-label="Grounded system instruction prompt"></textarea>
@@ -531,5 +551,6 @@
   </div>
 
   <script src="js/admin.js"></script>
+  <script src="js/retro-theme.js"></script>
 </body>
 </html>
