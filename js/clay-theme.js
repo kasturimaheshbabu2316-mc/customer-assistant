@@ -177,7 +177,8 @@
         { id: 'marshmallow', name: 'Candy Marshmallow', icon: 'fa-candy-cane', color: '#ec4899', desc: 'Pastel Bubblegum & Lilac Clay' },
         { id: 'mint', name: 'Mint & Eucalyptus', icon: 'fa-leaf', color: '#10b981', desc: 'Fresh Soothing Sage Clay' },
         { id: 'peach', name: 'Warm Peach & Coral', icon: 'fa-sun', color: '#f97316', desc: 'Sunny Warm Bisque Clay' },
-        { id: 'midnight', name: 'Midnight Velvet', icon: 'fa-moon', color: '#818cf8', desc: 'Deep Velvet Obsidian Dark Clay' }
+        { id: 'midnight', name: 'Midnight Velvet', icon: 'fa-moon', color: '#818cf8', desc: 'Deep Velvet Obsidian Dark Clay' },
+        { id: 'cyberpunk', name: 'Cyberpunk Neon', icon: 'fa-microchip', color: '#00f0ff', desc: 'Dark Neon-Noir Cyberpunk' }
       ];
 
       this.init();
@@ -198,6 +199,11 @@
     applyTheme(themeId, playSound = true) {
       this.activeTheme = themeId;
       localStorage.setItem('omnidesk_clay_theme', themeId);
+
+      // Lazy-load cyberpunk CSS when needed
+      if (themeId === 'cyberpunk') {
+        this._ensureCyberpunkCSS();
+      }
 
       if (themeId === 'porcelain') {
         document.documentElement.removeAttribute('data-theme');
@@ -344,6 +350,16 @@
       }
 
       this.updateDockButtons();
+    }
+
+    _ensureCyberpunkCSS() {
+      if (!document.getElementById('cyberpunk-theme-css')) {
+        const link = document.createElement('link');
+        link.id = 'cyberpunk-theme-css';
+        link.rel = 'stylesheet';
+        link.href = 'css/cyberpunk.css';
+        document.head.appendChild(link);
+      }
     }
 
     getThemeName(themeId) {
