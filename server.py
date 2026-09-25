@@ -243,6 +243,19 @@ class SettingsUpdateRequest(BaseModel):
     temperature: Optional[float] = Field(None, ge=0.0, le=1.0)
     system_instruction: Optional[str] = None
 
+class FeaturesUpdateRequest(BaseModel):
+    enable_streaming: Optional[bool] = None
+    enable_vision_upload: Optional[bool] = None
+    enable_multi_language: Optional[bool] = None
+    enable_faq_chips: Optional[bool] = None
+    enable_csat_popup: Optional[bool] = None
+    enable_ticket_lookup: Optional[bool] = None
+    enable_announcement_banner: Optional[bool] = None
+    announcement_banner_text: Optional[str] = Field(None, max_length=500)
+    welcome_greeting: Optional[str] = Field(None, max_length=1000)
+    theme_mode: Optional[str] = Field(None, max_length=50)
+    auto_escalate_vip: Optional[bool] = None
+
 class CreateTicketRequest(BaseModel):
     customer_id: Optional[str] = Field(None, max_length=50)
     customer_name: str = Field(..., min_length=1, max_length=100)
@@ -553,11 +566,28 @@ def get_ticket_stats():
     }
 
 @app.get("/api/tickets/{ticket_id}")
-def get_ticket(ticket_id: str):
-    ticket = database.get_ticket_by_id(ticket_id.upper())
+def get_ticket(ticket_id: str, public: Optional[bool] = Query(False, description="Strip private internal notes if true")):
+    if public:
+        ticket = database.get_customer_safe_ticket(ticket_id.upper())
+    else:
+        ticket = database.get_ticket_by_id(ticket_id.upper())
+        
     if not ticket:
         raise HTTPException(status_code=404, detail=f"Ticket {ticket_id} not found")
     
+    t_copy = dict(ticket)
+    t_copy["sla_details"] = calculate_sla_details(ticket)
+    return {
+        "status": "success",
+        "ticket": t_copy,
+        **t_copy
+    }
+
+@app.get("/api/tickets/public/{ticket_id}")
+def get_public_ticket(ticket_id: str):
+    ticket = database.get_customer_safe_ticket(ticket_id.upper())
+    if not ticket:
+        raise HTTPException(status_code=404, detail=f"Ticket {ticket_id} not found")
     t_copy = dict(ticket)
     t_copy["sla_details"] = calculate_sla_details(ticket)
     return {
@@ -715,6 +745,22 @@ def update_settings(req: SettingsUpdateRequest):
         "status": "success",
         "message": "Pipeline settings updated",
         "settings": updated
+    }
+
+@app.get("/api/features")
+def get_features():
+    """Public feature flags and UX customization options."""
+    return database.get_feature_flags()
+
+@app.post("/api/features", dependencies=[Depends(verify_admin_key)])
+def update_features(req: FeaturesUpdateRequest):
+    """Protected endpoint for UX team & admins to modify customer features."""
+    updates = {k: v for k, v in req.model_dump().items() if v is not None}
+    updated = database.update_feature_flags(updates)
+    return {
+        "status": "success",
+        "message": "UX feature flags updated successfully",
+        "features": updated
     }
 
 @app.post("/api/feedback")
@@ -885,6 +931,12 @@ def analyze_claim(req: VisionClaimRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/admin")
+def read_admin():
+    if os.path.exists("admin.html"):
+        return FileResponse("admin.html")
+    return {"status": "error", "message": "admin.html not found"}
 
 @app.get("/")
 def read_root():

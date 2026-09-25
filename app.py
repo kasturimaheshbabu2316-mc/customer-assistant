@@ -16,57 +16,337 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for glassmorphic styling
+# Custom CSS for Obsidian Glassmorphism styling
 st.markdown("""
 <style>
-    .metric-card {
-        background: rgba(30, 41, 59, 0.6);
-        border: 1px solid rgba(99, 102, 241, 0.25);
-        border-radius: 12px;
-        padding: 1rem 1.25rem;
-        margin-bottom: 1rem;
-    }
-    .ticket-badge-vip {
-        background-color: rgba(245, 158, 11, 0.2);
-        color: #fbbf24;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-    .ticket-badge-pro {
-        background-color: rgba(168, 85, 247, 0.2);
-        color: #c084fc;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-    .ticket-badge-std {
-        background-color: rgba(148, 163, 184, 0.2);
-        color: #94a3b8;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 0.8rem;
-    }
-    .intent-pill {
-        background: rgba(6, 182, 212, 0.15);
-        color: #38bdf8;
-        border: 1px solid rgba(6, 182, 212, 0.3);
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-    .sentiment-urgent {
-        background: rgba(244, 63, 94, 0.2);
-        color: #fb7185;
-        border: 1px solid rgba(244, 63, 94, 0.4);
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Global Root & Theme */
+:root {
+    --glass-bg: rgba(15, 23, 42, 0.65);
+    --glass-bg-hover: rgba(30, 41, 59, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.10);
+    --glass-border-light: rgba(255, 255, 255, 0.20);
+    --glass-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    --primary-glow: 0 0 25px rgba(99, 102, 241, 0.4);
+    --cyan-glow: 0 0 25px rgba(6, 182, 212, 0.35);
+}
+
+/* Background Aurora Canvas */
+.stApp {
+    background-color: #07090e !important;
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.18) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.15) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(168, 85, 247, 0.12) 0px, transparent 50%),
+        radial-gradient(at 80% 50%, rgba(16, 185, 129, 0.08) 0px, transparent 40%) !important;
+    background-attachment: fixed !important;
+    color: #f8fafc !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(11, 15, 25, 0.8);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.4);
+    border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.7);
+}
+
+/* Glassmorphic Sidebar */
+[data-testid="stSidebar"] {
+    background: rgba(11, 15, 25, 0.78) !important;
+    backdrop-filter: blur(24px) saturate(190%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 10px 0 35px rgba(0, 0, 0, 0.6) !important;
+}
+
+[data-testid="stSidebar"] hr {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Headers & Typography */
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.02em !important;
+    color: #f8fafc !important;
+}
+
+/* Glassmorphic Navigation Tabs */
+[data-baseweb="tab-list"] {
+    background: rgba(15, 23, 42, 0.65) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.10) !important;
+    border-radius: 16px !important;
+    padding: 6px !important;
+    gap: 8px !important;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+    margin-bottom: 1.5rem !important;
+}
+
+[data-baseweb="tab"] {
+    border-radius: 12px !important;
+    padding: 10px 22px !important;
+    color: #94a3b8 !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    border: 1px solid transparent !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    background: transparent !important;
+}
+
+[data-baseweb="tab"]:hover {
+    color: #f1f5f9 !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-baseweb="tab"][aria-selected="true"] {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.4) 0%, rgba(6, 182, 212, 0.25) 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(99, 102, 241, 0.6) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Metric KPI Cards */
+[data-testid="stMetric"], .metric-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.10) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.22) !important;
+    border-radius: 16px !important;
+    padding: 1.25rem 1.5rem !important;
+    box-shadow: 0 14px 35px -10px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+[data-testid="stMetric"]:hover, .metric-card:hover {
+    transform: translateY(-3px) !important;
+    border-color: rgba(99, 102, 241, 0.5) !important;
+    box-shadow: 0 20px 40px -10px rgba(99, 102, 241, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+
+[data-testid="stMetricLabel"] {
+    color: #94a3b8 !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+}
+
+[data-testid="stMetricValue"] {
+    color: #f8fafc !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 1.85rem !important;
+}
+
+/* Glassmorphic Chat Messages */
+[data-testid="stChatMessage"] {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.65) 0%, rgba(15, 23, 42, 0.8) 100%) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.09) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 18px !important;
+    padding: 1.25rem 1.5rem !important;
+    margin-bottom: 1.1rem !important;
+    box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+    transition: all 0.25s ease !important;
+}
+
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.32) 0%, rgba(99, 102, 241, 0.18) 100%) !important;
+    border: 1px solid rgba(129, 140, 248, 0.35) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 12px 30px -8px rgba(79, 70, 229, 0.35) !important;
+}
+
+/* Glass Floating Chat Input */
+[data-testid="stChatInput"] {
+    background: rgba(15, 23, 42, 0.85) !important;
+    backdrop-filter: blur(24px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+    border: 1px solid rgba(99, 102, 241, 0.45) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.25) !important;
+    border-radius: 18px !important;
+    box-shadow: 0 14px 40px -5px rgba(0, 0, 0, 0.7), 0 0 25px rgba(99, 102, 241, 0.25) !important;
+}
+
+[data-testid="stChatInput"] textarea {
+    color: #f8fafc !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
+/* Glass Buttons with Glow Sheen */
+.stButton > button {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.9) 0%, rgba(79, 70, 229, 0.95) 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.4) !important;
+    border-radius: 12px !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.3px !important;
+    padding: 0.55rem 1.25rem !important;
+    box-shadow: 0 8px 22px -4px rgba(99, 102, 241, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.stButton > button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 12px 30px -4px rgba(99, 102, 241, 0.65), 0 0 25px rgba(99, 102, 241, 0.45) !important;
+    border-color: rgba(255, 255, 255, 0.45) !important;
+}
+
+.stButton > button:active {
+    transform: translateY(0) !important;
+}
+
+/* Glass Expanders */
+.streamlit-expanderHeader {
+    background: rgba(15, 23, 42, 0.65) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.10) !important;
+    border-radius: 12px !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 600 !important;
+    color: #f1f5f9 !important;
+    transition: all 0.2s ease !important;
+}
+
+.streamlit-expanderHeader:hover {
+    border-color: rgba(99, 102, 241, 0.4) !important;
+    background: rgba(30, 41, 59, 0.75) !important;
+}
+
+[data-testid="stExpanderDetails"] {
+    background: rgba(11, 15, 25, 0.5) !important;
+    backdrop-filter: blur(14px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-top: none !important;
+    border-radius: 0 0 12px 12px !important;
+    padding: 1.25rem !important;
+}
+
+/* Glass Form Inputs */
+.stTextInput > div > div > input, .stTextArea textarea, .stSelectbox > div > div {
+    background: rgba(15, 23, 42, 0.75) !important;
+    backdrop-filter: blur(14px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 12px !important;
+    color: #f8fafc !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+    transition: all 0.2s ease !important;
+}
+
+.stTextInput > div > div > input:focus, .stTextArea textarea:focus {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Dataframe Glass Styling */
+[data-testid="stDataFrame"] {
+    background: rgba(15, 23, 42, 0.65) !important;
+    backdrop-filter: blur(18px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Badges and Neon Chips */
+.ticket-badge-vip {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.15) 100%);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.45);
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.2);
+}
+
+.ticket-badge-pro {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(147, 51, 234, 0.15) 100%);
+    color: #c084fc;
+    border: 1px solid rgba(168, 85, 247, 0.45);
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
+}
+
+.ticket-badge-std {
+    background: rgba(148, 163, 184, 0.18);
+    color: #cbd5e1;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.intent-pill {
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(14, 165, 233, 0.1) 100%);
+    color: #38bdf8;
+    border: 1px solid rgba(6, 182, 212, 0.4);
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.15);
+}
+
+.sentiment-urgent {
+    background: linear-gradient(135deg, rgba(244, 63, 94, 0.25) 0%, rgba(225, 29, 72, 0.15) 100%);
+    color: #fb7185;
+    border: 1px solid rgba(244, 63, 94, 0.5);
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    box-shadow: 0 0 12px rgba(244, 63, 94, 0.25);
+    animation: pulseGlow 2s infinite ease-in-out;
+}
+
+@keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 8px rgba(244, 63, 94, 0.2); }
+    50% { box-shadow: 0 0 18px rgba(244, 63, 94, 0.5); }
+}
+
+/* Glass Hero Header Banner */
+.hero-glass-banner {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.85) 100%);
+    backdrop-filter: blur(24px) saturate(190%);
+    -webkit-backdrop-filter: blur(24px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 20px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.75rem;
+    box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -83,7 +363,7 @@ if "messages" not in st.session_state:
         {"role": "assistant", "content": "Hello! I am your AI Support Assistant grounded in verified store documentation. How can I assist you today?", "language": "English"}
     ]
 if "admin_api_key" not in st.session_state:
-    st.session_state.admin_api_key = ""
+    st.session_state.admin_api_key = os.getenv("ADMIN_API_KEY", "admin-secret-key-2026")
 if "selected_language" not in st.session_state:
     st.session_state.selected_language = "Auto Detect"
 
@@ -136,6 +416,25 @@ with st.sidebar:
                 st.error(f"Failed to sync: {res.text}")
         except Exception as e:
             st.error(f"Error: {e}")
+
+# Glassmorphic Header Banner
+st.markdown("""
+<div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.65) 0%, rgba(15, 23, 42, 0.8) 100%); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-top: 1px solid rgba(255, 255, 255, 0.22); border-radius: 20px; padding: 1.25rem 1.75rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15);">
+    <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="background: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%); width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);">
+            ⚡
+        </div>
+        <div>
+            <h2 style="margin: 0; font-size: 1.45rem; font-family: 'Outfit', sans-serif; font-weight: 700; background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">OmniDesk AI Command Center</h2>
+            <p style="margin: 0; font-size: 0.85rem; color: #94a3b8;">Zero-Hallucination Customer Intelligence • ChromaDB Vector RAG • Live Copilot</p>
+        </div>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+        <span style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); color: #34d399; padding: 4px 12px; border-radius: 9999px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.03em; box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);">🟢 ENGINE ACTIVE</span>
+        <span style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.35); color: #a5b4fc; padding: 4px 12px; border-radius: 9999px; font-size: 0.78rem; font-weight: 700;">GEMINI 3.6 FLASH</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # Main Tabs Navigation
 tab_chat, tab_kb, tab_tickets, tab_analytics = st.tabs([

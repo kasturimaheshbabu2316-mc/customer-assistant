@@ -3,60 +3,64 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Support Hub App | OmniDesk AI RAG Portal</title>
-  <meta name="description" content="OmniDesk AI Enterprise Customer Support Application Portal. Powered by Google Gemini 3 Flash and ChromaDB.">
+  <title>Customer Help &amp; Support Hub | OmniDesk AI</title>
+  <meta name="description" content="24/7 Verified Customer Support Portal. Grounded in store policies for returns, warranty, shipping, and order tracking.">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body class="body-noscroll">
 
-  <!-- Ambient Glow for App -->
+  <!-- Ambient Background Glow -->
   <div class="bg-ambient-glow" aria-hidden="true">
     <div class="glow-orb glow-orb-1 orb-app-top"></div>
     <div class="glow-orb glow-orb-2 orb-app-bottom"></div>
   </div>
 
+  <!-- Dynamic Announcement Banner (Controlled by UX Feature Engine) -->
+  <div id="customer-announcement-banner" class="customer-announcement-banner is-hidden">
+    <div class="announcement-text">
+      <i class="fa-solid fa-bullhorn"></i>
+      <span id="announcement-banner-message">Special Notice: Free expedited delivery on all verified warranty replacements this week.</span>
+    </div>
+    <button type="button" class="announcement-close-btn" onclick="dismissAnnouncementBanner()" title="Close notice" aria-label="Close notice">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+
   <div class="app-layout">
-    <!-- Left Navigation Sidebar -->
+    <!-- Left Navigation Sidebar (Customer Facing) -->
     <aside class="app-sidebar" id="app-sidebar">
       <a href="index.html" class="sidebar-brand">
         <div class="brand-icon-box brand-icon-sm">
-          <i class="fa-solid fa-brain"></i>
+          <i class="fa-solid fa-headset"></i>
         </div>
-        <span>OmniDesk<span class="brand-secondary-text">Hub</span></span>
+        <span>OmniDesk<span class="brand-secondary-text">Support</span></span>
       </a>
 
-      <!-- Navigation Views List -->
+      <!-- Customer Navigation Views List -->
       <ul class="sidebar-nav">
         <li>
-          <button type="button" class="sidebar-item-btn active" id="btn-nav-chat" onclick="switchAppView('chat')">
-            <i class="fa-solid fa-messages"></i>
-            <span>Live Support Chat</span>
+          <button type="button" class="sidebar-item-btn active" id="btn-nav-chat" onclick="switchCustomerView('chat')">
+            <i class="fa-solid fa-comment-dots"></i>
+            <span>24/7 AI Support Chat</span>
           </button>
         </li>
         <li>
-          <button type="button" class="sidebar-item-btn" id="btn-nav-kb" onclick="switchAppView('kb')">
-            <i class="fa-solid fa-book-bookmark"></i>
-            <span>Knowledge Base Studio</span>
+          <button type="button" class="sidebar-item-btn" id="btn-nav-kb" onclick="switchCustomerView('kb')">
+            <i class="fa-solid fa-book-open-reader"></i>
+            <span>Help Center &amp; Policies</span>
           </button>
         </li>
         <li>
-          <button type="button" class="sidebar-item-btn" id="btn-nav-tickets" onclick="switchAppView('tickets')">
-            <i class="fa-solid fa-ticket"></i>
-            <span>Escalation &amp; Tickets</span>
-            <span class="sidebar-badge-count" id="sidebar-ticket-count">2</span>
+          <button type="button" class="sidebar-item-btn" id="btn-nav-tickets" onclick="switchCustomerView('tickets')">
+            <i class="fa-solid fa-magnifying-glass-location"></i>
+            <span>Track My Ticket</span>
           </button>
         </li>
         <li>
-          <button type="button" class="sidebar-item-btn" id="btn-nav-analytics" onclick="switchAppView('analytics')">
-            <i class="fa-solid fa-chart-pie"></i>
-            <span>Deflection &amp; Analytics</span>
-          </button>
-        </li>
-        <li>
-          <button type="button" class="sidebar-item-btn" id="btn-nav-settings" onclick="switchAppView('settings')">
-            <i class="fa-solid fa-sliders"></i>
-            <span>Pipeline Settings</span>
+          <button type="button" class="sidebar-item-btn" id="btn-nav-claim" onclick="switchCustomerView('claim')">
+            <i class="fa-solid fa-file-shield"></i>
+            <span>Submit Claim / Request</span>
           </button>
         </li>
       </ul>
@@ -66,7 +70,7 @@
         <div class="backend-status-pill">
           <div class="nav-actions">
             <span class="pulse-dot" id="sidebar-status-dot"></span>
-            <span id="sidebar-status-text" class="status-text">Checking API...</span>
+            <span id="sidebar-status-text" class="status-text">Support Live (24/7)</span>
           </div>
           <button type="button" class="btn-icon status-btn-refresh" onclick="checkBackendHealth()" title="Refresh connection" aria-label="Refresh connection">
             <i class="fa-solid fa-rotate-right"></i>
@@ -74,12 +78,17 @@
         </div>
 
         <a href="index.html" class="btn btn-secondary btn-sm sidebar-btn-back">
-          <i class="fa-solid fa-arrow-left"></i> Commercial Page
+          <i class="fa-solid fa-arrow-left"></i> Main Site
+        </a>
+
+        <!-- Discrete Staff & UX Control Access Link -->
+        <a href="admin.html" class="btn btn-outline btn-sm sidebar-btn-back sidebar-btn-admin-discrete" title="Access UX &amp; Staff Operations Console">
+          <i class="fa-solid fa-lock"></i> Staff &amp; UX Console
         </a>
       </div>
     </aside>
 
-    <!-- Main Workspace Area -->
+    <!-- Main Customer Workspace Area -->
     <div class="app-main">
       <!-- Topbar Header -->
       <header class="app-topbar">
@@ -87,16 +96,17 @@
           <button type="button" class="btn-icon mobile-menu-btn mobile-nav-toggle" id="app-sidebar-toggle" onclick="toggleAppSidebar()" title="Toggle Sidebar" aria-label="Toggle Sidebar">
             <i class="fa-solid fa-bars"></i>
           </button>
-          <div class="topbar-view-title" id="current-view-title">Live AI Support Chat</div>
+          <div class="topbar-view-title" id="current-view-title">24/7 AI Customer Support</div>
           <span class="badge badge-glow-primary" id="model-indicator-badge">
-            <i class="fa-solid fa-microchip"></i> Gemini 3 Flash &amp; gemini-embedding-001
+            <i class="fa-solid fa-shield-check"></i> 100% Policy Grounded
           </span>
         </div>
 
         <div class="topbar-actions">
-          <div class="lang-select-wrapper" title="Multi-Language Support Localization">
+          <!-- Multi-Language Localization Selector (Toggleable via UX Settings) -->
+          <div class="lang-select-wrapper" id="topbar-lang-wrapper" title="Language Localization">
             <i class="fa-solid fa-globe"></i>
-            <select id="app-language-select" class="lang-select" title="Select Target Language Localization" aria-label="Select Target Language Localization" onchange="handleLanguageChange(this.value)">
+            <select id="app-language-select" class="lang-select" title="Select Target Language" aria-label="Select Target Language" onchange="handleLanguageChange(this.value)">
               <option value="Auto Detect">🌐 Auto Detect</option>
               <option value="English">🇺🇸 English</option>
               <option value="Spanish">🇪🇸 Español</option>
@@ -107,17 +117,17 @@
               <option value="Hindi">🇮🇳 हिन्दी</option>
             </select>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="exportChatTranscript()" id="btn-export-chat" title="Export transcript as JSON">
-            <i class="fa-solid fa-download"></i> Export Chat
+          <button type="button" class="btn btn-secondary btn-sm" onclick="exportChatTranscript()" id="btn-export-chat" title="Export conversation as JSON">
+            <i class="fa-solid fa-download"></i> Save Chat
           </button>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="clearChatFeed()" id="btn-clear-chat" title="Clear current messages">
-            <i class="fa-solid fa-trash-can"></i> Clear
+          <button type="button" class="btn btn-secondary btn-sm" onclick="clearChatFeed()" id="btn-clear-chat" title="Clear conversation">
+            <i class="fa-solid fa-rotate"></i> New Chat
           </button>
         </div>
       </header>
 
       <!-- =========================================================================
-           VIEW 1: LIVE SUPPORT CHAT
+           VIEW 1: LIVE 24/7 AI CUSTOMER SUPPORT CHAT
            ========================================================================= -->
       <div class="app-view-container active-view" id="view-chat">
         <div class="chat-view-layout">
@@ -130,8 +140,8 @@
                   <i class="fa-solid fa-robot"></i>
                 </div>
                 <div class="msg-content-wrapper">
-                  <div class="msg-bubble-content">
-                    Hello! I am your AI Customer Support Assistant, grounded exclusively in your verified store policies. Ask me about returns, international shipping rates, warranty repairs, price matching, or order cancellations.
+                  <div class="msg-bubble-content" id="assistant-welcome-msg">
+                    Hello! I am your AI Customer Support Assistant, grounded exclusively in verified store policies. Ask me about returns, international shipping rates, warranty repairs, price matching, or order cancellations.
                   </div>
                   <div class="msg-actions-bar">
                     <button type="button" class="msg-btn-action" onclick="copyMessageText(this)">
@@ -140,644 +150,385 @@
                     <button type="button" class="msg-btn-action" onclick="speakMessageText(this)">
                       <i class="fa-solid fa-volume-high"></i> Read Aloud
                     </button>
-                    <button type="button" class="msg-btn-action" onclick="rateMessage(this, 'helpful')">
-                      <i class="fa-solid fa-thumbs-up"></i> Helpful
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Instant FAQ Prompt Suggestions (Controlled by UX Feature Engine) -->
+            <div class="chat-suggestions-bar" id="chat-faq-chips-container">
+              <span class="suggestions-label"><i class="fa-solid fa-bolt"></i> Popular Questions:</span>
+              <div class="suggestions-chips-row">
+                <button type="button" class="chip-btn" onclick="sendQuickPrompt('What is your 30-day return policy and are returns free?')">
+                  📦 30-Day Return Policy
+                </button>
+                <button type="button" class="chip-btn" onclick="sendQuickPrompt('How do international shipping and customs duties work?')">
+                  ✈️ International DHL Shipping
+                </button>
+                <button type="button" class="chip-btn" onclick="sendQuickPrompt('What is covered under the 1-year manufacturer warranty?')">
+                  🛡️ 1-Year Warranty Claim
+                </button>
+                <button type="button" class="chip-btn" onclick="sendQuickPrompt('Can I cancel an order I placed 20 minutes ago?')">
+                  ⏱️ 60-Min Cancellation
+                </button>
+                <button type="button" class="chip-btn" onclick="sendQuickPrompt('Do you offer a 14-day price match guarantee?')">
+                  💳 Price Match Guarantee
+                </button>
+              </div>
+            </div>
+
+            <!-- Attached Image Preview Bar (Multi-modal Vision) -->
+            <div id="attached-image-preview-bar" class="attached-image-bar is-hidden">
+              <div class="preview-thumb-box">
+                <img id="attached-img-tag" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E" alt="Claim Attachment">
+                <span class="preview-filename" id="attached-img-name">damage_photo.jpg</span>
+              </div>
+              <button type="button" class="btn-icon btn-sm remove-attachment-btn" onclick="removeAttachedImage()" title="Remove image" aria-label="Remove image">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            <!-- Chat Input Area -->
+            <div class="chat-composer-area">
+              <form id="chat-input-form" onsubmit="handleChatSubmit(event)">
+                <div class="composer-box">
+                  <!-- Vision Upload Button (Controlled by UX Feature Engine) -->
+                  <div class="composer-action-left" id="composer-vision-btn-wrapper">
+                    <label for="chat-file-input" class="btn-icon composer-btn-upload" title="Attach damage photo or receipt for instant claim inspection">
+                      <i class="fa-solid fa-camera"></i>
+                    </label>
+                    <input type="file" id="chat-file-input" class="is-hidden" accept="image/jpeg,image/png,image/webp" title="Attach claim photo" aria-label="Attach claim photo" onchange="handleImageAttachment(event)">
+                  </div>
+
+                  <textarea id="chat-text-input" class="composer-textarea" rows="1" placeholder="Ask any question about our store policies, returns, or warranty..." title="Type your question" aria-label="Type your question" onkeydown="handleTextareaKeydown(event)" oninput="autoResizeTextarea(this)"></textarea>
+
+                  <div class="composer-action-right">
+                    <button type="button" class="btn-icon composer-btn-mic" id="btn-voice-input" onclick="toggleVoiceInput()" title="Voice input" aria-label="Voice input">
+                      <i class="fa-solid fa-microphone"></i>
+                    </button>
+                    <button type="submit" class="btn btn-primary composer-btn-send" id="btn-send-message" title="Send message" aria-label="Send message">
+                      <i class="fa-solid fa-paper-plane"></i>
                     </button>
                   </div>
                 </div>
-              </div>
-            </div>
+              </form>
 
-            <!-- Chat Bottom Input -->
-            <div class="chat-bottom-input-wrap">
-              <div class="quick-prompts-bar">
-                <button type="button" class="preset-chip" onclick="sendAppQuickQuery('What is your 30-day return policy for electronics?')">
-                  📦 30-Day Return Policy
-                </button>
-                <button type="button" class="preset-chip" onclick="sendAppQuickQuery('Do you ship to Canada and how are customs duties handled?')">
-                  ✈️ Canada Shipping &amp; Duties
-                </button>
-                <button type="button" class="preset-chip" onclick="sendAppQuickQuery('How do I submit a 1-year warranty claim for a defective item?')">
-                  🛡️ Warranty Claim Process
-                </button>
-                <button type="button" class="preset-chip" onclick="sendAppQuickQuery('What is your order cancellation window?')">
-                  ⏱️ Order Cancellation Window
-                </button>
-                <button type="button" class="preset-chip" onclick="sendAppQuickQuery('What payment methods and installment plans do you accept?')">
-                  💳 Payment &amp; Installments
-                </button>
-              </div>
-
-              <div class="chat-input-row">
-                <textarea id="app-chat-input" class="chat-textarea" placeholder="Ask a question about store policies..." rows="1" onkeydown="handleChatKeyDown(event)"></textarea>
-                <button type="button" class="btn btn-primary chat-send-btn" id="btn-send-message" onclick="handleSendChat()" title="Send Message" aria-label="Send Message">
-                  <i class="fa-solid fa-paper-plane"></i>
+              <!-- Footer Quick Actions & Human Escalation -->
+              <div class="composer-footer-row">
+                <span class="composer-disclaimer">
+                  <i class="fa-solid fa-circle-info"></i> All answers strictly grounded in verified company policies.
+                </span>
+                <button type="button" class="btn-text-link" onclick="openHumanEscalationModal()">
+                  <i class="fa-solid fa-user-headset"></i> Need Human Assistance? Speak to Agent
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- Right Information & Verified Context Pane -->
+          <!-- Right Sidebar: Live Grounding Citations & Help Card -->
           <div class="chat-right-pane">
-            <div class="context-info-card">
-              <h4><i class="fa-solid fa-shield-check icon-emerald"></i> RAG Guardrail Status</h4>
-              <p class="card-info-desc">
-                Cosine distance filtering threshold is active. Queries outside policy bounds will be gracefully escalated.
-              </p>
-              <div class="info-row">
-                <span class="text-muted">Max Allowed Distance:</span>
-                <span class="text-mono text-cyan" id="info-guardrail-threshold">1.20</span>
+            <div class="right-pane-card">
+              <div class="pane-card-header">
+                <i class="fa-solid fa-file-lines text-primary"></i>
+                <span>Verified Policy Citations</span>
               </div>
-              <div class="info-row">
-                <span class="text-muted">Embedding Dimensions:</span>
-                <span class="text-mono text-primary">3,072 (gemini-embedding-001)</span>
-              </div>
-            </div>
+              <p class="pane-card-subtitle">Every answer is verified against exact clauses from our company store documentation.</p>
 
-            <div class="context-info-card">
-              <h4><i class="fa-solid fa-database icon-cyan"></i> Active Knowledge Index</h4>
-              <div class="card-info-desc">
-                Source file: <code>company_faq.txt</code>
-              </div>
-              <div class="info-subcard">
-                <div class="info-subcard-row-top">
-                  <span>Indexed Chunks:</span>
-                  <span class="text-emerald" id="info-chunk-count">6 Chunks</span>
-                </div>
-                <div class="info-subcard-row">
-                  <span>Chunk Strategy:</span>
-                  <span>400 chars / 80 overlap</span>
+              <div class="sources-list" id="active-sources-list">
+                <div class="source-placeholder">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <span>Ask a question to see real-time verified citations and distance confidence metrics.</span>
                 </div>
               </div>
             </div>
 
-            <div class="context-info-card">
-              <h4><i class="fa-solid fa-headset icon-amber"></i> Live Agent Escalation</h4>
-              <p class="card-info-desc-nb">
-                Need human handoff? Inquiries flagged for escalation will automatically generate a ticket to <strong>support@company.com</strong>.
-              </p>
+            <!-- Customer Self-Service Quick Links Card -->
+            <div class="right-pane-card">
+              <div class="pane-card-header">
+                <i class="fa-solid fa-circle-question text-cyan"></i>
+                <span>Self-Service Links</span>
+              </div>
+              <ul class="quick-links-list">
+                <li>
+                  <button type="button" class="quick-link-btn" onclick="switchCustomerView('kb')">
+                    <i class="fa-solid fa-book-bookmark"></i> Browse All Store Policies
+                  </button>
+                </li>
+                <li>
+                  <button type="button" class="quick-link-btn" onclick="switchCustomerView('tickets')">
+                    <i class="fa-solid fa-ticket"></i> Look Up Existing Ticket
+                  </button>
+                </li>
+                <li>
+                  <button type="button" class="quick-link-btn" onclick="switchCustomerView('claim')">
+                    <i class="fa-solid fa-shield-halved"></i> Submit Warranty or Return Claim
+                  </button>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
       </div>
 
       <!-- =========================================================================
-           VIEW 2: KNOWLEDGE BASE & CHUNK STUDIO
+           VIEW 2: HELP CENTER & POLICY DIRECTORY (Customer Read-Only)
            ========================================================================= -->
       <div class="app-view-container" id="view-kb">
-        <div class="kb-studio-container">
-          <div class="view-header-flex">
-            <div>
-              <h2 class="view-header-title">Knowledge Base &amp; Vector Chunks</h2>
-              <p class="view-header-subtitle">
-                Browse, search, and verify indexed store policy segments stored inside ChromaDB.
-              </p>
-            </div>
-            <div class="kb-header-actions">
-              <button type="button" class="btn btn-secondary" onclick="exportKnowledgeBaseBackup()" title="Download JSON vector backup">
-                <i class="fa-solid fa-download"></i> Export Backup
-              </button>
-              <button type="button" class="btn btn-secondary" onclick="handleResetKb()" title="Reset to default company policies">
-                <i class="fa-solid fa-arrows-rotate"></i> Reset Default KB
-              </button>
-              <button type="button" class="btn btn-primary" onclick="openAddPolicyModal()">
-                <i class="fa-solid fa-plus"></i> Ingest New Policy Clause
-              </button>
-            </div>
+        <div class="view-header-bar">
+          <div>
+            <h2 class="view-title"><i class="fa-solid fa-book-open-reader text-primary"></i> Customer Help Center &amp; Store Policies</h2>
+            <p class="view-subtitle">Search verified company policies on returns, delivery, warranties, cancellations, and price matching.</p>
           </div>
+        </div>
 
-          <div class="kb-search-bar">
-            <i class="fa-solid fa-magnifying-glass kb-search-icon"></i>
-            <input type="text" id="kb-search-input" class="kb-search-input" placeholder="Search knowledge base chunks by keyword or semantic topic..." oninput="filterKbChunks()" aria-label="Search knowledge base chunks" title="Search knowledge base chunks">
-          </div>
+        <!-- Search & Category Filters -->
+        <div class="policy-search-bar">
+          <i class="fa-solid fa-magnifying-glass policy-search-icon"></i>
+          <input type="text" id="policy-search-input" class="policy-search-input" placeholder="Search policies (e.g. 30 days, restocking fee, DHL tracking, serial number)..." title="Search policies" aria-label="Search policies" oninput="filterCustomerPolicies()">
+        </div>
 
-          <!-- Chunks Grid -->
-          <div class="chunks-grid" id="kb-chunks-list">
-            <!-- Dynamically populated by app.js -->
-          </div>
+        <div class="policy-categories-filter" id="policy-categories-chips">
+          <button type="button" class="category-chip-btn active" onclick="filterPolicyCategory('All', this)">All Policies</button>
+          <button type="button" class="category-chip-btn" onclick="filterPolicyCategory('Return', this)">Returns &amp; Refunds</button>
+          <button type="button" class="category-chip-btn" onclick="filterPolicyCategory('Shipping', this)">Shipping &amp; Delivery</button>
+          <button type="button" class="category-chip-btn" onclick="filterPolicyCategory('Warranty', this)">Warranty &amp; Repairs</button>
+          <button type="button" class="category-chip-btn" onclick="filterPolicyCategory('Cancellation', this)">Order Cancellations</button>
+          <button type="button" class="category-chip-btn" onclick="filterPolicyCategory('Payment', this)">Payment &amp; Price Match</button>
+        </div>
+
+        <!-- Customer Policy Cards Grid -->
+        <div class="customer-policy-grid" id="customer-policies-grid">
+          <!-- Dynamically Populated via JS -->
         </div>
       </div>
 
       <!-- =========================================================================
-           VIEW 3: ESCALATION & TICKETS INBOX
+           VIEW 3: TRACK MY TICKET
            ========================================================================= -->
       <div class="app-view-container" id="view-tickets">
-        <div class="dashboard-grid-container">
-          <div class="view-header-flex">
+        <div class="ticket-track-container">
+          <div class="view-header-bar">
             <div>
-              <h2 class="view-header-title">Escalation &amp; Support Tickets Inbox</h2>
-              <p class="view-header-subtitle">
-                Manage, assign, and resolve deflected customer inquiries requiring human agent intervention.
-              </p>
-            </div>
-            <button type="button" class="btn btn-primary" onclick="openCreateTicketModal()">
-              <i class="fa-solid fa-plus"></i> Create New Ticket
-            </button>
-          </div>
-
-          <!-- Ticket KPIs Row -->
-          <div class="metrics-summary-row">
-            <div class="kpi-card">
-              <div class="kpi-info">
-                <h5>Open Tickets</h5>
-                <div class="kpi-num text-amber" id="ticket-kpi-open">2</div>
-                <div class="kpi-delta pos"><i class="fa-solid fa-clock"></i> Requires response</div>
-              </div>
-              <div class="feature-icon-wrap feature-icon-kpi">
-                <i class="fa-solid fa-inbox"></i>
-              </div>
-            </div>
-
-            <div class="kpi-card">
-              <div class="kpi-info">
-                <h5>In Progress</h5>
-                <div class="kpi-num text-cyan" id="ticket-kpi-in-progress">1</div>
-                <div class="kpi-delta pos"><i class="fa-solid fa-user-check"></i> Agent assigned</div>
-              </div>
-              <div class="feature-icon-wrap feature-icon-kpi feature-icon-cyan">
-                <i class="fa-solid fa-spinner"></i>
-              </div>
-            </div>
-
-            <div class="kpi-card">
-              <div class="kpi-info">
-                <h5>Resolved Tickets</h5>
-                <div class="kpi-num text-emerald" id="ticket-kpi-resolved">1</div>
-                <div class="kpi-delta pos"><i class="fa-solid fa-circle-check"></i> Closed successfully</div>
-              </div>
-              <div class="feature-icon-wrap feature-icon-kpi feature-icon-emerald">
-                <i class="fa-solid fa-clipboard-check"></i>
-              </div>
-            </div>
-
-            <div class="kpi-card">
-              <div class="kpi-info">
-                <h5>Resolution Rate</h5>
-                <div class="kpi-num" id="ticket-kpi-rate">98.2%</div>
-                <div class="kpi-delta pos"><i class="fa-solid fa-bolt"></i> &lt; 2hr SLA average</div>
-              </div>
-              <div class="feature-icon-wrap feature-icon-kpi feature-icon-purple">
-                <i class="fa-solid fa-gauge"></i>
-              </div>
+              <h2 class="view-title"><i class="fa-solid fa-magnifying-glass-location text-primary"></i> Track Your Support Request</h2>
+              <p class="view-subtitle">Enter your Ticket ID or email address to view live status updates, resolution estimates, and agent responses.</p>
             </div>
           </div>
 
-          <!-- Filters & Fast Search Row -->
-          <div class="tickets-filter-row">
-            <div class="ticket-filter-tabs">
-              <button type="button" class="ticket-tab-btn active" id="tab-ticket-all" onclick="filterTicketsList('all')">
-                <i class="fa-solid fa-layer-group"></i> All Tickets
-              </button>
-              <button type="button" class="ticket-tab-btn" id="tab-ticket-open" onclick="filterTicketsList('Open')">
-                <i class="fa-solid fa-envelope-open"></i> Open
-              </button>
-              <button type="button" class="ticket-tab-btn" id="tab-ticket-progress" onclick="filterTicketsList('In Progress')">
-                <i class="fa-solid fa-arrows-rotate"></i> In Progress
-              </button>
-              <button type="button" class="ticket-tab-btn" id="tab-ticket-resolved" onclick="filterTicketsList('Resolved')">
-                <i class="fa-solid fa-check"></i> Resolved
-              </button>
-            </div>
-
-            <div class="kb-search-bar search-bar-compact">
-              <i class="fa-solid fa-magnifying-glass kb-search-icon"></i>
-              <input type="text" id="tickets-search-input" class="kb-search-input" placeholder="Search Customer ID, Name, Email..." oninput="handleSearchTickets()">
-            </div>
-
-            <button type="button" class="btn btn-secondary btn-sm" onclick="exportTicketsData('csv')" title="Download CSV for CRM/Excel">
-              <i class="fa-solid fa-file-csv"></i> Export CSV
-            </button>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="exportTicketsData('json')" title="Download JSON dataset">
-              <i class="fa-solid fa-file-code"></i> JSON
-            </button>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="fetchTicketsFromBackend(true)" title="Refresh tickets" aria-label="Refresh tickets">
-              <i class="fa-solid fa-rotate"></i> Refresh
-            </button>
-          </div>
-
-          <!-- Tickets Grid -->
-          <div class="tickets-grid" id="tickets-list-container">
-            <!-- Dynamically populated by app.js -->
-          </div>
-        </div>
-      </div>
-
-      <!-- =========================================================================
-           VIEW 4: DEFLECTION & ANALYTICS DASHBOARD
-           ========================================================================= -->
-      <div class="app-view-container" id="view-analytics">
-        <div class="dashboard-grid-container">
-          <div>
-            <h2 class="view-header-title">Resolution &amp; Deflection Intelligence</h2>
-            <p class="view-header-subtitle">
-              Real-time telemetry on autonomous policy resolutions and agent workload reduction.
-            </p>
-          </div>
-
-          <!-- KPI Summary Row -->
-          <div class="metrics-summary-row">
-            <div class="kpi-card">
-              <div class="kpi-info">
-                <h5>Autonomous Deflection</h5>
-                <div class="kpi-num" id="kpi-deflection-rate">88.4%</div>
-                <div class="kpi-delta pos"><i class="fa-solid fa-arrow-up"></i> +4.2% this week</div>
-              </div>
-              <div class="feature-icon-wrap feature-icon-kpi">
-                <i class="fa-solid fa-robot"></i>
-              </div>
-            </div>
-
-            <div class="kpi-card">
-              <div class="kpi-info">
-                <h5>Avg Response Latency</h5>
-                <div class="kpi-num" id="kpi-avg-latency">0.42s</div>
-                <div class="kpi-delta pos"><i class="fa-solid fa-bolt"></i> 98ms ChromaDB</div>
-              </div>
-              <div class="feature-icon-wrap feature-icon-kpi feature-icon-cyan">
-                <i class="fa-solid fa-gauge-high"></i>
-              </div>
-            </div>
-
-            <div class="kpi-card">
-              <div class="kpi-info">
-                <h5>Total Inquiries Handled</h5>
-                <div class="kpi-num" id="kpi-total-inquiries">14,820</div>
-                <div class="kpi-delta pos"><i class="fa-solid fa-arrow-up"></i> +12.8% vs last mo</div>
-              </div>
-              <div class="feature-icon-wrap feature-icon-kpi feature-icon-purple">
-                <i class="fa-solid fa-comments"></i>
-              </div>
-            </div>
-
-            <div class="kpi-card">
-              <div class="kpi-info">
-                <h5>Customer CSAT Score</h5>
-                <div class="kpi-num" id="kpi-csat-score">4.92 / 5</div>
-                <div class="kpi-delta pos"><i class="fa-solid fa-star icon-amber"></i> 96% positive rating</div>
-              </div>
-              <div class="feature-icon-wrap feature-icon-kpi feature-icon-emerald">
-                <i class="fa-solid fa-heart"></i>
-              </div>
-            </div>
-          </div>
-
-          <!-- Charts Row -->
-          <div class="charts-row">
-            <!-- 7-Day Inquiries Chart -->
-            <div class="chart-card">
-              <div class="chart-card-header">
-                <h4>7-Day Inquiry Volume &amp; Deflection</h4>
-                <div class="badge badge-cyan chart-badge">Last 7 Days</div>
-              </div>
-
-              <!-- SVG Bar Chart -->
-              <div class="chart-container-bars">
-                <div class="chart-bar-col">
-                  <div class="chart-bar chart-bar-primary chart-bar-h-65" title="Mon: 1,840 inquiries (88% deflected)"></div>
-                  <span class="chart-bar-lbl">Mon</span>
+          <!-- Lookup Card -->
+          <div class="ticket-track-lookup-card">
+            <form onsubmit="handleCustomerTicketLookup(event)" class="ticket-lookup-form">
+              <div class="form-row-lookup">
+                <div class="input-with-icon input-flex-fill">
+                  <i class="fa-solid fa-ticket"></i>
+                  <input type="text" id="lookup-ticket-id-input" class="form-input" placeholder="Enter Ticket ID (e.g. TCK-1042) or your Email" title="Enter Ticket ID or Email" aria-label="Enter Ticket ID or Email" required>
                 </div>
-                <div class="chart-bar-col">
-                  <div class="chart-bar chart-bar-primary chart-bar-h-78" title="Tue: 2,120 inquiries (89% deflected)"></div>
-                  <span class="chart-bar-lbl">Tue</span>
-                </div>
-                <div class="chart-bar-col">
-                  <div class="chart-bar chart-bar-primary chart-bar-h-72" title="Wed: 1,980 inquiries (87% deflected)"></div>
-                  <span class="chart-bar-lbl">Wed</span>
-                </div>
-                <div class="chart-bar-col">
-                  <div class="chart-bar chart-bar-primary chart-bar-h-85" title="Thu: 2,450 inquiries (90% deflected)"></div>
-                  <span class="chart-bar-lbl">Thu</span>
-                </div>
-                <div class="chart-bar-col">
-                  <div class="chart-bar chart-bar-primary chart-bar-h-95" title="Fri: 2,780 inquiries (88% deflected)"></div>
-                  <span class="chart-bar-lbl">Fri</span>
-                </div>
-                <div class="chart-bar-col">
-                  <div class="chart-bar chart-bar-cyan chart-bar-h-50" title="Sat: 1,420 inquiries (91% deflected)"></div>
-                  <span class="chart-bar-lbl">Sat</span>
-                </div>
-                <div class="chart-bar-col">
-                  <div class="chart-bar chart-bar-cyan chart-bar-h-42" title="Sun: 1,230 inquiries (92% deflected)"></div>
-                  <span class="chart-bar-lbl">Sun</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Categories Breakdown -->
-            <div class="chart-card">
-              <div class="chart-card-header">
-                <h4>Inquiry Categories</h4>
-              </div>
-              <div class="progress-list">
-                <div>
-                  <div class="progress-lbl-row">
-                    <span>Returns &amp; Refunds</span>
-                    <span class="font-semibold">42%</span>
-                  </div>
-                  <div class="progress-track">
-                    <div class="progress-fill progress-fill-w42"></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div class="progress-lbl-row">
-                    <span>Shipping &amp; Delivery</span>
-                    <span class="font-semibold">28%</span>
-                  </div>
-                  <div class="progress-track">
-                    <div class="progress-fill progress-fill-w28"></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div class="progress-lbl-row">
-                    <span>Warranty &amp; Repairs</span>
-                    <span class="font-semibold">18%</span>
-                  </div>
-                  <div class="progress-track">
-                    <div class="progress-fill progress-fill-w18"></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div class="progress-lbl-row">
-                    <span>Billing &amp; Payment</span>
-                    <span class="font-semibold">12%</span>
-                  </div>
-                  <div class="progress-track">
-                    <div class="progress-fill progress-fill-w12"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Live Activity Log -->
-          <div class="chart-card">
-            <div class="chart-card-header">
-              <h4>Recent Inquiries &amp; Citation Audit Log</h4>
-              <button type="button" class="btn btn-secondary btn-sm" onclick="fetchAnalyticsFromBackend(true)">
-                <i class="fa-solid fa-arrows-rotate"></i> Refresh
-              </button>
-            </div>
-
-            <div class="audit-list" id="audit-list-container">
-              <div class="audit-row">
-                <div>
-                  <strong>&quot;Can I return open-box headphones?&quot;</strong>
-                  <div class="audit-subtext">Matched: Section 1 Return Policy &bull; Distance: 0.31</div>
-                </div>
-                <span class="badge badge-emerald chart-badge">Resolved (100% Grounded)</span>
-              </div>
-
-              <div class="audit-row">
-                <div>
-                  <strong>&quot;Do you ship to Toronto, Canada?&quot;</strong>
-                  <div class="audit-subtext">Matched: Section 2 Shipping Policy &bull; Distance: 0.28</div>
-                </div>
-                <span class="badge badge-emerald chart-badge">Resolved (DDP Duties Cited)</span>
-              </div>
-
-              <div class="audit-row">
-                <div>
-                  <strong>&quot;How long is the manufacturer warranty?&quot;</strong>
-                  <div class="audit-subtext">Matched: Section 4 Warranty &bull; Distance: 0.22</div>
-                </div>
-                <span class="badge badge-emerald chart-badge">Resolved (1-Year Limited Cited)</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Phase 7: Autonomous Synthetic Benchmark Studio -->
-          <div class="chart-card">
-            <div class="chart-card-header">
-              <div>
-                <h4><i class="fa-solid fa-microchip icon-cyan"></i> Autonomous Synthetic Benchmark &amp; Stress Test Studio</h4>
-                <div class="text-dim text-xs mt-1">Multi-scenario load test evaluating throughput (QPS), latency percentiles, and guardrail precision.</div>
-              </div>
-              <button type="button" class="btn btn-primary btn-sm" id="btn-run-benchmark" onclick="handleRunSyntheticBenchmark()">
-                <i class="fa-solid fa-play"></i> Run Synthetic Benchmark
-              </button>
-            </div>
-
-            <div class="bench-metrics-grid" id="bench-metrics-grid">
-              <div class="bench-metric-card">
-                <div class="bench-metric-num" id="bench-qps">18.4 QPS</div>
-                <div class="bench-metric-lbl">Throughput (Queries/sec)</div>
-              </div>
-              <div class="bench-metric-card">
-                <div class="bench-metric-num text-emerald" id="bench-p50">48ms</div>
-                <div class="bench-metric-lbl">P50 Response Latency</div>
-              </div>
-              <div class="bench-metric-card">
-                <div class="bench-metric-num text-purple" id="bench-precision">100.0%</div>
-                <div class="bench-metric-lbl">Guardrail Accuracy</div>
-              </div>
-              <div class="bench-metric-card">
-                <div class="bench-metric-num text-amber" id="bench-intent-acc">100.0%</div>
-                <div class="bench-metric-lbl">Intent Classification</div>
-              </div>
-            </div>
-
-            <div id="bench-results-container" class="mt-4 display-none">
-              <h5 class="text-xs text-muted uppercase font-bold tracking-wider mb-2">Battery Test Executions (8 Scenarios)</h5>
-              <div class="table-responsive">
-                <table class="bench-results-table">
-                  <thead>
-                    <tr>
-                      <th>Scenario Query</th>
-                      <th>Lang</th>
-                      <th>Intent</th>
-                      <th>Latency</th>
-                      <th>Guardrail</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody id="bench-results-tbody">
-                    <!-- Populated dynamically -->
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <!-- Phase 7: Outbound Incident Webhooks Feed -->
-          <div class="chart-card">
-            <div class="chart-card-header">
-              <div>
-                <h4><i class="fa-solid fa-bell icon-amber"></i> Outbound Incident Webhooks &amp; Alert Stream</h4>
-                <div class="text-dim text-xs mt-1">Automated dispatch to Slack, PagerDuty, and SIEM on SLA risk thresholds and low CSAT scores.</div>
-              </div>
-              <button type="button" class="btn btn-secondary btn-sm" id="btn-test-webhook" onclick="handleTriggerTestWebhook()">
-                <i class="fa-solid fa-paper-plane"></i> Test Alert Webhook
-              </button>
-            </div>
-
-            <div id="webhook-logs-container">
-              <!-- Populated dynamically -->
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- =========================================================================
-           VIEW 5: PIPELINE SETTINGS
-           ========================================================================= -->
-      <div class="app-view-container" id="view-settings">
-        <div class="settings-container">
-          <div>
-            <h2 class="view-header-title">RAG Pipeline Configuration</h2>
-            <p class="view-header-subtitle">
-              Fine-tune backend API connections, retrieval limits, and Gemini model parameters.
-            </p>
-          </div>
-
-          <div class="settings-card">
-            <h4 class="settings-section-title"><i class="fa-solid fa-server icon-primary"></i> Backend Endpoint Connection</h4>
-
-            <div class="form-group">
-              <label class="form-label" for="setting-backend-url">FastAPI Backend URL</label>
-              <div class="form-row-flex">
-                <input type="text" id="setting-backend-url" class="form-control" value="http://localhost:8000">
-                <button type="button" class="btn btn-secondary" onclick="testBackendConnection()">
-                  <i class="fa-solid fa-plug"></i> Test Connection
+                <button type="submit" class="btn btn-primary" id="btn-lookup-ticket">
+                  <i class="fa-solid fa-search"></i> Check Status
                 </button>
               </div>
-              <div class="form-help">Default local endpoint for <code>server.py</code>. Cross-Origin Resource Sharing (CORS) is enabled.</div>
+            </form>
+          </div>
+
+          <!-- Ticket Details & Thread Display (Safe for customer view) -->
+          <div id="customer-ticket-result-box" class="is-hidden">
+            <div class="card ticket-details-view-card">
+              <div class="ticket-header-meta">
+                <div>
+                  <div class="ticket-id-badge" id="cust-ticket-id-display">TCK-1042</div>
+                  <h3 class="ticket-subject-title" id="cust-ticket-subject-display">Bulk discount inquiry</h3>
+                </div>
+                <div class="ticket-status-pill-wrap">
+                  <span class="status-badge" id="cust-ticket-status-badge">Open</span>
+                  <span class="badge badge-glow-cyan" id="cust-ticket-sla-badge">SLA: In Progress</span>
+                </div>
+              </div>
+
+              <!-- Progress Stepper -->
+              <div class="ticket-status-stepper" id="cust-ticket-stepper">
+                <div class="stepper-step completed" id="step-submitted">
+                  <div class="stepper-dot"><i class="fa-solid fa-check"></i></div>
+                  <span class="stepper-label">Submitted</span>
+                </div>
+                <div class="stepper-step active" id="step-review">
+                  <div class="stepper-dot"><i class="fa-solid fa-user-clock"></i></div>
+                  <span class="stepper-label">In Review</span>
+                </div>
+                <div class="stepper-step" id="step-resolved">
+                  <div class="stepper-dot"><i class="fa-solid fa-flag-checkered"></i></div>
+                  <span class="stepper-label">Resolved</span>
+                </div>
+              </div>
+
+              <!-- Public Conversation Thread -->
+              <div class="ticket-thread-section">
+                <h4 class="thread-section-title"><i class="fa-solid fa-comments"></i> Conversation History</h4>
+                <div class="ticket-messages-feed" id="cust-ticket-messages-feed">
+                  <!-- Messages populated via JS -->
+                </div>
+
+                <!-- Customer Reply Box -->
+                <form id="cust-ticket-reply-form" onsubmit="handleCustomerTicketReply(event)" class="ticket-reply-box">
+                  <textarea id="cust-reply-input" class="form-textarea" rows="2" placeholder="Reply or provide additional information..." title="Customer reply input" aria-label="Customer reply input" required></textarea>
+                  <div class="reply-actions-row">
+                    <button type="submit" class="btn btn-primary btn-sm" id="btn-cust-send-reply">
+                      <i class="fa-solid fa-paper-plane"></i> Send Reply
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW 4: SUBMIT CLAIM / WARRANTY REQUEST
+           ========================================================================= -->
+      <div class="app-view-container" id="view-claim">
+        <div class="claim-submit-card">
+          <div class="view-header-bar">
+            <div>
+              <h2 class="view-title"><i class="fa-solid fa-file-shield text-primary"></i> Submit a Support Claim or Request</h2>
+              <p class="view-subtitle">Need a return authorization, warranty replacement, or price adjustment? Submit your details below for expedited processing.</p>
             </div>
           </div>
 
-          <div class="settings-card">
-            <h4 class="settings-section-title"><i class="fa-solid fa-lock icon-purple"></i> Admin Security &amp; Authorization</h4>
+          <form id="customer-claim-form" onsubmit="handleCustomerClaimSubmit(event)">
+            <div class="form-grid-2col">
+              <div class="form-group">
+                <label for="claim-cust-name" class="form-label">Full Name *</label>
+                <input type="text" id="claim-cust-name" class="form-input" placeholder="Alex Morgan" required>
+              </div>
+              <div class="form-group">
+                <label for="claim-cust-email" class="form-label">Email Address *</label>
+                <input type="email" id="claim-cust-email" class="form-input" placeholder="alex.morgan@example.com" required>
+              </div>
+            </div>
+
+            <div class="form-grid-2col">
+              <div class="form-group">
+                <label for="claim-order-num" class="form-label">Order # / Serial Number</label>
+                <input type="text" id="claim-order-num" class="form-input" placeholder="e.g. ORD-98234 or SN-88412">
+              </div>
+              <div class="form-group">
+                <label for="claim-category-select" class="form-label">Request Type *</label>
+                <select id="claim-category-select" class="form-select" title="Select request type" aria-label="Select request type" required>
+                  <option value="Return & Refund">📦 30-Day Return &amp; Refund</option>
+                  <option value="Warranty & Claims">🛡️ 1-Year Manufacturer Warranty Claim</option>
+                  <option value="Shipping & Logistics">✈️ Shipping &amp; Delivery Issue</option>
+                  <option value="Billing & Payment">💳 Price Match or Billing Credit</option>
+                  <option value="Order Modification">⏱️ Order Cancellation / Modification</option>
+                  <option value="General Inquiry">💬 General Support Inquiry</option>
+                </select>
+              </div>
+            </div>
 
             <div class="form-group">
-              <label class="form-label" for="setting-admin-key">Admin API Key (X-API-Key)</label>
-              <input type="password" id="setting-admin-key" class="form-control" placeholder="Enter ADMIN_API_KEY if server authentication is enabled" autocomplete="current-password">
-              <div class="form-help">Required for vector indexing, deleting policy clauses, and updating pipeline parameters when backend auth is active.</div>
+              <label for="claim-subject-input" class="form-label">Subject *</label>
+              <input type="text" id="claim-subject-input" class="form-input" placeholder="Brief summary of your request" required>
             </div>
+
+            <div class="form-group">
+              <label for="claim-description-input" class="form-label">Detailed Description *</label>
+              <textarea id="claim-description-input" class="form-textarea" rows="4" placeholder="Please describe what happened, any defects noticed, or details of your inquiry..." title="Detailed description" aria-label="Detailed description" required></textarea>
+            </div>
+
+            <!-- Optional Image Upload for Claims with Gemini Vision pre-inspection -->
+            <div class="form-group">
+              <label for="claim-photo-input" class="form-label"><i class="fa-solid fa-camera"></i> Attach Photo (Hardware defect, damage, or receipt)</label>
+              <div class="file-drop-zone" onclick="document.getElementById('claim-photo-input').click()">
+                <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
+                <span class="drop-text" id="claim-photo-drop-text">Click or drag photo here (JPEG, PNG, WebP)</span>
+                <input type="file" id="claim-photo-input" class="is-hidden" accept="image/jpeg,image/png,image/webp" title="Attach photo" aria-label="Attach photo" onchange="handleClaimPhotoSelect(event)">
+              </div>
+              <div id="claim-photo-preview" class="claim-preview-box">
+                <img id="claim-photo-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E" alt="Claim Photo Preview" class="claim-preview-img">
+              </div>
+            </div>
+
+            <div class="form-actions-bar claim-actions-row">
+              <button type="submit" class="btn btn-primary btn-lg" id="btn-submit-claim-form">
+                <i class="fa-solid fa-paper-plane"></i> Submit Request
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Human Escalation Modal -->
+  <div class="modal-overlay is-hidden" id="escalation-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-user-headset text-primary"></i> Connect with Human Support</h3>
+        <button type="button" class="btn-icon" onclick="closeHumanEscalationModal()" aria-label="Close modal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">
+          Our AI assistant will transfer your chat transcript directly to our support desk for human review.
+        </p>
+        <form onsubmit="handleEscalationModalSubmit(event)">
+          <div class="form-group">
+            <label for="esc-name" class="form-label">Your Name</label>
+            <input type="text" id="esc-name" class="form-input" placeholder="Jane Doe" required>
           </div>
-
-          <div class="settings-card">
-            <h4 class="settings-section-title"><i class="fa-solid fa-sliders icon-cyan"></i> Retrieval &amp; Guardrail Parameters</h4>
-
-            <div class="form-group">
-              <label class="form-label" for="setting-model">Language Model</label>
-              <select id="setting-model" class="form-control">
-                <option value="gemini-3.6-flash">gemini-3.6-flash (Recommended - Ultra Low Latency)</option>
-                <option value="gemini-3-flash-preview">gemini-3-flash-preview (Preview)</option>
-                <option value="gemini-flash-latest">gemini-flash-latest (Latest Flash)</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="setting-guardrail">
-                Guardrail Distance Threshold: <span id="val-guardrail-threshold" class="text-cyan">1.20</span>
-              </label>
-              <input type="range" id="setting-guardrail" class="custom-range" min="0.5" max="2.0" step="0.05" value="1.20" oninput="document.getElementById('val-guardrail-threshold').textContent = parseFloat(this.value).toFixed(2)" aria-label="Guardrail Distance Threshold" title="Guardrail Distance Threshold">
-              <div class="form-help">Queries with vector distance higher than this threshold will be flagged as out-of-scope.</div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="setting-topk">Top-K Retrieved Context Chunks</label>
-              <input type="number" id="setting-topk" class="form-control" value="2" min="1" max="10">
-              <div class="form-help">Number of closest semantic chunks retrieved from ChromaDB for grounded synthesis.</div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="setting-system-prompt">System Instruction Guardrail</label>
-              <textarea id="setting-system-prompt" class="form-control" rows="4">You are an empathetic, concise Customer Support Assistant. Strict Rule: Rely ONLY on the facts explicitly mentioned in the provided &lt;context&gt;. Do not extrapolate, assume, or fabricate any rules, dates, or prices. If the answer is not explicitly written in the context, output: 'I am sorry, but our documentation does not cover that. Please contact support@company.com.'</textarea>
-            </div>
-
-            <button type="button" class="btn btn-primary" onclick="savePipelineSettings()">
-              <i class="fa-solid fa-floppy-disk"></i> Save Settings
+          <div class="form-group">
+            <label for="esc-email" class="form-label">Your Email</label>
+            <input type="email" id="esc-email" class="form-input" placeholder="jane.doe@example.com" required>
+          </div>
+          <div class="form-group">
+            <label for="esc-priority" class="form-label">Urgency Level</label>
+            <select id="esc-priority" class="form-select" title="Select urgency level" aria-label="Select urgency level">
+              <option value="Medium">Medium (Standard Inquiry)</option>
+              <option value="High">High (Impacting Orders)</option>
+              <option value="Urgent">Urgent (Immediate assistance needed)</option>
+            </select>
+          </div>
+          <div class="modal-footer-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeHumanEscalationModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="btn-submit-escalation">
+              <i class="fa-solid fa-paper-plane"></i> Submit &amp; Create Ticket
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   </div>
 
-  <!-- Add Policy Modal -->
-  <div class="modal-overlay" id="add-policy-modal">
-    <div class="modal-card">
-      <button type="button" class="modal-close" onclick="closeAddPolicyModal()" title="Close dialog" aria-label="Close dialog">&times;</button>
-      <div class="modal-header-box">
-        <div class="brand-icon-box brand-icon-sm">
-          <i class="fa-solid fa-plus"></i>
-        </div>
-        <h3 class="brand-icon-sm">Add Knowledge Policy Clause</h3>
-      </div>
-      <p class="modal-desc">
-        Add a new policy rule or FAQ section to expand your store's verified vector database.
-      </p>
-
-      <form id="add-policy-form" onsubmit="handleAddPolicyClause(event)">
-        <div class="form-group">
-          <label class="form-label" for="policy-title">Section / Policy Title</label>
-          <input type="text" id="policy-title" class="form-control" placeholder="e.g. 7. Price Matching Guarantee" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="policy-content">Policy Clause Text</label>
-          <textarea id="policy-content" class="form-control" rows="5" placeholder="Enter detailed policy text..." required></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary btn-w-full">
-          <i class="fa-solid fa-vector-square"></i> Ingest &amp; Index Chunk
+  <!-- CSAT Feedback Modal -->
+  <div class="modal-overlay is-hidden" id="csat-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-star text-amber"></i> Rate Your Experience</h3>
+        <button type="button" class="btn-icon" onclick="closeCsatModal()" aria-label="Close modal">
+          <i class="fa-solid fa-xmark"></i>
         </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Create Support Ticket Modal -->
-  <div class="modal-overlay" id="create-ticket-modal">
-    <div class="modal-card">
-      <button type="button" class="modal-close" onclick="closeCreateTicketModal()" title="Close dialog" aria-label="Close dialog">&times;</button>
-      <div class="modal-header-box">
-        <div class="brand-icon-box brand-icon-sm">
-          <i class="fa-solid fa-headset"></i>
-        </div>
-        <h3 class="brand-icon-sm">Escalate to Human Support</h3>
       </div>
-      <p class="modal-desc">
-        Create an escalated customer support ticket for our tier-2 specialized team.
-      </p>
-
-      <form id="create-ticket-form" onsubmit="handleCreateTicketSubmit(event)">
-        <div class="form-group">
-          <label class="form-label" for="ticket-customer-name">Customer Name</label>
-          <input type="text" id="ticket-customer-name" class="form-control" placeholder="e.g. Alex Morgan" required autocomplete="name">
+      <div class="modal-body">
+        <p class="modal-desc">How was your support conversation today?</p>
+        <div class="star-rating-row" id="star-rating-container">
+          <button type="button" class="star-btn" onclick="setCsatRating(1)" title="1 Star" aria-label="1 Star"><i class="fa-solid fa-star"></i></button>
+          <button type="button" class="star-btn" onclick="setCsatRating(2)" title="2 Stars" aria-label="2 Stars"><i class="fa-solid fa-star"></i></button>
+          <button type="button" class="star-btn" onclick="setCsatRating(3)" title="3 Stars" aria-label="3 Stars"><i class="fa-solid fa-star"></i></button>
+          <button type="button" class="star-btn" onclick="setCsatRating(4)" title="4 Stars" aria-label="4 Stars"><i class="fa-solid fa-star"></i></button>
+          <button type="button" class="star-btn active" onclick="setCsatRating(5)" title="5 Stars" aria-label="5 Stars"><i class="fa-solid fa-star"></i></button>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="ticket-customer-email">Email Address</label>
-          <input type="email" id="ticket-customer-email" class="form-control" placeholder="e.g. alex@example.com" required autocomplete="email">
+        <div class="form-group customization-group">
+          <label for="csat-comment-input" class="form-label">Comments</label>
+          <textarea id="csat-comment-input" class="form-textarea" rows="2" placeholder="Optional comments or suggestions..." title="Optional comments" aria-label="Optional comments"></textarea>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="ticket-priority">Priority Level</label>
-          <select id="ticket-priority" class="form-control">
-            <option value="Medium">Medium Priority (Standard SLA 24h)</option>
-            <option value="High">High Priority (SLA 4h)</option>
-            <option value="Urgent">Urgent Priority (Critical Escalation SLA 1h)</option>
-            <option value="Low">Low Priority (General Feedback)</option>
-          </select>
+        <div class="modal-footer-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeCsatModal()">Skip</button>
+          <button type="button" class="btn btn-primary" onclick="submitCsatFeedback()">Submit Feedback</button>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="ticket-subject">Subject</label>
-          <input type="text" id="ticket-subject" class="form-control" placeholder="Brief summary of inquiry..." required>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="ticket-details">Inquiry &amp; Context Details</label>
-          <textarea id="ticket-details" class="form-control" rows="4" placeholder="Detailed customer query..." required></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary btn-w-full">
-          <i class="fa-solid fa-paper-plane"></i> Submit Escalation Ticket
-        </button>
-      </form>
+      </div>
     </div>
   </div>
 
-  <!-- Toast Container -->
-  <div class="toast-container" id="toast-container"></div>
-
-  <!-- App Controller Script -->
   <script src="js/app.js"></script>
 </body>
 </html>

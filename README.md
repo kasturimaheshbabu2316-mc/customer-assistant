@@ -124,7 +124,8 @@ flowchart TD
 
 | Interface | File | Description |
 | :--- | :--- | :--- |
-| **Support Hub SPA** | [app.html](file:///c:/Users/kastu/Desktop/mahesh%20pro/app.html) | Dual-pane operator portal with live chat, ticket queue, SLA badges, AI Copilot, macro insertions, and vision claim reviewer. |
+| **Customer Support Portal** | [app.html](file:///c:/Users/kastu/Desktop/mahesh%20pro/app.html) | Pure customer-facing help center with 24/7 AI chat, streaming responses, ticket lookup timeline, and multi-modal claim filing. |
+| **UX & Admin Console** | [admin.html](file:///c:/Users/kastu/Desktop/mahesh%20pro/admin.html) | Restricted console for UX designers & managers with live feature flag toggles, ChromaDB knowledge studio, agent desk, and telemetry. |
 | **Commercial Landing** | [index.html](file:///c:/Users/kastu/Desktop/mahesh%20pro/index.html) | Premium SaaS marketing page with live interactive demo simulator, ROI savings calculator, feature matrix, and pricing tiers. |
 | **Command Center** | [app.py](file:///c:/Users/kastu/Desktop/mahesh%20pro/app.py) | Streamlit dashboard for ticket management, knowledge base re-indexing, live analytics, and system telemetry. |
 
@@ -134,19 +135,22 @@ flowchart TD
 
 ```text
 ├── index.html                  # Commercial SaaS marketing landing page
-├── app.html                    # Support Hub Single Page Application portal
+├── app.html                    # Customer Support Portal (AI chat, ticket tracking, claim intake)
+├── admin.html                  # UX Feature Studio & Admin Operations Console
 ├── main.py                     # Universal ASGI server entry point (Docker/Railway/Uvicorn)
 ├── server.py                   # FastAPI REST backend with CORS, auth, SSE, Vision & webhooks
+├── database.py                 # SQLite persistent storage (tickets, features, audit logs, webhooks)
 ├── rag_engine.py               # RAG pipeline with ChromaDB, Gemini, Hybrid Search & Benchmark
 ├── app.py                      # 4-Tab Streamlit enterprise control center
 ├── css/
 │   └── style.css               # Core design system & modern glassmorphic styles
 ├── js/
 │   ├── landing.js              # ROI calculator, demo simulator & interactions
-│   └── app.js                  # Support Hub SPA controller & fallback engine
+│   ├── app.js                  # Customer Portal controller & fallback engine
+│   └── admin.js                # UX Feature Studio & Admin Console controller
 ├── knowledge_base/
 │   └── company_faq.txt         # Enterprise store policy knowledge dataset
-├── test_master_suite.py        # Unified Master Test Suite (Phases 1 - 7)
+├── test_master_suite.py        # Unified Master Test Suite (Phases 1 - 8)
 ├── test_phase8_features.py     # Hybrid Search & Vision Claim Inspection test suite
 ├── test_phase6_features.py     # Multi-Language, CSAT & Macro test suite
 ├── test_phase5_copilot.py      # Copilot, Threading & SLA test suite

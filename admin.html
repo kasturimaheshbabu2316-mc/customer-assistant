@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin &amp; UX Control Center | OmniDesk AI</title>
+  <meta name="description" content="Dedicated UX Feature Controls, Knowledge Base Studio, Agent Escalation Desk, and Telemetry Center for OmniDesk AI.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="body-noscroll">
+
+  <!-- Ambient Glow -->
+  <div class="bg-ambient-glow" aria-hidden="true">
+    <div class="glow-orb glow-orb-1 orb-app-top"></div>
+    <div class="glow-orb glow-orb-2 orb-app-bottom"></div>
+  </div>
+
+  <!-- Admin Auth Gate (Protected Access) -->
+  <div id="admin-auth-gate" class="admin-auth-overlay">
+    <div class="admin-auth-card">
+      <div class="brand-icon-box brand-icon-sm admin-auth-brand-box">
+        <i class="fa-solid fa-lock"></i>
+      </div>
+      <h2 class="admin-auth-heading">UX &amp; Admin Console</h2>
+      <p class="admin-auth-desc">
+        Restricted access for UX design team, support managers, and administrators.
+      </p>
+      <form onsubmit="handleAdminLogin(event)">
+        <div class="form-group admin-auth-group">
+          <label for="admin-key-input" class="form-label">Admin Key / UX Passcode</label>
+          <input type="password" id="admin-key-input" class="form-input" placeholder="Enter secret API key (default: admin-secret-key-2026)" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg admin-auth-btn" id="btn-admin-unlock">
+          <i class="fa-solid fa-unlock"></i> Authenticate &amp; Access
+        </button>
+      </form>
+      <div class="admin-auth-back-wrap">
+        <a href="app.html" class="admin-auth-back-link">
+          <i class="fa-solid fa-arrow-left"></i> Return to Customer Portal
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-layout">
+    <!-- Left Navigation Sidebar -->
+    <aside class="app-sidebar" id="app-sidebar">
+      <a href="index.html" class="sidebar-brand">
+        <div class="brand-icon-box brand-icon-sm brand-icon-admin">
+          <i class="fa-solid fa-sliders"></i>
+        </div>
+        <span>OmniDesk<span class="brand-secondary-text">Admin</span></span>
+      </a>
+
+      <!-- Navigation Views List -->
+      <ul class="sidebar-nav">
+        <li>
+          <button type="button" class="sidebar-item-btn active" id="btn-admin-nav-ux" onclick="switchAdminView('ux')">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>UX &amp; Feature Studio</span>
+          </button>
+        </li>
+        <li>
+          <button type="button" class="sidebar-item-btn" id="btn-admin-nav-kb" onclick="switchAdminView('kb')">
+            <i class="fa-solid fa-book-bookmark"></i>
+            <span>Knowledge Base Studio</span>
+          </button>
+        </li>
+        <li>
+          <button type="button" class="sidebar-item-btn" id="btn-admin-nav-tickets" onclick="switchAdminView('tickets')">
+            <i class="fa-solid fa-ticket"></i>
+            <span>Escalation &amp; Agent Desk</span>
+            <span class="sidebar-badge-count" id="admin-ticket-badge">0</span>
+          </button>
+        </li>
+        <li>
+          <button type="button" class="sidebar-item-btn" id="btn-admin-nav-analytics" onclick="switchAdminView('analytics')">
+            <i class="fa-solid fa-chart-pie"></i>
+            <span>Deflection &amp; Analytics</span>
+          </button>
+        </li>
+        <li>
+          <button type="button" class="sidebar-item-btn" id="btn-admin-nav-settings" onclick="switchAdminView('settings')">
+            <i class="fa-solid fa-gears"></i>
+            <span>RAG Pipeline Settings</span>
+          </button>
+        </li>
+      </ul>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <div class="backend-status-pill">
+          <div class="nav-actions">
+            <span class="pulse-dot" id="sidebar-status-dot"></span>
+            <span id="sidebar-status-text" class="status-text">Admin Connected</span>
+          </div>
+          <button type="button" class="btn-icon status-btn-refresh" onclick="checkBackendHealth()" title="Refresh connection" aria-label="Refresh connection">
+            <i class="fa-solid fa-rotate-right"></i>
+          </button>
+        </div>
+
+        <a href="app.html" class="btn btn-secondary btn-sm sidebar-btn-back">
+          <i class="fa-solid fa-eye"></i> View Customer Portal
+        </a>
+        <button type="button" class="btn btn-outline btn-sm sidebar-btn-back sidebar-btn-admin-discrete" onclick="adminLogout()">
+          <i class="fa-solid fa-right-from-bracket"></i> Lock Console
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Admin Workspace Area -->
+    <div class="app-main">
+      <!-- Topbar Header -->
+      <header class="app-topbar">
+        <div class="topbar-title-wrap">
+          <button type="button" class="btn-icon mobile-menu-btn mobile-nav-toggle" id="app-sidebar-toggle" onclick="toggleAppSidebar()" title="Toggle Sidebar" aria-label="Toggle Sidebar">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="topbar-view-title" id="admin-current-view-title">UX &amp; Feature Studio</div>
+          <span class="badge badge-glow-primary" id="model-indicator-badge">
+            <i class="fa-solid fa-lock-open"></i> UX Admin Mode
+          </span>
+        </div>
+
+        <div class="topbar-actions">
+          <a href="app.html" target="_blank" class="btn btn-secondary btn-sm" title="Open Customer UI in new tab">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Preview Customer Portal
+          </a>
+        </div>
+      </header>
+
+      <!-- =========================================================================
+           VIEW 1: UX & FEATURE CONTROLS STUDIO
+           ========================================================================= -->
+      <div class="app-view-container active-view" id="admin-view-ux">
+        <div class="view-header-bar">
+          <div>
+            <h2 class="view-title"><i class="fa-solid fa-wand-magic-sparkles text-primary"></i> UX &amp; Feature Configuration Studio</h2>
+            <p class="view-subtitle">Enable, disable, and tune customer-facing features in real time without redeploying code.</p>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="saveFeatureSettings()">
+            <i class="fa-solid fa-floppy-disk"></i> Save Feature Changes
+          </button>
+        </div>
+
+        <!-- Feature Flags Toggles Grid -->
+        <div class="ux-features-grid">
+          <!-- Toggle 1: SSE Streaming -->
+          <div class="ux-feature-card">
+            <div class="ux-feature-info">
+              <div class="ux-feature-title">
+                <i class="fa-solid fa-bolt text-amber"></i> Real-time SSE Token Streaming
+              </div>
+              <p class="ux-feature-desc">Stream AI tokens word-by-word into customer chat for sub-second perceived latency.</p>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="feat-enable-streaming" title="Toggle real-time SSE token streaming" aria-label="Toggle real-time SSE token streaming" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <!-- Toggle 2: Vision Image Claim Inspection -->
+          <div class="ux-feature-card">
+            <div class="ux-feature-info">
+              <div class="ux-feature-title">
+                <i class="fa-solid fa-camera text-cyan"></i> Multi-Modal Vision Claim Uploads
+              </div>
+              <p class="ux-feature-desc">Allow customers to attach defect photos/receipts with instant Gemini Vision pre-inspection.</p>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="feat-enable-vision" title="Toggle multi-modal vision claim uploads" aria-label="Toggle multi-modal vision claim uploads" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <!-- Toggle 3: Multi-Language Selector -->
+          <div class="ux-feature-card">
+            <div class="ux-feature-info">
+              <div class="ux-feature-title">
+                <i class="fa-solid fa-globe text-primary"></i> Multi-Language Selector
+              </div>
+              <p class="ux-feature-desc">Show language dropdown on the customer portal for real-time multilingual localization.</p>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="feat-enable-language" title="Toggle multi-language selector" aria-label="Toggle multi-language selector" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <!-- Toggle 4: Quick FAQ Chips -->
+          <div class="ux-feature-card">
+            <div class="ux-feature-info">
+              <div class="ux-feature-title">
+                <i class="fa-solid fa-lightbulb text-amber"></i> Quick FAQ Prompt Chips
+              </div>
+              <p class="ux-feature-desc">Display 1-click popular policy question chips above the chat composer.</p>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="feat-enable-faq-chips" title="Toggle quick FAQ prompt chips" aria-label="Toggle quick FAQ prompt chips" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <!-- Toggle 5: CSAT Feedback Prompting -->
+          <div class="ux-feature-card">
+            <div class="ux-feature-info">
+              <div class="ux-feature-title">
+                <i class="fa-solid fa-star text-amber"></i> CSAT Rating Prompting
+              </div>
+              <p class="ux-feature-desc">Prompt customers to submit 1-5 star feedback ratings after resolved interactions.</p>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="feat-enable-csat" title="Toggle CSAT rating prompting" aria-label="Toggle CSAT rating prompting" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <!-- Toggle 6: Ticket Status Tracking -->
+          <div class="ux-feature-card">
+            <div class="ux-feature-info">
+              <div class="ux-feature-title">
+                <i class="fa-solid fa-magnifying-glass-location text-emerald"></i> Customer Ticket Lookup
+              </div>
+              <p class="ux-feature-desc">Enable customer self-service ticket status tracking with stepper timeline.</p>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="feat-enable-ticket-lookup" title="Toggle customer ticket lookup" aria-label="Toggle customer ticket lookup" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <!-- Toggle 7: Announcement Banner -->
+          <div class="ux-feature-card">
+            <div class="ux-feature-info">
+              <div class="ux-feature-title">
+                <i class="fa-solid fa-bullhorn text-rose"></i> Global Customer Notice Banner
+              </div>
+              <p class="ux-feature-desc">Display an alert banner across the customer portal header.</p>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="feat-enable-announcement" title="Toggle global customer notice banner" aria-label="Toggle global customer notice banner">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <!-- Toggle 8: Auto Escalate VIP -->
+          <div class="ux-feature-card">
+            <div class="ux-feature-info">
+              <div class="ux-feature-title">
+                <i class="fa-solid fa-crown text-amber"></i> Auto-Escalate VIP &amp; Urgent Tickets
+              </div>
+              <p class="ux-feature-desc">Automatically route VIP Enterprise inquiries to high priority with Slack alerts.</p>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="feat-auto-escalate-vip" title="Toggle automatic VIP and urgent ticket escalation" aria-label="Toggle automatic VIP and urgent ticket escalation" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Text & Theme Customization Card -->
+        <div class="card customization-card">
+          <h3 class="customization-heading">
+            <i class="fa-solid fa-pen-to-square text-cyan"></i> Customer Portal Messaging &amp; Presentation
+          </h3>
+
+          <div class="form-group customization-group">
+            <label for="feat-announcement-text" class="form-label">Announcement Banner Text</label>
+            <input type="text" id="feat-announcement-text" class="form-input" placeholder="e.g. Free expedited shipping on all warranty replacements this week." value="Special Notice: Free expedited delivery on all verified warranty replacements this week.">
+          </div>
+
+          <div class="form-group customization-group">
+            <label for="feat-welcome-greeting" class="form-label">Customer Chat Welcome Greeting</label>
+            <textarea id="feat-welcome-greeting" class="form-textarea" rows="2" placeholder="Greeting displayed to customers when opening support chat...">Hello! I am your AI Customer Support Assistant, grounded exclusively in verified store policies. Ask me about returns, international shipping rates, warranty repairs, price matching, or order cancellations.</textarea>
+          </div>
+
+          <div class="form-grid-2col">
+            <div class="form-group">
+              <label for="feat-theme-mode" class="form-label">Default Customer Portal Theme</label>
+              <select id="feat-theme-mode" class="form-select" title="Select default customer portal theme" aria-label="Select default customer portal theme">
+                <option value="cyber_dark">Cyber Obsidian Dark (Default)</option>
+                <option value="light">Clean Light Mode</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW 2: KNOWLEDGE BASE STUDIO (ChromaDB Vector Management)
+           ========================================================================= -->
+      <div class="app-view-container" id="admin-view-kb">
+        <div class="view-header-bar">
+          <div>
+            <h2 class="view-title"><i class="fa-solid fa-book-bookmark text-primary"></i> Knowledge Base Studio</h2>
+            <p class="view-subtitle">Manage company policy vector clauses indexed in ChromaDB.</p>
+          </div>
+          <div class="header-btn-group">
+            <button type="button" class="btn btn-secondary" onclick="exportKnowledgeBaseJson()">
+              <i class="fa-solid fa-download"></i> Backup JSON
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="resetDefaultKnowledgeBase()">
+              <i class="fa-solid fa-rotate-left"></i> Re-Index Default KB
+            </button>
+            <button type="button" class="btn btn-primary" onclick="openAddPolicyModal()">
+              <i class="fa-solid fa-plus"></i> Add Policy Clause
+            </button>
+          </div>
+        </div>
+
+        <div class="stats-overview-row">
+          <div class="stat-card">
+            <div class="stat-card-title">Indexed Vector Chunks</div>
+            <div class="stat-card-val" id="kb-total-chunks-count">6</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-title">Embedding Dimension</div>
+            <div class="stat-card-val">3,072-dim</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-title">Vector Collection</div>
+            <div class="stat-card-val kb-collection-val">support_kb</div>
+          </div>
+        </div>
+
+        <!-- Chunks Grid -->
+        <div class="kb-chunks-grid" id="kb-chunks-grid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW 3: ESCALATION & AGENT COPILOT DESK
+           ========================================================================= -->
+      <div class="app-view-container" id="admin-view-tickets">
+        <div class="view-header-bar">
+          <div>
+            <h2 class="view-title"><i class="fa-solid fa-ticket text-primary"></i> Escalation &amp; Agent Desk</h2>
+            <p class="view-subtitle">Triage escalated tickets, generate AI Copilot responses, apply 1-click Macros, and add confidential staff notes.</p>
+          </div>
+          <div class="header-btn-group">
+            <button type="button" class="btn btn-secondary" onclick="exportTicketsData('csv')">
+              <i class="fa-solid fa-file-csv"></i> Export CSV
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="exportTicketsData('json')">
+              <i class="fa-solid fa-file-code"></i> Export JSON
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="tickets-filter-bar">
+          <div class="filter-group">
+            <button type="button" class="filter-chip active" onclick="filterAdminTickets('all', this)">All Tickets</button>
+            <button type="button" class="filter-chip" onclick="filterAdminTickets('Open', this)">Open</button>
+            <button type="button" class="filter-chip" onclick="filterAdminTickets('In Progress', this)">In Progress</button>
+            <button type="button" class="filter-chip" onclick="filterAdminTickets('Resolved', this)">Resolved</button>
+          </div>
+        </div>
+
+        <!-- Tickets List -->
+        <div class="tickets-list-wrapper" id="admin-tickets-container">
+          <!-- Populated via JS -->
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW 4: DEFLECTION & ANALYTICS
+           ========================================================================= -->
+      <div class="app-view-container" id="admin-view-analytics">
+        <div class="view-header-bar">
+          <div>
+            <h2 class="view-title"><i class="fa-solid fa-chart-pie text-primary"></i> Deflection &amp; CSAT Telemetry</h2>
+            <p class="view-subtitle">Track query deflection rates, latency distributions, customer satisfaction, and outbound incident webhooks.</p>
+          </div>
+          <div class="header-btn-group">
+            <button type="button" class="btn btn-secondary" onclick="triggerTestWebhookAlert()">
+              <i class="fa-solid fa-paper-plane"></i> Test Slack Alert
+            </button>
+            <button type="button" class="btn btn-primary" onclick="runSyntheticStressBenchmark()">
+              <i class="fa-solid fa-vial-circle-check"></i> Run Synthetic Benchmark
+            </button>
+          </div>
+        </div>
+
+        <div class="stats-overview-row">
+          <div class="stat-card">
+            <div class="stat-card-title">AI Deflection Rate</div>
+            <div class="stat-card-val text-emerald" id="stat-deflection-rate">88.4%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-title">Average Latency</div>
+            <div class="stat-card-val text-cyan" id="stat-avg-latency">420ms</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-title">Average CSAT Rating</div>
+            <div class="stat-card-val text-amber" id="stat-csat-score">4.85 / 5.0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-title">Positive CSAT Ratio</div>
+            <div class="stat-card-val text-primary" id="stat-csat-pos-percent">96.2%</div>
+          </div>
+        </div>
+
+        <!-- Audit Logs Table -->
+        <div class="card customization-card">
+          <h3 class="customization-heading">
+            <i class="fa-solid fa-clock-rotate-left text-cyan"></i> Query Audit Stream
+          </h3>
+          <div class="admin-table-container">
+            <table class="bench-results-table admin-data-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Customer Query</th>
+                  <th>Grounded Status</th>
+                  <th>Distance</th>
+                  <th>Matched Clause</th>
+                  <th>Latency</th>
+                </tr>
+              </thead>
+              <tbody id="admin-audit-logs-body">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Outbound Webhooks Section -->
+        <div class="card">
+          <h3 class="customization-heading">
+            <i class="fa-solid fa-satellite-dish text-primary"></i> Outbound Incident Webhooks (Slack / PagerDuty)
+          </h3>
+          <div id="admin-webhooks-list">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW 5: RAG PIPELINE & MODEL SETTINGS
+           ========================================================================= -->
+      <div class="app-view-container" id="admin-view-settings">
+        <div class="view-header-bar">
+          <div>
+            <h2 class="view-title"><i class="fa-solid fa-gears text-primary"></i> RAG Pipeline &amp; Model Settings</h2>
+            <p class="view-subtitle">Tune distance guardrails, top-k chunks, generation temperature, and system prompt constraints.</p>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="savePipelineSettings()">
+            <i class="fa-solid fa-floppy-disk"></i> Save Pipeline Settings
+          </button>
+        </div>
+
+        <div class="card settings-card-constrained">
+          <div class="form-grid-2col">
+            <div class="form-group">
+              <label for="setting-threshold-slider" class="form-label">Guardrail Distance Threshold</label>
+              <div class="range-slider-wrap">
+                <input type="range" id="setting-threshold-slider" min="0.2" max="2.0" step="0.05" value="1.2" class="form-range range-slider-input" oninput="document.getElementById('setting-threshold-val').textContent = this.value" title="Guardrail distance threshold" aria-label="Guardrail distance threshold">
+                <span id="setting-threshold-val" class="range-slider-val">1.2</span>
+              </div>
+              <span class="customization-helper-text">Lower = stricter grounding (more deflections). Higher = more permissive.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="setting-topk-slider" class="form-label">Top-K Retrieved Chunks</label>
+              <div class="range-slider-wrap">
+                <input type="range" id="setting-topk-slider" min="1" max="10" step="1" value="2" class="form-range range-slider-input" oninput="document.getElementById('setting-topk-val').textContent = this.value" title="Top-K retrieved chunks" aria-label="Top-K retrieved chunks">
+                <span id="setting-topk-val" class="range-slider-val-cyan">2</span>
+              </div>
+              <span class="customization-helper-text">Number of vector policy chunks passed into the LLM context.</span>
+            </div>
+          </div>
+
+          <div class="form-grid-2col settings-row-spaced">
+            <div class="form-group">
+              <label for="setting-gen-model" class="form-label">LLM Generation Model</label>
+              <select id="setting-gen-model" class="form-select" title="Select LLM generation model" aria-label="Select LLM generation model">
+                <option value="gemini-3.6-flash">Google Gemini 3.6 Flash (Recommended)</option>
+                <option value="gemini-1.5-pro">Google Gemini 1.5 Pro</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="setting-emb-model" class="form-label">Vector Embedding Model</label>
+              <select id="setting-emb-model" class="form-select" title="Select vector embedding model" aria-label="Select vector embedding model">
+                <option value="gemini-embedding-001">gemini-embedding-001 (3,072 dims)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group settings-row-spaced">
+            <label for="setting-system-prompt" class="form-label">Grounded System Instruction Prompt</label>
+            <textarea id="setting-system-prompt" class="form-textarea" rows="4" placeholder="System prompt instructions..." title="Grounded system instruction prompt" aria-label="Grounded system instruction prompt"></textarea>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Add Policy Modal -->
+  <div class="modal-overlay is-hidden" id="add-policy-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-file-circle-plus text-primary"></i> Add Vector Policy Clause</h3>
+        <button type="button" class="btn-icon" onclick="closeAddPolicyModal()" aria-label="Close modal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="handleAddPolicySubmit(event)">
+          <div class="form-group">
+            <label for="new-policy-title" class="form-label">Clause Title *</label>
+            <input type="text" id="new-policy-title" class="form-input" placeholder="e.g. Section 7: Extended Holiday Return Policy" required>
+          </div>
+          <div class="form-group">
+            <label for="new-policy-content" class="form-label">Policy Content *</label>
+            <textarea id="new-policy-content" class="form-textarea" rows="5" placeholder="Detailed factual store policy wording..." required></textarea>
+          </div>
+          <div class="modal-footer-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeAddPolicyModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="btn-submit-policy">
+              <i class="fa-solid fa-vector-square"></i> Vectorize &amp; Save
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>

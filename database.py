@@ -109,6 +109,14 @@ def init_db():
     );
     """)
 
+    # 6. UX & System Feature Flags Table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS features (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+    );
+    """)
+
     conn.commit()
 
     # Seed initial data if tickets table is empty
@@ -535,6 +543,69 @@ def get_webhook_logs(limit: int = 50) -> list[dict]:
         rows.append(d)
     conn.close()
     return rows
+
+# ==============================================================================
+# UX & SYSTEM FEATURE FLAGS
+# ==============================================================================
+
+DEFAULT_FEATURE_FLAGS = {
+    "enable_streaming": True,
+    "enable_vision_upload": True,
+    "enable_multi_language": True,
+    "enable_faq_chips": True,
+    "enable_csat_popup": True,
+    "enable_ticket_lookup": True,
+    "enable_announcement_banner": False,
+    "announcement_banner_text": "Special Announcement: Free expedited delivery on all warranty claims this week.",
+    "welcome_greeting": "Hello! I am your AI Customer Support Assistant, grounded exclusively in verified store policies. Ask me about returns, international shipping rates, warranty repairs, price matching, or order cancellations.",
+    "theme_mode": "cyber_dark",
+    "auto_escalate_vip": True
+}
+
+def get_feature_flags() -> dict:
+    """Retrieves all UX and system feature flags, merged with defaults."""
+    conn = _get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT key, value FROM features;")
+    rows = cursor.fetchall()
+    conn.close()
+    
+    flags = dict(DEFAULT_FEATURE_FLAGS)
+    for r in rows:
+        key = r["key"]
+        val = r["value"]
+        try:
+            flags[key] = json.loads(val)
+        except Exception:
+            flags[key] = val
+    return flags
+
+def update_feature_flags(updates: dict) -> dict:
+    """Updates one or more feature flags in SQLite."""
+    conn = _get_connection()
+    cursor = conn.cursor()
+    for k, v in updates.items():
+        if v is not None:
+            serialized = json.dumps(v) if isinstance(v, (bool, int, float, dict, list)) else str(v)
+            cursor.execute("""
+            INSERT OR REPLACE INTO features (key, value)
+            VALUES (?, ?);
+            """, (k, serialized))
+    conn.commit()
+    conn.close()
+    return get_feature_flags()
+
+def get_customer_safe_ticket(ticket_id: str) -> Optional[dict]:
+    """Fetches a ticket and strips internal confidential staff notes for customer privacy."""
+    ticket = get_ticket_by_id(ticket_id)
+    if not ticket:
+        return None
+    safe_ticket = dict(ticket)
+    safe_ticket["messages"] = [
+        m for m in safe_ticket.get("messages", [])
+        if not m.get("is_internal_note")
+    ]
+    return safe_ticket
 
 # Initialize SQLite database immediately upon import
 init_db()

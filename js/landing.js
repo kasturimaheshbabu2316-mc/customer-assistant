@@ -307,7 +307,7 @@ async function handleDemoSubmit() {
   if (sources && sources.length > 0) {
     const srcText = sources[0];
     sourceHtml = `
-      <div class="verified-source-tag" style="margin-top: 6px;">
+      <div class="verified-source-tag source-tag-mt">
         <i class="fa-solid fa-shield-check"></i>
         <span><strong>Verified Source:</strong> ${srcText.length > 90 ? srcText.substring(0, 90) + '...' : srcText}</span>
       </div>

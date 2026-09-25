@@ -117,14 +117,29 @@ def test_phase2_hardening_and_auth():
     huge_res = requests.post(f"{BASE_URL}/ask", json={"query": huge_query}, timeout=10)
     assert huge_res.status_code == 422
     
-    # 3. Security telemetry & diagnostics
+    # 3. UX Feature Flags API & Auth Verification
+    feat_res = requests.get(f"{BASE_URL}/api/features", timeout=10)
+    assert feat_res.status_code == 200
+    feat_data = feat_res.json()
+    assert "enable_streaming" in feat_data
+    assert "enable_vision_upload" in feat_data
+
+    # 4. Unauthorized Feature Mutation -> 401
+    unauth_res = requests.post(f"{BASE_URL}/api/features", json={"enable_streaming": True}, timeout=10)
+    assert unauth_res.status_code == 401
+
+    # 5. Authorized Feature Mutation -> 200
+    auth_feat = requests.post(f"{BASE_URL}/api/features", json={"enable_streaming": True}, headers=HEADERS, timeout=10)
+    assert auth_feat.status_code == 200
+
+    # 6. Security telemetry & diagnostics
     info_res = requests.get(f"{BASE_URL}/api/info", timeout=10)
     assert info_res.status_code == 200
     info_data = info_res.json()
     assert "rate_limit_per_min" in info_data
     assert "uptime_seconds" in info_data
     
-    log("Phase 2", "Security & Hardening", f"422 Payload guards & API telemetry verified (Rate limit: {info_data['rate_limit_per_min']} req/m)", "PASS")
+    log("Phase 2", "Security & Hardening", f"422 Guards, UX Feature Auth & Telemetry verified (Rate limit: {info_data['rate_limit_per_min']} req/m)", "PASS")
 
 def test_phase3_ticket_escalation():
     """Phase 3: Smart Escalation & Routing."""
