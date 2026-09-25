@@ -933,12 +933,22 @@ def analyze_claim(req: VisionClaimRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/admin")
+@app.get("/admin.html")
 def read_admin():
     if os.path.exists("admin.html"):
         return FileResponse("admin.html")
     return {"status": "error", "message": "admin.html not found"}
 
+@app.get("/app")
+@app.get("/app.html")
+@app.get("/support")
+def read_app():
+    if os.path.exists("app.html"):
+        return FileResponse("app.html")
+    return {"status": "error", "message": "app.html not found"}
+
 @app.get("/")
+@app.get("/index.html")
 def read_root():
     if os.path.exists("index.html"):
         return FileResponse("index.html")
