@@ -43,3 +43,4 @@ data/
 .idea/
 .DS_Store
 Thumbs.db
+customer-agent-temp/
