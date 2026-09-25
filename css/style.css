@@ -1,9 +1,9 @@
 /* ==========================================================================
    OMNIDESK AI - CORE DESIGN SYSTEM & MASTER STYLESHEET
-   Aesthetics: Obsidian Glassmorphism, Modern Gradients, Electric Indigo & Cyan
+   Aesthetics: Obsidian Glassmorphism, Retro Synthwave 80s, CRT Terminal, Win95, 90s Arcade
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Press+Start+2P&family=VT323&family=Pixelify+Sans:wght@400;600;700&family=Share+Tech+Mono&family=Silkscreen&display=swap');
 
 :root {
   /* Color Palette */
@@ -82,6 +82,168 @@
   --border-light: rgba(0, 0, 0, 0.12);
   --shadow-glow: 0 10px 25px rgba(99, 102, 241, 0.15);
 }
+
+/* ==========================================================================
+   RETRO THEME PRESETS & TOKENS
+   ========================================================================== */
+
+/* 1. Retro Synthwave 80s / Outrun Neon Cyberpunk */
+[data-theme="synthwave"] {
+  --bg-darkest: #0e021a;
+  --bg-dark: #17032e;
+  --bg-card: rgba(30, 8, 56, 0.85);
+  --bg-card-hover: rgba(48, 14, 88, 0.92);
+  --bg-elevated: rgba(45, 12, 80, 0.85);
+  --bg-glass: rgba(22, 3, 45, 0.78);
+  --bg-input: rgba(18, 3, 38, 0.9);
+  --primary: #ff007f;
+  --primary-light: #ff47a3;
+  --primary-dark: #cc0066;
+  --primary-glow: rgba(255, 0, 127, 0.45);
+  --secondary: #00f0ff;
+  --secondary-light: #67f5ff;
+  --secondary-glow: rgba(0, 240, 255, 0.45);
+  --accent-purple: #b026ff;
+  --accent-emerald: #00ff9f;
+  --accent-emerald-glow: rgba(0, 255, 159, 0.35);
+  --accent-amber: #ffaa00;
+  --accent-rose: #ff0055;
+  --text-main: #fff0f5;
+  --text-muted: #d8b4e2;
+  --text-dim: #9d75ab;
+  --text-inverse: #0e021a;
+  --border-subtle: rgba(255, 0, 127, 0.25);
+  --border-light: rgba(0, 240, 255, 0.38);
+  --border-glow: rgba(255, 0, 127, 0.65);
+  --shadow-glow: 0 0 25px rgba(255, 0, 127, 0.45);
+  --shadow-cyan-glow: 0 0 25px rgba(0, 240, 255, 0.45);
+  --font-heading: 'Outfit', 'Press Start 2P', sans-serif;
+  --font-mono: 'VT323', 'JetBrains Mono', monospace;
+}
+
+/* 2. Retro CRT Terminal (Phosphor Green Hacker Pip-Boy) */
+[data-theme="terminal"] {
+  --bg-darkest: #020b04;
+  --bg-dark: #051508;
+  --bg-card: rgba(8, 28, 12, 0.92);
+  --bg-card-hover: rgba(12, 42, 18, 0.96);
+  --bg-elevated: rgba(10, 34, 14, 0.9);
+  --bg-glass: rgba(6, 22, 9, 0.88);
+  --bg-input: rgba(3, 14, 5, 0.95);
+  --primary: #00ff66;
+  --primary-light: #4dff88;
+  --primary-dark: #00cc52;
+  --primary-glow: rgba(0, 255, 102, 0.45);
+  --secondary: #38ef7d;
+  --secondary-light: #80ffaa;
+  --secondary-glow: rgba(56, 239, 125, 0.35);
+  --accent-purple: #00e5ff;
+  --accent-emerald: #00ff66;
+  --accent-emerald-glow: rgba(0, 255, 102, 0.45);
+  --accent-amber: #ffb000;
+  --accent-rose: #ff3333;
+  --text-main: #00ff66;
+  --text-muted: #66cc88;
+  --text-dim: #338855;
+  --text-inverse: #020b04;
+  --border-subtle: rgba(0, 255, 102, 0.28);
+  --border-light: rgba(0, 255, 102, 0.5);
+  --border-glow: rgba(0, 255, 102, 0.75);
+  --shadow-glow: 0 0 20px rgba(0, 255, 102, 0.4);
+  --shadow-cyan-glow: 0 0 20px rgba(0, 255, 102, 0.4);
+  --font-heading: 'VT323', 'JetBrains Mono', monospace;
+  --font-body: 'Share Tech Mono', 'JetBrains Mono', monospace;
+  --font-mono: 'VT323', 'JetBrains Mono', monospace;
+  --radius-sm: 0px;
+  --radius-md: 2px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+  --radius-full: 2px;
+}
+
+/* 3. Retro Windows 95 / Classic 90s OS Desktop */
+[data-theme="win95"] {
+  --bg-darkest: #008080;
+  --bg-dark: #006666;
+  --bg-card: #c0c0c0;
+  --bg-card-hover: #d4d0c8;
+  --bg-elevated: #d4d0c8;
+  --bg-glass: #c0c0c0;
+  --bg-input: #ffffff;
+  --primary: #000080;
+  --primary-light: #1084d0;
+  --primary-dark: #000050;
+  --primary-glow: rgba(0, 0, 128, 0.25);
+  --secondary: #008080;
+  --secondary-light: #00aaaa;
+  --secondary-glow: rgba(0, 128, 128, 0.25);
+  --accent-purple: #800080;
+  --accent-emerald: #008000;
+  --accent-emerald-glow: rgba(0, 128, 0, 0.25);
+  --accent-amber: #808000;
+  --accent-rose: #800000;
+  --text-main: #000000;
+  --text-muted: #2d2d2d;
+  --text-dim: #555555;
+  --text-inverse: #ffffff;
+  --border-subtle: #808080;
+  --border-light: #ffffff;
+  --border-glow: #000080;
+  --shadow-sm: none;
+  --shadow-lg: 2px 2px 0px #000000;
+  --shadow-glow: none;
+  --shadow-cyan-glow: none;
+  --font-heading: 'Pixelify Sans', 'Tahoma', 'Segoe UI', sans-serif;
+  --font-body: 'Tahoma', 'Segoe UI', 'Inter', sans-serif;
+  --font-mono: 'Courier New', monospace;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-full: 0px;
+}
+
+/* 4. Neo-Brutalist 90s Arcade / 16-Bit Pop */
+[data-theme="arcade"] {
+  --bg-darkest: #181528;
+  --bg-dark: #221d38;
+  --bg-card: #ffe600;
+  --bg-card-hover: #fff04d;
+  --bg-elevated: #ff0077;
+  --bg-glass: #00e5ff;
+  --bg-input: #ffffff;
+  --primary: #ff0077;
+  --primary-light: #ff3399;
+  --primary-dark: #c4005c;
+  --primary-glow: rgba(255, 0, 119, 0.4);
+  --secondary: #00e5ff;
+  --secondary-light: #6befff;
+  --secondary-glow: rgba(0, 229, 255, 0.4);
+  --accent-purple: #8400ff;
+  --accent-emerald: #00f59b;
+  --accent-emerald-glow: rgba(0, 245, 155, 0.4);
+  --accent-amber: #ffe600;
+  --accent-rose: #ff2a4b;
+  --text-main: #000000;
+  --text-muted: #242230;
+  --text-dim: #4d4a5e;
+  --text-inverse: #ffffff;
+  --border-subtle: #000000;
+  --border-light: #000000;
+  --border-glow: #000000;
+  --shadow-sm: 3px 3px 0px #000000;
+  --shadow-lg: 6px 6px 0px #000000;
+  --shadow-glow: 4px 4px 0px #ff0077;
+  --shadow-cyan-glow: 4px 4px 0px #00e5ff;
+  --font-heading: 'Press Start 2P', 'Outfit', cursive, sans-serif;
+  --font-body: 'Outfit', 'Inter', sans-serif;
+  --font-mono: 'VT323', 'JetBrains Mono', monospace;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+}
+
 
 /* Reset & Base */
 *, *::before, *::after {
