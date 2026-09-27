@@ -56,6 +56,24 @@
   --shadow-lg: var(--clay-shadow-card);
   --shadow-glow: 0 12px 32px var(--primary-glow);
   --shadow-cyan-glow: 0 12px 32px var(--secondary-glow);
+  
+  /* Typography */
+  --font-heading: 'Outfit', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  /* Transitions */
+  --transition-fast: 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-normal: 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-slow: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  
+  /* Clay Radii (Generously puffy, soft and rounded) */
+  --radius-sm: 14px;
+  --radius-md: 20px;
+  --radius-lg: 26px;
+  --radius-xl: 32px;
+  --radius-full: 9999px;
+  --max-width: 1280px;
 }
 
 /* 1. Optional Light Porcelain Cloud Theme */
@@ -87,25 +105,6 @@
   --border-subtle: rgba(255, 255, 255, 0.85);
   --border-light: rgba(255, 255, 255, 0.98);
   --border-glow: rgba(92, 98, 236, 0.35);
-}
-  
-  /* Typography */
-  --font-heading: 'Outfit', sans-serif;
-  --font-body: 'Plus Jakarta Sans', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  
-  /* Transitions */
-  --transition-fast: 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
-  --transition-normal: 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-  --transition-slow: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  
-  /* Clay Radii (Generously puffy, soft and rounded) */
-  --radius-sm: 14px;
-  --radius-md: 20px;
-  --radius-lg: 26px;
-  --radius-xl: 32px;
-  --radius-full: 9999px;
-  --max-width: 1280px;
 }
 
 /* ==========================================================================
@@ -4853,6 +4852,7 @@ input:checked + .toggle-slider:before {
   margin: 0 !important;
   display: -webkit-box !important;
   -webkit-line-clamp: 4 !important;
+  line-clamp: 4 !important;
   -webkit-box-orient: vertical !important;
   overflow: hidden !important;
 }
@@ -5536,6 +5536,7 @@ input:checked + .toggle-slider:before {
   flex-direction: column;
   align-items: flex-end;
   pointer-events: none;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -5558,6 +5559,7 @@ input:checked + .toggle-slider:before {
   gap: 8px;
   animation: sparkyPopIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
   transform-origin: bottom right;
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
 }
 
@@ -5717,6 +5719,7 @@ input:checked + .toggle-slider:before {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+  -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   animation: sparkyMenuSlide 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   transform-origin: bottom right;
@@ -5864,6 +5867,7 @@ input:checked + .toggle-slider:before {
   color: var(--text-main) !important;
   box-shadow: var(--clay-shadow-pill) !important;
   transition: all var(--transition-fast) !important;
+  -webkit-user-select: none !important;
   user-select: none !important;
 }
 
