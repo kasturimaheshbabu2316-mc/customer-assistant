@@ -369,10 +369,14 @@
 
                 <!-- Customer Reply Box -->
                 <form id="cust-ticket-reply-form" onsubmit="handleCustomerTicketReply(event)" class="ticket-reply-box">
-                  <textarea id="cust-reply-input" class="form-textarea" rows="2" placeholder="Reply or provide additional information..." title="Customer reply input" aria-label="Customer reply input" required></textarea>
+                  <div class="ticket-reply-box-header">
+                    <span class="reply-box-title"><i class="fa-solid fa-reply text-primary"></i> Customer Follow-Up Response</span>
+                    <span class="reply-box-hint">Ask a question or upload additional details for the support team</span>
+                  </div>
+                  <textarea id="cust-reply-input" class="form-textarea cust-reply-textarea" rows="4" placeholder="Reply or provide additional information regarding your ticket..." title="Customer reply input" aria-label="Customer reply input" required></textarea>
                   <div class="reply-actions-row">
-                    <button type="submit" class="btn btn-primary btn-sm" id="btn-cust-send-reply">
-                      <i class="fa-solid fa-paper-plane"></i> Send Reply
+                    <button type="submit" class="btn btn-primary btn-sm btn-glow" id="btn-cust-send-reply">
+                      <i class="fa-solid fa-paper-plane"></i> Send Follow-Up Reply
                     </button>
                   </div>
                 </form>
@@ -532,5 +536,6 @@
 
   <script src="js/app.js?v=2.5"></script>
   <script src="js/clay-theme.js?v=2.5"></script>
+  <script src="js/kid-assistant.js?v=2.5"></script>
 </body>
 </html>

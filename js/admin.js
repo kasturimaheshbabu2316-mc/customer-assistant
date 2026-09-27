@@ -424,20 +424,28 @@ function renderAdminTicketsList() {
             <p id="copilot-draft-text-${t.id}" class="copilot-draft-content"></p>
           </div>
 
-          <!-- Reply Composer -->
+          <!-- Owner & Staff Reply Composer -->
           <div class="agent-reply-composer">
-            <textarea id="agent-reply-text-${t.id}" class="form-textarea" rows="2" placeholder="Type reply to customer or internal staff note..." title="Type agent reply" aria-label="Type agent reply"></textarea>
+            <div class="agent-reply-header">
+              <span class="agent-reply-title">
+                <i class="fa-solid fa-user-shield text-primary"></i> Owner &amp; Support Response Desk
+              </span>
+              <span class="agent-reply-hint">
+                <i class="fa-solid fa-globe text-cyan"></i> Sent directly to Customer's Live Ticket Thread
+              </span>
+            </div>
+            <textarea id="agent-reply-text-${t.id}" class="form-textarea owner-reply-textarea" rows="5" placeholder="Type official resolution, return instructions, or staff response for customer..." title="Type agent reply" aria-label="Type agent reply"></textarea>
             <div class="agent-reply-controls">
               <label for="is-note-${t.id}" class="agent-note-checkbox-label">
-                <input type="checkbox" id="is-note-${t.id}" title="Toggle confidential staff note" aria-label="Toggle confidential staff note">
-                <span>🔒 Confidential Staff Note</span>
+                <input type="checkbox" id="is-note-${t.id}" title="Toggle confidential staff note" aria-label="Toggle confidential staff note" onchange="toggleStaffNoteVisual('${t.id}', this.checked)">
+                <span>🔒 Confidential Staff Note (Internal Only)</span>
               </label>
               <div class="btn-group-sm">
                 <button type="button" class="btn btn-outline btn-sm" onclick="updateTicketStatus('${t.id}', 'Resolved')">
                   <i class="fa-solid fa-check"></i> Mark Resolved
                 </button>
-                <button type="button" class="btn btn-primary btn-sm" onclick="sendAgentMessage('${t.id}')">
-                  <i class="fa-solid fa-paper-plane"></i> Send
+                <button type="button" class="btn btn-primary btn-sm btn-glow" onclick="sendAgentMessage('${t.id}')">
+                  <i class="fa-solid fa-paper-plane"></i> Send Official Response
                 </button>
               </div>
             </div>
@@ -486,6 +494,18 @@ async function applyMacro(ticketId, macroId) {
     }
   } catch (e) {
     alert('Failed to apply macro.');
+  }
+}
+
+function toggleStaffNoteVisual(ticketId, isNote) {
+  const box = document.getElementById(`agent-reply-text-${ticketId}`);
+  if (!box) return;
+  if (isNote) {
+    box.classList.add('staff-note-active');
+    box.placeholder = "🔒 Internal confidential note (NOT visible to customer)...";
+  } else {
+    box.classList.remove('staff-note-active');
+    box.placeholder = "Type official resolution, return instructions, or staff response for customer...";
   }
 }
 

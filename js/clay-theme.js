@@ -7,8 +7,10 @@
 (function () {
   'use strict';
 
-  // Clear legacy retro-theme storage so the fresh Claymorphism design takes full priority
-  try {
+    // Clear legacy retro-theme storage so the fresh Claymorphism design takes full priority
+    if (localStorage.getItem('omnidesk_clay_theme') === 'porcelain' || !localStorage.getItem('omnidesk_clay_theme')) {
+      localStorage.setItem('omnidesk_clay_theme', 'midnight');
+    }
     if (localStorage.getItem('omnidesk_retro_theme')) {
       localStorage.removeItem('omnidesk_retro_theme');
     }
@@ -170,15 +172,20 @@
   class ClayThemeManager {
     constructor() {
       this.sound = new ClayAudioEngine();
-      this.activeTheme = localStorage.getItem('omnidesk_clay_theme') || 'porcelain';
+      let savedTheme = localStorage.getItem('omnidesk_clay_theme');
+      if (!savedTheme || savedTheme === 'porcelain') {
+        savedTheme = 'midnight';
+        try { localStorage.setItem('omnidesk_clay_theme', 'midnight'); } catch (e) {}
+      }
+      this.activeTheme = savedTheme;
 
       this.themes = [
+        { id: 'midnight', name: 'Midnight Velvet', icon: 'fa-moon', color: '#818cf8', desc: 'Deep Velvet Obsidian Dark Clay' },
+        { id: 'cyberpunk', name: 'Cyberpunk Neon', icon: 'fa-microchip', color: '#00f0ff', desc: 'Dark Neon-Noir Cyberpunk' },
         { id: 'porcelain', name: 'Porcelain Cloud', icon: 'fa-cloud', color: '#6366f1', desc: 'Soft Ceramic White & Indigo Clay' },
         { id: 'marshmallow', name: 'Candy Marshmallow', icon: 'fa-candy-cane', color: '#ec4899', desc: 'Pastel Bubblegum & Lilac Clay' },
         { id: 'mint', name: 'Mint & Eucalyptus', icon: 'fa-leaf', color: '#10b981', desc: 'Fresh Soothing Sage Clay' },
-        { id: 'peach', name: 'Warm Peach & Coral', icon: 'fa-sun', color: '#f97316', desc: 'Sunny Warm Bisque Clay' },
-        { id: 'midnight', name: 'Midnight Velvet', icon: 'fa-moon', color: '#818cf8', desc: 'Deep Velvet Obsidian Dark Clay' },
-        { id: 'cyberpunk', name: 'Cyberpunk Neon', icon: 'fa-microchip', color: '#00f0ff', desc: 'Dark Neon-Noir Cyberpunk' }
+        { id: 'peach', name: 'Warm Peach & Coral', icon: 'fa-sun', color: '#f97316', desc: 'Sunny Warm Bisque Clay' }
       ];
 
       this.init();
@@ -198,18 +205,14 @@
 
     applyTheme(themeId, playSound = true) {
       this.activeTheme = themeId;
-      localStorage.setItem('omnidesk_clay_theme', themeId);
+      try { localStorage.setItem('omnidesk_clay_theme', themeId); } catch (e) {}
 
       // Lazy-load cyberpunk CSS when needed
       if (themeId === 'cyberpunk') {
         this._ensureCyberpunkCSS();
       }
 
-      if (themeId === 'porcelain') {
-        document.documentElement.removeAttribute('data-theme');
-      } else {
-        document.documentElement.setAttribute('data-theme', themeId);
-      }
+      document.documentElement.setAttribute('data-theme', themeId);
 
       // Sync any admin dropdown if present
       const adminSelects = [
