@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin &amp; UX Control Center | OmniDesk AI</title>
   <meta name="description" content="Dedicated UX Feature Controls, Knowledge Base Studio, Agent Escalation Desk, and Telemetry Center for OmniDesk AI.">
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/cyberpunk.css">
+  <link rel="stylesheet" href="css/style.css?v=2.5">
+  <link rel="stylesheet" href="css/cyberpunk.css?v=2.5">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body class="body-noscroll">
@@ -34,6 +34,9 @@
         </div>
         <button type="submit" class="btn btn-primary btn-lg admin-auth-btn" id="btn-admin-unlock">
           <i class="fa-solid fa-unlock"></i> Authenticate &amp; Access
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm admin-auth-btn admin-auth-autofill-btn" onclick="document.getElementById('admin-key-input').value='admin-secret-key-2026'; document.getElementById('btn-admin-unlock').click();">
+          <i class="fa-solid fa-key text-cyan"></i> Auto-Fill Default Key &amp; Unlock
         </button>
       </form>
       <div class="admin-auth-back-wrap">
@@ -553,7 +556,7 @@
     </div>
   </div>
 
-  <script src="js/admin.js"></script>
-  <script src="js/clay-theme.js"></script>
+  <script src="js/admin.js?v=2.5"></script>
+  <script src="js/clay-theme.js?v=2.5"></script>
 </body>
 </html>

@@ -287,7 +287,10 @@ function handleImageAttachment(event) {
 
     if (imgTag) imgTag.src = e.target.result;
     if (nameTag) nameTag.textContent = file.name;
-    if (bar) bar.classList.remove('is-hidden');
+    if (bar) {
+      bar.classList.remove('is-hidden');
+      bar.style.display = 'flex';
+    }
   };
   reader.readAsDataURL(file);
 }
@@ -297,7 +300,10 @@ function removeAttachedImage() {
   CustomerState.attachedImageMime = '';
   const bar = document.getElementById('attached-image-preview-bar');
   const input = document.getElementById('chat-file-input');
-  if (bar) bar.classList.add('is-hidden');
+  if (bar) {
+    bar.classList.add('is-hidden');
+    bar.style.display = 'none';
+  }
   if (input) input.value = '';
 }
 
@@ -452,6 +458,106 @@ async function processSyncQuery(query, existingMsgId = null) {
   }
 }
 
+// Markdown Parser for Grounded AI Responses
+function formatMarkdownContent(rawText) {
+  if (!rawText) return '';
+  if (typeof rawText !== 'string') return String(rawText);
+
+  // If it's a typing placeholder or custom HTML snippet, pass it through directly
+  if (rawText.startsWith('<span class="typing-cursor">') && !rawText.includes('\n')) {
+    return rawText;
+  }
+  if (rawText.includes('<div class="verdict-banner-row">')) {
+    return rawText;
+  }
+
+  // Preserve typing cursor if present during live SSE streaming
+  let hasCursor = false;
+  let text = rawText;
+  if (text.includes('<span class="typing-cursor"></span>')) {
+    hasCursor = true;
+    text = text.replace('<span class="typing-cursor"></span>', '');
+  }
+
+  // 1. Sanitize HTML entities
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  // 2. Headers
+  html = html.replace(/^### (.*$)/gim, '<h4>$1</h4>');
+  html = html.replace(/^## (.*$)/gim, '<h3>$1</h3>');
+
+  // 3. Bold & Italic
+  html = html.replace(/\*\*\*(.*?)\*\*\*/gim, '<strong><em>$1</em></strong>');
+  html = html.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>');
+  html = html.replace(/\*(.*?)\*/gim, '<em>$1</em>');
+  html = html.replace(/__(.*?)__/gim, '<strong>$1</strong>');
+  html = html.replace(/_([^_]+)_/gim, '<em>$1</em>');
+
+  // 4. Inline code
+  html = html.replace(/`([^`]+)`/gim, '<code class="inline-code">$1</code>');
+
+  // 5. Unordered and Ordered Lists
+  const lines = html.split('\n');
+  let inUl = false;
+  let inOl = false;
+  const processedLines = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const ulMatch = line.match(/^\s*[\*\-]\s+(.*)$/);
+    const olMatch = line.match(/^\s*(\d+)\.\s+(.*)$/);
+
+    if (ulMatch) {
+      if (!inUl) {
+        if (inOl) { processedLines.push('</ol>'); inOl = false; }
+        processedLines.push('<ul>');
+        inUl = true;
+      }
+      processedLines.push(`<li>${ulMatch[1]}</li>`);
+    } else if (olMatch) {
+      if (!inOl) {
+        if (inUl) { processedLines.push('</ul>'); inUl = false; }
+        processedLines.push('<ol>');
+        inOl = true;
+      }
+      processedLines.push(`<li>${olMatch[2]}</li>`);
+    } else {
+      if (inUl) { processedLines.push('</ul>'); inUl = false; }
+      if (inOl) { processedLines.push('</ol>'); inOl = false; }
+      processedLines.push(line);
+    }
+  }
+  if (inUl) processedLines.push('</ul>');
+  if (inOl) processedLines.push('</ol>');
+
+  html = processedLines.join('\n');
+
+  // 6. Paragraphs and breaks
+  html = html.replace(/\n\n+/g, '</p><p>');
+  html = html.replace(/\n/g, '<br>');
+  html = `<p>${html}</p>`;
+
+  // Clean redundant wrappers
+  html = html
+    .replace(/<p><\/p>/g, '')
+    .replace(/<p><h([34])>/g, '<h$1>')
+    .replace(/<\/h([34])><\/p>/g, '</h$1>')
+    .replace(/<p><([uo]l)>/g, '<$1>')
+    .replace(/<\/([uo]l)><\/p>/g, '</$1>')
+    .replace(/<br><([uo]l)>/g, '<$1>')
+    .replace(/<\/([uo]l)><br>/g, '</$1>')
+    .replace(/<br><h([34])>/g, '<h$1>')
+    .replace(/<\/h([34])><br>/g, '</h$1>');
+
+  if (hasCursor) {
+    html += '<span class="typing-cursor"></span>';
+  }
+  return html;
+}
+
 function appendChatMessage(role, content, sources = [], latency = null, imageSrc = null) {
   const feed = document.getElementById('chat-feed');
   const msgId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
@@ -465,12 +571,13 @@ function appendChatMessage(role, content, sources = [], latency = null, imageSrc
     `<div class="avatar-badge avatar-user"><i class="fa-solid fa-user"></i></div>`;
 
   const imgHtml = imageSrc ? `<div class="msg-attached-image"><img src="${imageSrc}" alt="Attached photo" class="msg-img-preview"></div>` : '';
+  const formattedContent = role === 'assistant' ? formatMarkdownContent(content) : content;
 
   row.innerHTML = `
     ${avatar}
     <div class="msg-content-wrapper">
       ${imgHtml}
-      <div class="msg-bubble-content">${content}</div>
+      <div class="msg-bubble-content">${formattedContent}</div>
       ${role === 'assistant' ? `
       <div class="msg-actions-bar">
         <button type="button" class="msg-btn-action" onclick="copyMessageText(this)"><i class="fa-solid fa-copy"></i> Copy</button>
@@ -490,7 +597,7 @@ function updateChatMessage(msgId, content) {
   const row = document.getElementById(msgId);
   if (!row) return;
   const bubble = row.querySelector('.msg-bubble-content');
-  if (bubble) bubble.innerHTML = content;
+  if (bubble) bubble.innerHTML = formatMarkdownContent(content);
   const feed = document.getElementById('chat-feed');
   if (feed) feed.scrollTop = feed.scrollHeight;
 }
@@ -512,7 +619,7 @@ function showCitationSources(sources) {
   list.innerHTML = sources.map(s => `
     <div class="source-card">
       <div class="source-card-header">
-        <i class="fa-solid fa-file-check text-primary"></i>
+        <i class="fa-solid fa-file-circle-check text-primary"></i>
         <span class="source-title">${s.title}</span>
       </div>
       <div class="source-meta-row">
@@ -530,7 +637,7 @@ function clearChatFeed() {
       <div class="chat-msg-row assistant-msg">
         <div class="avatar-badge avatar-assistant"><i class="fa-solid fa-robot"></i></div>
         <div class="msg-content-wrapper">
-          <div class="msg-bubble-content">${CustomerState.features.welcome_greeting}</div>
+          <div class="msg-bubble-content">${formatMarkdownContent(CustomerState.features.welcome_greeting)}</div>
         </div>
       </div>
     `;

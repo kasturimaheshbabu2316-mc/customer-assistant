@@ -1,7 +1,9 @@
 # OmniDesk AI — Complete Project Codebase Archive
+>
 > Generated on: `2026-09-24 16:03:27` | Total Files: `38` (Binary files excluded from text dump)
 
 ## Table of Contents
+
 - [.dockerignore](#dockerignore)
 - [.env.example](#envexample)
 - [.github/workflows/ci.yml](#githubworkflowsciyml)
@@ -25,7 +27,7 @@
 - [knowledge_base/company_faq.txt](#knowledgebasecompanyfaqtxt)
 - [main.py](#mainpy)
 - [nixpacks.toml](#nixpackstoml)
-- [Procfile](#procfile)
+- [Procfile](#procfile) 
 - [rag_engine.py](#ragenginepy)
 - [railway.json](#railwayjson)
 - [README.md](#readmemd)
@@ -44,6 +46,7 @@
 ---
 
 ### <a id="dockerignore"></a> `.dockerignore`
+
 ```
 .venv
 __pycache__
@@ -56,6 +59,7 @@ __pycache__
 ```
 
 ### <a id="envexample"></a> `.env.example`
+
 ```
 # ==============================================================================
 # OMNIDESK AI - ENVIRONMENT TEMPLATE
@@ -83,6 +87,7 @@ KNOWLEDGE_BASE_PATH=knowledge_base/company_faq.txt
 ```
 
 ### <a id="githubworkflowsciyml"></a> `.github/workflows/ci.yml`
+
 ```yaml
 name: OmniDesk AI — Automated CI/CD Regression Pipeline
 
@@ -129,6 +134,7 @@ jobs:
 ```
 
 ### <a id="gitignore"></a> `.gitignore`
+
 ```
 # Python
 __pycache__/
@@ -179,6 +185,7 @@ Thumbs.db
 ```
 
 ### <a id="adminhtml"></a> `admin.html`
+
 ```html
 <!DOCTYPE html>
 <html lang="en">
@@ -719,6 +726,7 @@ Thumbs.db
 ```
 
 ### <a id="apphtml"></a> `app.html`
+
 ```html
 <!DOCTYPE html>
 <html lang="en">
@@ -1258,6 +1266,7 @@ Thumbs.db
 ```
 
 ### <a id="apppy"></a> `app.py`
+
 ```python
 import os
 import streamlit as st
@@ -1940,6 +1949,7 @@ with tab_analytics:
 ```
 
 ### <a id="archiveprojectpy"></a> `archive_project.py`
+
 ```python
 #!/usr/bin/env python3
 """
@@ -2137,6 +2147,7 @@ if __name__ == "__main__":
 ```
 
 ### <a id="cssstylecss"></a> `css/style.css`
+
 ```css
 /* ==========================================================================
    OMNIDESK AI - CORE DESIGN SYSTEM & MASTER STYLESHEET
@@ -5785,6 +5796,7 @@ input:checked + .toggle-slider:before {
 ```
 
 ### <a id="databasepy"></a> `database.py`
+
 ```python
 """
 OmniDesk AI — SQLite Persistence Layer
@@ -6401,6 +6413,7 @@ init_db()
 ```
 
 ### <a id="docarchitecturemd"></a> `doc/architecture.md`
+
 ```markdown
 # OmniDesk AI — Technical Architecture Document
 
@@ -8012,6 +8025,7 @@ gantt
 ```
 
 ### <a id="jsadminjs"></a> `js/admin.js`
+
 ```javascript
 /* ==========================================================================
    OMNIDESK AI - ADMIN & UX CONTROL CENTER CONTROLLER (admin.js)
@@ -8682,6 +8696,7 @@ async function savePipelineSettings() {
 ```
 
 ### <a id="jsappjs"></a> `js/app.js`
+
 ```javascript
 /* ==========================================================================
    OMNIDESK AI - CUSTOMER SUPPORT PORTAL CONTROLLER (app.js)
@@ -9528,6 +9543,7 @@ async function submitCsatFeedback() {
 ```
 
 ### <a id="jslandingjs"></a> `js/landing.js`
+
 ```javascript
 /* ==========================================================================
    OMNIDESK AI - LANDING PAGE INTERACTIVE ENGINE
@@ -9878,6 +9894,7 @@ function handleLeadSubmit(e) {
 ```
 
 ### <a id="knowledgebasecompanyfaqtxt"></a> `knowledge_base/company_faq.txt`
+
 ```text
 ================================================================================
                     OMNIDESK AI / APEX RETAIL STORE POLICIES & FAQ
@@ -9924,6 +9941,7 @@ function handleLeadSubmit(e) {
 ```
 
 ### <a id="mainpy"></a> `main.py`
+
 ```python
 """
 Main entry point for OmniDesk AI Backend.
@@ -9944,6 +9962,7 @@ if __name__ == "__main__":
 ```
 
 ### <a id="nixpackstoml"></a> `nixpacks.toml`
+
 ```toml
 [phases.setup]
 nixPkgs = ["python311"]
@@ -9957,12 +9976,14 @@ cmd = "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"
 ```
 
 ### <a id="procfile"></a> `Procfile`
+
 ```
 web: uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
 
 ```
 
 ### <a id="ragenginepy"></a> `rag_engine.py`
+
 ```python
 import os
 import re
@@ -10946,6 +10967,7 @@ def analyze_claim_image(
 ```
 
 ### <a id="railwayjson"></a> `railway.json`
+
 ```json
 {
   "$schema": "https://railway.com/railway.schema.json",
@@ -10964,6 +10986,7 @@ def analyze_claim_image(
 ```
 
 ### <a id="readmemd"></a> `README.md`
+
 ```markdown
 # OmniDesk AI — Enterprise RAG Customer Support Hub
 
@@ -11049,39 +11072,47 @@ flowchart TD
 ## 🌟 Key Capabilities by Phase
 
 ### 1. Phase 1: Core Grounded RAG & Real-Time SSE Token Streaming
+
 - **Dense Embedding Search**: Chunks and indexes company policies (`company_faq.txt`) into ChromaDB using 3,072-dim embeddings.
 - **Server-Sent Events (SSE)**: Streaming endpoint (`/ask/stream`) delivering sub-second token streams with verified citations.
 - **Strict Distance Guardrails**: Deflects out-of-scope/unverified inquiries to human agents to prevent hallucinations.
 
 ### 2. Phase 2: Production Hardening & Security
+
 - **Sliding-Window Rate Limiting**: Per-client IP throttling returning `HTTP 429 Too Many Requests` with dynamic `Retry-After`.
 - **Admin API Key Authorization**: Sensitive management endpoints guarded via `X-API-Key` headers.
 - **Input Validation**: Pydantic models enforcing payload size limits and non-empty checks (`422 Unprocessable Entity`).
 
 ### 3. Phase 3: Smart Escalation & Customer ID Routing
+
 - **Automated Ticket Creation**: Automatic customer profile assignment (`CUST-XXXX`), VIP tier tracking, and priority triage.
 - **Lifecycle Workflows**: Status transitions (`Open` $\to$ `In Progress` $\to$ `Resolved`), agent assignments, and resolution tracking.
 
 ### 4. Phase 4: Multi-Channel Intent Classification & CRM Export
+
 - **Intent & Urgency Classification**: Auto-tagging inquiries into `Return & Refund`, `Shipping & Logistics`, `Warranty & Claims`, `Billing & Payment`, `Order Modification`.
 - **CRM Integration**: 1-click CSV and JSON data export streams.
 - **Streamlit Command Center ([app.py](file:///c:/Users/kastu/Desktop/mahesh%20pro/app.py))**: 4-tab control center.
 
 ### 5. Phase 5: AI Agent Copilot & Live SLA Countdown Engine
+
 - **AI Reply Draft Generator (`/api/tickets/{id}/suggest-reply`)**: Synthesizes grounded resolution drafts referencing official policies.
 - **Conversation Threading & Internal Staff Notes**: Chronological thread of customer interactions with private amber-locked internal notes (`🔒 Staff Note`).
 - **Live SLA Countdown Badges**: Real-time dynamic countdowns (Urgent: 1h, High: 4h, Medium: 24h, Low: 48h).
 
 ### 6. Phase 6: Multi-Language Auto-Localization, CSAT & Quick Macros
+
 - **7-Language Localization**: Automatic language detection and localized RAG answering (English, Spanish, French, German, Japanese, Portuguese, Hindi).
 - **CSAT Feedback Telemetry**: Dynamic `👍 Helpful` and `👎 Needs Work` ratings with live scoring (`/api/analytics`).
 - **Macro Automation Rules**: Pre-configured templates (`📦 30-Day RMA`, `🛡️ 1-Yr Warranty`, `💳 Price Match`, `✈️ DHL DDP`) with automatic variable substitution (`{{customer_name}}`, `{{ticket_id}}`, `{{assigned_agent}}`).
 
 ### 7. Phase 7: Autonomous Synthetic Benchmarking & Incident Webhooks
+
 - **Synthetic Load & Accuracy Benchmark Studio**: Telemetry measuring Throughput (QPS), Latency percentiles (P50, P90, P99), Guardrail precision, and Intent classification accuracy across simulated test scenarios.
 - **Outbound Incident Webhook Alert Dispatcher**: Automatic incident dispatching to external systems (e.g. Slack `#support-alerts`, PagerDuty) on urgent VIP tickets or low CSAT ratings.
 
 ### 8. Phase 8: Hybrid Search & Multi-Modal Vision RAG Claim Inspection
+
 - **Hybrid Search (BM25 + Vector RRF)**: Reciprocal Rank Fusion combining keyword exact-matching with semantic dense embeddings for high-precision retrieval (`/api/search/hybrid`).
 - **Multi-Modal Vision Claim Inspection**: Inspects product photos and damage claims, cross-referencing visual defects against Section 4 warranty exclusion policies to verify coverage (`/api/vision/analyze-claim`).
 
@@ -11197,6 +11228,7 @@ python main.py
 - **Support Hub Operator SPA**: Open [app.html](file:///c:/Users/kastu/Desktop/mahesh%20pro/app.html) directly in any modern browser.
 - **Commercial Landing Page**: Open [index.html](file:///c:/Users/kastu/Desktop/mahesh%20pro/index.html).
 - **Streamlit Control Center**:
+
   ```bash
   streamlit run app.py
   ```
@@ -11258,6 +11290,7 @@ python test_phase6_features.py      # Multi-Language, CSAT & Quick Macros
 ### Railway / Render Deployment
 
 The repository includes ready-to-deploy cloud manifests:
+
 - `railway.json` & `nixpacks.toml`: Configured for zero-config Railway builds.
 - `Procfile`: Declares the web process `web: python main.py`.
 
@@ -11302,6 +11335,7 @@ pydantic>=2.7.0
 ```
 
 ### <a id="requirementstxt"></a> `requirements.txt`
+
 ```text
 fastapi>=0.115.0
 uvicorn>=0.30.0
@@ -11315,6 +11349,7 @@ pydantic>=2.7.0
 ```
 
 ### <a id="serverpy"></a> `server.py`
+
 ```python
 from fastapi import FastAPI, HTTPException, Request, Header, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -12285,6 +12320,7 @@ if __name__ == "__main__":
 ```
 
 ### <a id="testmastersuitepy"></a> `test_master_suite.py`
+
 ```python
 """
 OmniDesk AI — Unified Master Automated Test Suite (Phases 1 to 7)
@@ -12605,6 +12641,7 @@ if __name__ == "__main__":
 ```
 
 ### <a id="testphase4featurespy"></a> `test_phase4_features.py`
+
 ```python
 import os
 import json
@@ -12706,6 +12743,7 @@ if __name__ == "__main__":
 ```
 
 ### <a id="testphase5copilotpy"></a> `test_phase5_copilot.py`
+
 ```python
 import os
 import json
@@ -12828,6 +12866,7 @@ if __name__ == "__main__":
 ```
 
 ### <a id="testphase6featurespy"></a> `test_phase6_features.py`
+
 ```python
 """
 OmniDesk AI — Phase 6 Automated Test Suite
@@ -13140,6 +13179,7 @@ if __name__ == "__main__":
 ```
 
 ### <a id="testphase8featurespy"></a> `test_phase8_features.py`
+
 ```python
 """
 OmniDesk AI — Phase 8 Automated Test Suite
@@ -13298,6 +13338,7 @@ if __name__ == "__main__":
 ```
 
 ### <a id="testproductionhardeningpy"></a> `test_production_hardening.py`
+
 ```python
 import os
 import time
@@ -13410,6 +13451,7 @@ if __name__ == "__main__":
 ```
 
 ### <a id="testragintegrationpy"></a> `test_rag_integration.py`
+
 ```python
 import os
 import sys
@@ -13547,6 +13589,7 @@ if __name__ == "__main__":
 ```
 
 ### <a id="testticketescalationpy"></a> `test_ticket_escalation.py`
+
 ```python
 import os
 from fastapi.testclient import TestClient
