@@ -222,7 +222,8 @@ async function handleDemoSubmit() {
 
   // Try live backend streaming
   try {
-    const res = await fetch('http://localhost:8000/ask/stream', {
+    const backendUrl = localStorage.getItem('omni_backend_url') || (window.location.origin.startsWith('http') && !window.location.port.match(/^(5500|3000|5173)$/) ? window.location.origin : 'http://localhost:8000');
+    const res = await fetch(`${backendUrl}/ask/stream`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: userText }),

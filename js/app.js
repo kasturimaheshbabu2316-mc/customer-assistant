@@ -72,6 +72,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await checkBackendHealth();
   renderCustomerPolicies();
   initCustomerWelcomeGreeting();
+  handleUrlParameters();
 });
 
 // Load dynamic UX features
@@ -191,6 +192,36 @@ function switchCustomerView(viewName) {
 function toggleAppSidebar() {
   const sidebar = document.getElementById('app-sidebar');
   if (sidebar) sidebar.classList.toggle('mobile-open');
+}
+
+// Handle deep-links via URL query parameters (?prompt=..., ?ticket=..., ?view=...)
+function handleUrlParameters() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const prompt = params.get('prompt') || params.get('q');
+    const view = params.get('view');
+    const ticketId = params.get('ticket') || params.get('id');
+
+    if (view) {
+      switchCustomerView(view);
+    }
+
+    if (ticketId) {
+      switchCustomerView('tickets');
+      const ticketInput = document.getElementById('lookup-ticket-id-input');
+      if (ticketInput) {
+        ticketInput.value = ticketId;
+        const btn = document.getElementById('btn-lookup-ticket');
+        if (btn) btn.click();
+      }
+    } else if (prompt) {
+      setTimeout(() => {
+        sendQuickPrompt(prompt);
+      }, 350);
+    }
+  } catch (e) {
+    console.warn('URL parameter handling skipped:', e);
+  }
 }
 
 // Check backend connectivity
