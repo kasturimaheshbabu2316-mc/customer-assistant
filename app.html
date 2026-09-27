@@ -118,6 +118,11 @@
               <option value="Hindi">🇮🇳 हिन्दी</option>
             </select>
           </div>
+          <!-- Theme Mode Switcher (Light / Dark Mode) -->
+          <button type="button" class="btn btn-secondary btn-sm theme-mode-toggle-btn" id="theme-mode-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark / Light Mode" aria-label="Toggle Dark / Light Mode">
+            <i class="fa-solid fa-sun" id="theme-mode-icon"></i>
+            <span id="theme-mode-label">Light Mode</span>
+          </button>
           <button type="button" class="btn btn-secondary btn-sm" onclick="exportChatTranscript()" id="btn-export-chat" title="Export conversation as JSON">
             <i class="fa-solid fa-download"></i> Save Chat
           </button>
@@ -534,8 +539,8 @@
     </div>
   </div>
 
-  <script src="js/app.js?v=2.5"></script>
-  <script src="js/clay-theme.js?v=2.5"></script>
-  <script src="js/kid-assistant.js?v=2.5"></script>
+  <script src="js/clay-theme.js?v=3.0"></script>
+  <script src="js/app.js?v=3.0"></script>
+  <script src="js/kid-assistant.js?v=3.0"></script>
 </body>
 </html>

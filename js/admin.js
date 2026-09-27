@@ -686,3 +686,10 @@ async function savePipelineSettings() {
     alert('Failed to save pipeline settings.');
   }
 }
+
+function toggleThemeMode() {
+  if (window.ClayEngine) {
+    window.ClayEngine.toggleMode();
+  }
+}
+

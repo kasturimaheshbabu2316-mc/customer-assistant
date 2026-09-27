@@ -948,3 +948,10 @@ async function submitCsatFeedback() {
     closeCsatModal();
   }
 }
+
+function toggleThemeMode() {
+  if (window.ClayEngine) {
+    window.ClayEngine.toggleMode();
+  }
+}
+

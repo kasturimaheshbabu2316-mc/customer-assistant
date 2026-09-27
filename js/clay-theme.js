@@ -7,6 +7,13 @@
 (function () {
   'use strict';
 
+  window.toggleThemeMode = function () {
+    if (window.ClayEngine) {
+      window.ClayEngine.toggleMode();
+    }
+  };
+
+  try {
     // Clear legacy retro-theme storage so the fresh Claymorphism design takes full priority
     if (localStorage.getItem('omnidesk_clay_theme') === 'porcelain' || !localStorage.getItem('omnidesk_clay_theme')) {
       localStorage.setItem('omnidesk_clay_theme', 'midnight');
@@ -229,12 +236,55 @@
       });
 
       this.updateDockButtons();
+      this.updateThemeModeButtons();
 
       if (playSound) {
         this.sound.playPop(620);
       }
 
       window.dispatchEvent(new CustomEvent('omnidesk:themechange', { detail: { theme: themeId } }));
+    }
+
+    isDarkMode() {
+      return this.activeTheme === 'midnight' || this.activeTheme === 'cyberpunk';
+    }
+
+    toggleMode() {
+      const nextTheme = this.isDarkMode() ? 'porcelain' : 'midnight';
+      this.applyTheme(nextTheme, true);
+    }
+
+    updateThemeModeButtons() {
+      const isDark = this.isDarkMode();
+      const toggleBtns = document.querySelectorAll('.theme-mode-toggle-btn');
+      toggleBtns.forEach(btn => {
+        const icon = btn.querySelector('i');
+        const label = btn.querySelector('span');
+        if (isDark) {
+          if (icon) icon.className = 'fa-solid fa-sun';
+          if (label) label.textContent = 'Light Mode';
+          btn.title = 'Switch to Light Mode';
+          btn.setAttribute('aria-label', 'Switch to Light Mode');
+        } else {
+          if (icon) icon.className = 'fa-solid fa-moon';
+          if (label) label.textContent = 'Dark Mode';
+          btn.title = 'Switch to Dark Mode';
+          btn.setAttribute('aria-label', 'Switch to Dark Mode');
+        }
+      });
+
+      // Update dock mode switch buttons if present
+      const lightBtn = document.getElementById('clay-btn-mode-light');
+      const darkBtn = document.getElementById('clay-btn-mode-dark');
+      if (lightBtn && darkBtn) {
+        if (isDark) {
+          lightBtn.classList.remove('is-active');
+          darkBtn.classList.add('is-active');
+        } else {
+          lightBtn.classList.add('is-active');
+          darkBtn.classList.remove('is-active');
+        }
+      }
     }
 
     injectUI() {
@@ -263,7 +313,17 @@
           </div>
 
           <div class="clay-dock-body">
-            <div class="clay-section-label">Tactile Clay Palettes</div>
+            <div class="clay-section-label">Theme Mode</div>
+            <div class="clay-mode-switch-row" id="clay-mode-switch-row">
+              <button type="button" class="clay-mode-btn ${this.isDarkMode() ? '' : 'is-active'}" id="clay-btn-mode-light" onclick="window.ClayEngine.applyTheme('porcelain')">
+                <i class="fa-solid fa-sun" style="color: #f59e0b;"></i> Light
+              </button>
+              <button type="button" class="clay-mode-btn ${this.isDarkMode() ? 'is-active' : ''}" id="clay-btn-mode-dark" onclick="window.ClayEngine.applyTheme('midnight')">
+                <i class="fa-solid fa-moon" style="color: #818cf8;"></i> Dark
+              </button>
+            </div>
+
+            <div class="clay-section-label" style="margin-top: 10px;">Tactile Clay Palettes</div>
             <div class="clay-theme-grid">
               ${this.themes.map(t => `
                 <button type="button" class="clay-theme-btn ${this.activeTheme === t.id ? 'is-active' : ''}" data-theme-id="${t.id}" title="${t.desc}">
@@ -388,6 +448,13 @@
 
     attachSoundListeners() {
       document.addEventListener('click', (e) => {
+        const toggleBtn = e.target.closest('#theme-mode-toggle-btn, .theme-mode-toggle-btn');
+        if (toggleBtn) {
+          e.preventDefault();
+          this.toggleMode();
+          return;
+        }
+
         const target = e.target.closest('button, a.btn, .chip-btn, .sidebar-item-btn, .tab-btn, .msg-btn-action, .rating-star-btn');
         if (target && !target.closest('#clay-theme-dock')) {
           if (target.classList.contains('rating-star-btn') || target.textContent.includes('Submit') || target.textContent.includes('Resolve')) {
@@ -407,4 +474,6 @@
   }
 
   window.ClayEngine = new ClayThemeManager();
+  window.ClayTheme = window.ClayEngine;
+  window.toggleThemeMode = () => window.ClayEngine.toggleMode();
 })();

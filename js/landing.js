@@ -343,3 +343,10 @@ function handleLeadSubmit(e) {
   showToast(`Thank you, ${name}! Your sandbox credentials have been generated.`, 'success');
   e.target.reset();
 }
+
+function toggleThemeMode() {
+  if (window.ClayEngine) {
+    window.ClayEngine.toggleMode();
+  }
+}
+
