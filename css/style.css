@@ -2405,18 +2405,20 @@ input:checked + .toggle-slider:before {
 }
 
 .toast {
-  background: #ffffff;
+  background: var(--bg-card);
   border: 2px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: 1rem 1.5rem;
   color: var(--text-main);
   font-size: 0.94rem;
   font-weight: 600;
-  box-shadow: 12px 18px 38px rgba(155, 175, 205, 0.45);
+  box-shadow: 12px 18px 38px rgba(0, 0, 0, 0.45), var(--clay-shadow-card);
   display: flex;
   align-items: center;
   gap: 0.85rem;
   animation: slideInRight 0.3s ease-out;
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
 }
 
 .toast.success { border-left: 6px solid var(--accent-emerald); }

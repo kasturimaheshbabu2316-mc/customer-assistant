@@ -13,6 +13,39 @@
     }
   };
 
+  // Unified Non-Blocking Claymorphic Toast Notification System
+  window.showToast = function (message, type = 'info') {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'toast-container';
+      container.className = 'toast-container';
+      document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+
+    let icon = 'fa-circle-info';
+    if (type === 'success') icon = 'fa-circle-check';
+    if (type === 'error') icon = 'fa-triangle-exclamation';
+
+    toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
+    container.appendChild(toast);
+
+    if (window.ClayEngine && window.ClayEngine.sound) {
+      if (type === 'success') window.ClayEngine.sound.playSend();
+      else window.ClayEngine.sound.playPop(type === 'error' ? 320 : 640);
+    }
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(100%)';
+      toast.style.transition = 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      setTimeout(() => toast.remove(), 320);
+    }, 4200);
+  };
+
   try {
     // Clear legacy retro-theme storage so the fresh Claymorphism design takes full priority
     if (localStorage.getItem('omnidesk_clay_theme') === 'porcelain' || !localStorage.getItem('omnidesk_clay_theme')) {
