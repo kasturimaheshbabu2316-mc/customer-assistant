@@ -36,7 +36,7 @@
       this.hasDragged = false;
       this.dragOffset = { x: 0, y: 0 };
       this.dragStart = { x: 0, y: 0 };
-      this.roamMode = 'follow'; // 'follow' (mouse escort companion) | 'pinned' (stays at anchor)
+      this.roamMode = 'pinned'; // 'pinned' (stays at anchor; only moves when dragged by user)
 
       this.isTyping = false;
       this.isStreaming = false;
@@ -49,7 +49,7 @@
         "Psst! Did you know returns are super easy? 30 days! 🎁",
         "I'm super fast at looking up tracking codes! Vroom! 🏎️",
         "Got questions about warranty? Sparky knows it all! 🛠️",
-        "Drag me anywhere on your screen! I can fly! 🛸",
+        "Drag me anywhere on your screen! I'll stay right where you put me! ✨",
         "Click me! Give Sparky a high five! ✋",
         "Need a human agent? You can escalate anytime! 🤝",
         "Sparky is watching over you! Have a super duper day! 🌟"
@@ -239,7 +239,7 @@
               <span>🍦</span> Tell me a secret tip!
             </button>
             <button type="button" class="sparky-chip-btn" id="btn-sparky-roam">
-              <span>🛸</span> <strong id="sparky-roam-label">Roam Mode: Screen Escort (ON)</strong>
+              <span>📍</span> <strong id="sparky-roam-label">Drag & Move (Free Placement)</strong>
             </button>
             <button type="button" class="sparky-chip-btn" id="btn-sparky-sleep" style="margin-top: 4px; opacity: 0.85;">
               <span>💤</span> Nap Time (Minimize)
@@ -394,7 +394,7 @@
       const onDragMove = (clientX, clientY) => {
         if (!this.isDragging) return;
         const dist = Math.hypot(clientX - this.dragStart.x, clientY - this.dragStart.y);
-        if (dist > 18) {
+        if (dist > 8) {
           this.hasDragged = true;
         }
         const minX = 20, maxX = Math.max(minX, window.innerWidth - 130);
@@ -405,6 +405,11 @@
         this.target.y = this.pos.y;
         this.anchor.x = this.pos.x;
         this.anchor.y = this.pos.y;
+
+        const root = document.getElementById('sparky-mascot-root');
+        if (root) {
+          root.style.transform = `translate3d(${this.pos.x.toFixed(1)}px, ${this.pos.y.toFixed(1)}px, 0px)`;
+        }
       };
 
       const onDragEnd = () => {
@@ -420,9 +425,11 @@
           } catch (e) {}
           this.anchor.x = this.pos.x;
           this.anchor.y = this.pos.y;
+          this.target.x = this.pos.x;
+          this.target.y = this.pos.y;
           this.doJumpAnimation();
           this.playGiggleSound();
-          this.setEmotion('🚀', "Wheee! I love floating right here! ✨", 'cheer');
+          this.setEmotion('🚀', "Placed! I'll stay right here. Drag me anytime! ✨", 'cheer');
           setTimeout(() => { this.hasDragged = false; }, 150);
         } else {
           this.hasDragged = false;
@@ -480,7 +487,7 @@
       });
 
       // -----------------------------------------------------------------------
-      // 2. MOUSE ESCORT & EYE TRACKING ACROSS ENTIRE SCREEN
+      // 2. EYE & HEAD TRACKING (Anchor position remains fixed unless dragged)
       // -----------------------------------------------------------------------
       window.addEventListener('mousemove', (e) => {
         this.mouse.x = e.clientX;
@@ -488,28 +495,6 @@
         this.lastMouseMoveTime = Date.now();
 
         if (this.isAsleep || this.isDragging) return;
-
-        // When in companion roam mode, float smoothly near the cursor
-        if (this.roamMode === 'follow' && !this.isTyping && !this.isStreaming) {
-          let offsetX = 85;
-          let offsetY = -35;
-
-          // If too close to right viewport edge, flip to left of cursor
-          if (e.clientX + offsetX > window.innerWidth - 130) {
-            offsetX = -120;
-          }
-          // If too close to top edge, float slightly lower
-          if (e.clientY + offsetY < 50) {
-            offsetY = 30;
-          }
-
-          const targetX = Math.max(25, Math.min(window.innerWidth - 130, e.clientX + offsetX));
-          const targetY = Math.max(45, Math.min(window.innerHeight - 145, e.clientY + offsetY));
-          this.target.x = targetX;
-          this.target.y = targetY;
-          this.anchor.x = targetX;
-          this.anchor.y = targetY;
-        }
 
         const avatarEl = document.getElementById('sparky-avatar-btn');
         if (!avatarEl) return;
@@ -551,26 +536,12 @@
       });
 
       // -----------------------------------------------------------------------
-      // 3. TYPING MAGNET: SWOOP TO QUERY INPUT WHEN USER TYPES OR FOCUSES
+      // 3. TYPING REACTIONS: EMOTE AND ANIMATE IN PLACE WHILE USER TYPES
       // -----------------------------------------------------------------------
-      const snapToChatInput = (isBobbing = false) => {
-        if (!chatInput) return;
-        const rect = chatInput.getBoundingClientRect();
-        // Swoop directly near the query input box
-        const targetX = Math.max(30, Math.min(window.innerWidth - 140, rect.right - 120));
-        const bob = isBobbing ? (Math.sin(Date.now() / 70) * 7) : 0;
-        const targetY = Math.max(50, rect.top - 125 + bob);
-        this.target.x = targetX;
-        this.target.y = targetY;
-        this.anchor.x = targetX;
-        this.anchor.y = targetY;
-      };
-
       if (chatInput) {
         chatInput.addEventListener('focus', () => {
           if (!this.isAsleep) {
             this.isTyping = true;
-            snapToChatInput(false);
             this.setPose('typing');
             this.setEmotion('🤔', "Ooh! What can I search for you? I'm listening! ✍️", null, false);
           }
@@ -581,7 +552,6 @@
           this.isTyping = true;
           this.playPopTap();
           this.setPose('typing');
-          snapToChatInput(true);
 
           const val = chatInput.value.toLowerCase();
           if (val.includes('return') || val.includes('refund')) {
@@ -604,11 +574,6 @@
             if (!this.isStreaming && document.activeElement !== chatInput) {
               this.isTyping = false;
               this.setPose('idle');
-              // Return smoothly to companion mouse position
-              this.target.x = Math.max(30, Math.min(window.innerWidth - 130, this.mouse.x + 85));
-              this.target.y = Math.max(50, Math.min(window.innerHeight - 150, this.mouse.y - 35));
-              this.anchor.x = this.target.x;
-              this.anchor.y = this.target.y;
             }
           }, 800);
         });
@@ -659,22 +624,9 @@
       if (roamBtn) {
         roamBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          const label = document.getElementById('sparky-roam-label');
-          if (this.roamMode === 'follow') {
-            this.roamMode = 'pinned';
-            this.anchor.x = this.pos.x;
-            this.anchor.y = this.pos.y;
-            this.target.x = this.pos.x;
-            this.target.y = this.pos.y;
-            if (label) label.textContent = 'Roam Mode: Pinned Here (Anchor)';
-            this.playChimeSound();
-            this.setEmotion('⚓', "Anchored down! I'll guard this spot! You can drag me anytime! ⚓", 'idle');
-          } else {
-            this.roamMode = 'follow';
-            if (label) label.textContent = 'Roam Mode: Screen Escort (ON)';
-            this.playCelebrationFanfare();
-            this.setEmotion('🛸', "Wheee! Full-screen escort active! Move your mouse anywhere! 🚀", 'cheer');
-          }
+          this.doJumpAnimation();
+          this.playChimeSound();
+          this.setEmotion('📍', "Drag & Move is active! Click and drag my body anywhere on your screen! ✨", 'cheer');
         });
       }
 
@@ -753,33 +705,14 @@
         if (root && !this.isAsleep) {
           const now = Date.now();
 
-          // Persistent typing magnet while chat input is actively focused
-          if (chatInput && document.activeElement === chatInput) {
-            this.isTyping = true;
-            const rect = chatInput.getBoundingClientRect();
-            const targetX = Math.max(30, Math.min(window.innerWidth - 140, rect.right - 120));
-            const bob = Math.sin(now / 70) * 7;
-            const targetY = Math.max(50, rect.top - 125 + bob);
-            this.target.x = targetX;
-            this.target.y = targetY;
-            this.anchor.x = targetX;
-            this.anchor.y = targetY;
-          } else if (!this.isTyping && !this.isStreaming && !this.isDragging && (now - this.lastMouseMoveTime > 2200)) {
-            // Autonomous idle hover when user is inactive
-            const wanderX = Math.sin(now * 0.0013) * 55 + Math.cos(now * 0.0008) * 30;
-            const wanderY = Math.cos(now * 0.0017) * 40 + Math.sin(now * 0.0010) * 22;
-
-            const minX = 25, maxX = Math.max(minX, window.innerWidth - 130);
-            const minY = 45, maxY = Math.max(minY, window.innerHeight - 145);
-
-            this.target.x = Math.max(minX, Math.min(maxX, this.anchor.x + wanderX));
-            this.target.y = Math.max(minY, Math.min(maxY, this.anchor.y + wanderY));
-          }
-
-          // Spring physics & velocity damping towards target position
+          // Gentle floating physics: hovers in place around the user's dragged anchor (no wandering or jumping)
           if (!this.isDragging) {
-            const ax = (this.target.x - this.pos.x) * 0.055;
-            const ay = (this.target.y - this.pos.y) * 0.055;
+            const hoverBob = Math.sin(now * 0.002) * 5;
+            this.target.x = this.anchor.x;
+            this.target.y = this.anchor.y + hoverBob;
+
+            const ax = (this.target.x - this.pos.x) * 0.08;
+            const ay = (this.target.y - this.pos.y) * 0.08;
             this.vel.x = (this.vel.x + ax) * 0.82;
             this.vel.y = (this.vel.y + ay) * 0.82;
             this.pos.x += this.vel.x;
