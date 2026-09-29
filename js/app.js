@@ -374,7 +374,7 @@ async function handleChatSubmit(event) {
 }
 
 async function processVisionClaimQuery(query, imgBase64, mimeType) {
-  const botMsgId = appendChatMessage('assistant', '<span class="typing-cursor">Analyzing image and verifying warranty coverage...</span>');
+  const botMsgId = appendChatMessage('assistant', renderThinkingIndicator('Analyzing image and verifying warranty coverage...'));
   try {
     const res = await fetch(`${CustomerState.backendUrl}/api/vision/analyze-claim`, {
       method: 'POST',
@@ -410,7 +410,7 @@ async function processVisionClaimQuery(query, imgBase64, mimeType) {
 }
 
 async function processStreamingQuery(query) {
-  const botMsgId = appendChatMessage('assistant', '<span class="typing-cursor">Searching store policies...</span>');
+  const botMsgId = appendChatMessage('assistant', renderThinkingIndicator('Searching store policies...'));
   let accumulatedText = '';
   let sources = [];
 
@@ -468,7 +468,7 @@ async function processStreamingQuery(query) {
 }
 
 async function processSyncQuery(query, existingMsgId = null) {
-  const botMsgId = existingMsgId || appendChatMessage('assistant', '<span class="typing-cursor">Consulting store policies...</span>');
+  const botMsgId = existingMsgId || appendChatMessage('assistant', renderThinkingIndicator('Consulting store policies...'));
   try {
     const res = await fetch(`${CustomerState.backendUrl}/ask`, {
       method: 'POST',
@@ -489,16 +489,27 @@ async function processSyncQuery(query, existingMsgId = null) {
   }
 }
 
+// Animated Thinking Indicator for AI Responses
+function renderThinkingIndicator(statusText = 'Searching store policies...') {
+  return `
+    <div class="response-thinking-indicator">
+      <div class="thinking-dots">
+        <span class="thinking-dot"></span>
+        <span class="thinking-dot"></span>
+        <span class="thinking-dot"></span>
+      </div>
+      <span class="thinking-text">${statusText}</span>
+    </div>
+  `;
+}
+
 // Markdown Parser for Grounded AI Responses
 function formatMarkdownContent(rawText) {
   if (!rawText) return '';
   if (typeof rawText !== 'string') return String(rawText);
 
-  // If it's a typing placeholder or custom HTML snippet, pass it through directly
-  if (rawText.startsWith('<span class="typing-cursor">') && !rawText.includes('\n')) {
-    return rawText;
-  }
-  if (rawText.includes('<div class="verdict-banner-row">')) {
+  // If it's a thinking placeholder or custom HTML snippet, pass it through directly
+  if (rawText.includes('response-thinking-indicator') || rawText.includes('verdict-banner-row')) {
     return rawText;
   }
 
@@ -593,8 +604,9 @@ function appendChatMessage(role, content, sources = [], latency = null, imageSrc
   const feed = document.getElementById('chat-feed');
   const msgId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
 
+  const isThinking = typeof content === 'string' && content.includes('response-thinking-indicator');
   const row = document.createElement('div');
-  row.className = `chat-msg-row ${role}-msg`;
+  row.className = `chat-msg-row ${role}-msg ${isThinking ? 'is-loading' : ''}`;
   row.id = msgId;
 
   const avatar = role === 'assistant' ?
@@ -610,7 +622,7 @@ function appendChatMessage(role, content, sources = [], latency = null, imageSrc
       ${imgHtml}
       <div class="msg-bubble-content">${formattedContent}</div>
       ${role === 'assistant' ? `
-      <div class="msg-actions-bar">
+      <div class="msg-actions-bar" ${isThinking ? 'style="display: none;"' : ''}>
         <button type="button" class="msg-btn-action" onclick="copyMessageText(this)"><i class="fa-solid fa-copy"></i> Copy</button>
         <button type="button" class="msg-btn-action" onclick="speakMessageText(this)"><i class="fa-solid fa-volume-high"></i> Read</button>
         <button type="button" class="msg-btn-action" onclick="openCsatModal()"><i class="fa-solid fa-star"></i> Rate</button>
@@ -629,6 +641,20 @@ function updateChatMessage(msgId, content) {
   if (!row) return;
   const bubble = row.querySelector('.msg-bubble-content');
   if (bubble) bubble.innerHTML = formatMarkdownContent(content);
+
+  const isThinking = typeof content === 'string' && content.includes('response-thinking-indicator');
+  const actionsBar = row.querySelector('.msg-actions-bar');
+  if (isThinking) {
+    row.classList.add('is-loading');
+    if (actionsBar) actionsBar.style.display = 'none';
+  } else {
+    row.classList.remove('is-loading');
+    if (actionsBar) {
+      actionsBar.style.display = 'flex';
+      actionsBar.style.opacity = '1';
+    }
+  }
+
   const feed = document.getElementById('chat-feed');
   if (feed) feed.scrollTop = feed.scrollHeight;
 }

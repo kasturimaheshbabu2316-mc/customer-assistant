@@ -1812,32 +1812,126 @@ input:checked + .toggle-slider:before {
   color: #ffffff;
 }
 
+.msg-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
+  flex: 1;
+}
+
 .msg-bubble-content {
-  background: #ffffff;
-  border: 2px solid #ffffff;
-  border-radius: 26px 26px 26px 8px;
-  padding: 1.25rem 1.5rem;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-light);
+  border-radius: 24px 24px 24px 8px;
+  padding: 1.25rem 1.65rem;
   color: var(--text-main);
   font-size: 0.96rem;
-  line-height: 1.65;
-  box-shadow: 10px 14px 28px rgba(155, 175, 205, 0.35), -6px -6px 16px rgba(255, 255, 255, 0.95), inset 3px 3px 6px rgba(255, 255, 255, 0.95), inset -2px -2px 5px rgba(170, 190, 220, 0.25);
+  line-height: 1.68;
+  box-shadow: var(--clay-shadow-card);
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 120px;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  transition: all 0.2s ease;
+}
+
+.msg-bubble-content p {
+  margin: 0 0 0.85rem 0;
+}
+
+.msg-bubble-content p:last-child {
+  margin-bottom: 0;
+}
+
+.msg-bubble-content ul,
+.msg-bubble-content ol {
+  margin: 0.5rem 0 0.85rem 1.35rem;
+  padding: 0;
+}
+
+.msg-bubble-content li {
+  margin-bottom: 0.45rem;
+  line-height: 1.6;
+}
+
+.msg-bubble-content li:last-child {
+  margin-bottom: 0;
+}
+
+.msg-bubble-content strong {
+  font-weight: 700;
+  color: var(--text-main);
 }
 
 .user-msg .msg-bubble-content {
   background: linear-gradient(145deg, #6366f1 0%, #4f46e5 100%);
   border: 2px solid rgba(255, 255, 255, 0.35);
-  border-radius: 26px 26px 8px 26px;
+  border-radius: 24px 24px 8px 24px;
   color: #ffffff;
-  box-shadow: 10px 14px 28px rgba(79, 70, 229, 0.35), inset 3px 3px 6px rgba(255, 255, 255, 0.5), inset -3px -3px 6px rgba(30, 20, 110, 0.3);
+  box-shadow: 10px 14px 28px rgba(79, 70, 229, 0.35), inset 3px 3px 6px rgba(255, 255, 255, 0.5);
+  margin-left: auto;
+}
+
+.user-msg .msg-bubble-content strong {
+  color: #ffffff;
+}
+
+/* Response Thinking Indicator */
+.response-thinking-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0.25rem 0.2rem;
+  color: var(--text-muted);
+  font-size: 0.94rem;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+.thinking-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.thinking-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+  animation: thinkingDotBounce 1.4s infinite ease-in-out both;
+}
+
+.thinking-dot:nth-child(1) { animation-delay: -0.32s; }
+.thinking-dot:nth-child(2) { animation-delay: -0.16s; }
+.thinking-dot:nth-child(3) { animation-delay: 0s; }
+
+@keyframes thinkingDotBounce {
+  0%, 80%, 100% {
+    transform: scale(0.6);
+    opacity: 0.35;
+  }
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
+    box-shadow: 0 0 8px var(--primary);
+  }
+}
+
+.chat-msg-row.is-loading .msg-actions-bar {
+  display: none !important;
 }
 
 .msg-actions-bar {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  margin-top: 0.75rem;
-  padding-top: 0.6rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  margin-top: 0.65rem;
+  padding-top: 0.4rem;
+  transition: opacity 0.25s ease;
 }
 
 .msg-btn-action {
@@ -2767,16 +2861,17 @@ input:checked + .toggle-slider:before {
   color: white;
 }
 
-/* Streaming & Typing Animation */
+/* Streaming & Typing Caret Animation */
 .typing-cursor {
   display: inline-block;
-  width: 7px;
-  height: 15px;
-  background-color: var(--primary-light);
-  margin-left: 3px;
-  vertical-align: middle;
-  animation: blinkCursor 0.8s infinite;
+  width: 2.5px;
+  height: 1.15em;
+  background-color: var(--primary);
+  margin-left: 4px;
+  vertical-align: -0.18em;
+  animation: blinkCursor 0.75s infinite;
   border-radius: 1px;
+  box-shadow: 0 0 6px var(--primary-glow);
 }
 
 @keyframes blinkCursor {
@@ -4412,8 +4507,10 @@ input:checked + .toggle-slider:before {
   border-radius: 24px 24px 24px 8px !important;
   box-shadow: var(--clay-shadow-card) !important;
   color: var(--text-main) !important;
-  max-width: 86% !important;
-  padding: 1.35rem 1.65rem !important;
+  width: fit-content !important;
+  min-width: 140px !important;
+  max-width: 88% !important;
+  padding: 1.25rem 1.65rem !important;
   line-height: 1.7 !important;
 }
 
@@ -5526,24 +5623,44 @@ input:checked + .toggle-slider:before {
 }
 
 /* ==========================================================================
-   FLOATING AI ASSISTANT MASCOT ("SPARKY") — PLAYFUL KID BUDDY
+   FLOATING AI ASSISTANT MASCOT ("SPARKY") — FREE-ROAMING SCREEN COMPANION
    ========================================================================== */
 
 .sparky-mascot-root {
   position: fixed;
-  bottom: 86px;
-  right: 26px;
+  top: 0;
+  left: 0;
   z-index: 9998;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
   pointer-events: none;
   -webkit-user-select: none;
   user-select: none;
+  will-change: transform;
 }
 
 .sparky-mascot-root * {
   pointer-events: auto;
+}
+
+/* Draggable & Dragging States */
+.sparky-avatar-btn {
+  cursor: grab !important;
+}
+
+.sparky-mascot-root.is-dragging .sparky-avatar-btn {
+  cursor: grabbing !important;
+}
+
+.sparky-mascot-root.is-dragging .sparky-rig {
+  transform: scale(1.18) rotate(8deg) !important;
+  animation: none !important;
+}
+
+.sparky-mascot-root.is-dragging .sparky-thrust-glow {
+  height: 24px !important;
+  box-shadow: 0 6px 24px rgba(56, 189, 248, 1) !important;
 }
 
 /* Kid Speech Bubble */
@@ -5553,26 +5670,59 @@ input:checked + .toggle-slider:before {
   border: 2px solid var(--border-light);
   border-radius: 20px 20px 4px 20px;
   padding: 10px 16px 10px 14px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), var(--clay-shadow-card);
-  max-width: 250px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), var(--clay-shadow-card);
+  max-width: 270px;
   margin-bottom: 12px;
   display: flex;
   align-items: center;
   gap: 8px;
   animation: sparkyPopIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-  transform-origin: bottom right;
+  transform-origin: bottom center;
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
+  white-space: normal;
 }
 
 .sparky-speech-bubble::after {
   content: '';
   position: absolute;
   bottom: -9px;
-  right: 24px;
-  border-width: 9px 9px 0 0;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 9px 8px 0 8px;
   border-style: solid;
   border-color: var(--bg-card) transparent transparent transparent;
+}
+
+/* Adaptive speech bubble flip when near top of screen */
+.sparky-mascot-root.flip-down .sparky-speech-bubble {
+  order: 4;
+  margin-top: 14px;
+  margin-bottom: 0;
+  border-radius: 4px 20px 20px 20px;
+}
+
+.sparky-mascot-root.flip-down .sparky-speech-bubble::after {
+  top: -9px;
+  bottom: auto;
+  border-width: 0 8px 9px 8px;
+  border-color: transparent transparent var(--bg-card) transparent;
+}
+
+.sparky-mascot-root.dock-left .sparky-speech-bubble {
+  border-radius: 4px 20px 20px 20px;
+}
+
+.sparky-mascot-root.dock-left .sparky-speech-bubble::after {
+  left: 25%;
+}
+
+.sparky-mascot-root.dock-right .sparky-speech-bubble {
+  border-radius: 20px 4px 20px 20px;
+}
+
+.sparky-mascot-root.dock-right .sparky-speech-bubble::after {
+  left: 75%;
 }
 
 .sparky-speech-text {
@@ -5599,96 +5749,197 @@ input:checked + .toggle-slider:before {
   color: var(--accent-rose);
 }
 
-/* Sparky 3D Avatar Body */
-.sparky-avatar-btn {
-  width: 64px;
-  height: 64px;
+/* Floating Emotional Mood Emoji Halo */
+.sparky-mood-halo {
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background: linear-gradient(145deg, #1e2b48 0%, #111728 100%);
-  border: 3px solid rgba(255, 255, 255, 0.25);
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35), var(--clay-shadow-card);
-  cursor: pointer;
+  background: var(--bg-card);
+  border: 2px solid var(--border-light);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), var(--clay-shadow-card);
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
-  animation: sparkyFloat 3.5s ease-in-out infinite;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
-  outline: none;
+  margin-bottom: -10px;
+  z-index: 10;
+  cursor: pointer;
+  animation: sparkyMoodFloat 2.4s ease-in-out infinite alternate;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.sparky-avatar-btn:hover {
-  transform: scale(1.1) translateY(-4px);
-  box-shadow: 0 14px 34px rgba(99, 102, 241, 0.5), 0 0 20px var(--secondary-glow);
+.sparky-mood-halo:hover {
+  transform: scale(1.22) rotate(8deg);
   border-color: var(--secondary-light);
 }
 
-.sparky-avatar-btn:active {
-  transform: scale(0.95);
+.sparky-mood-emoji {
+  font-size: 1.25rem;
+  display: inline-block;
+  animation: sparkyMoodPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  line-height: 1;
+}
+
+/* Full Articulated Mascot Character Container */
+.sparky-avatar-btn {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  outline: none;
+  overflow: visible !important;
+  filter: drop-shadow(0 14px 30px rgba(0, 0, 0, 0.55));
+}
+
+.sparky-rig {
+  position: relative;
+  width: 110px;
+  height: 116px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 700px;
+  animation: sparkyHoverFloat 3.8s ease-in-out infinite;
+  transform-style: preserve-3d;
+  transition: transform 0.2s ease-out;
+  overflow: visible !important;
+}
+
+.sparky-avatar-btn:hover .sparky-rig {
+  transform: scale(1.08) translateY(-4px);
+}
+
+/* Central Head & Body Column */
+.sparky-torso-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 4;
 }
 
 /* Wiggling Antenna on Head */
 .sparky-antenna {
-  position: absolute;
-  top: -14px;
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
   width: 4px;
-  height: 12px;
+  height: 14px;
   background: linear-gradient(to top, var(--primary), var(--secondary));
   border-radius: 2px;
+  margin: 0 auto -2px auto;
   transform-origin: bottom center;
-  animation: sparkyAntennaWiggle 2.8s ease-in-out infinite;
+  animation: sparkyAntennaWiggle 2.6s ease-in-out infinite;
 }
 
 .sparky-antenna-orb {
   position: absolute;
-  top: -6px;
-  left: -4px;
-  width: 12px;
-  height: 12px;
+  top: -8px;
+  left: -5px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: var(--secondary-light);
-  box-shadow: 0 0 10px #38bdf8, 0 0 18px rgba(6, 182, 212, 0.8);
-  animation: sparkyOrbPulse 1.8s ease-in-out infinite alternate;
+  box-shadow: 0 0 10px #38bdf8, 0 0 20px rgba(6, 182, 212, 0.85);
+  animation: sparkyOrbPulse 1.6s ease-in-out infinite alternate;
 }
 
-/* Sparky Visor & Animated Eyes */
-.sparky-face {
-  width: 44px;
-  height: 34px;
-  border-radius: 18px;
-  background: #090d16;
-  border: 1.5px solid rgba(255, 255, 255, 0.15);
+/* Head Helmet */
+.sparky-head-wrapper {
+  position: relative;
+  z-index: 5;
+}
+
+.sparky-head {
+  width: 64px;
+  height: 48px;
+  border-radius: 24px;
+  background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+  border: 2px solid rgba(255, 255, 255, 0.24);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35), inset 0 2px 4px rgba(255, 255, 255, 0.18);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  position: relative;
+  transition: transform 0.25s ease-out;
+}
+
+/* Dark Visor Face Screen */
+.sparky-face {
+  width: 48px;
+  height: 34px;
+  border-radius: 16px;
+  background: #060913;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
   position: relative;
   overflow: hidden;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.9);
+}
+
+.sparky-eyes-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
 }
 
 .sparky-eye {
-  width: 9px;
-  height: 12px;
-  border-radius: 5px;
+  width: 11px;
+  height: 14px;
+  border-radius: 6px;
   background: var(--secondary-light);
-  box-shadow: 0 0 8px #38bdf8;
+  box-shadow: 0 0 8px #38bdf8, 0 0 14px rgba(56, 189, 248, 0.6);
   position: relative;
-  animation: sparkyBlink 4s infinite;
-  transition: all 0.2s ease;
+  animation: sparkyBlink 4.2s infinite;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
 }
 
-.sparky-eye::after {
-  content: '';
+.sparky-pupil {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 3px;
-  height: 3px;
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
   background: #ffffff;
+  transition: transform 0.1s ease-out;
+}
+
+/* Mouth Line */
+.sparky-mouth {
+  width: 10px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--secondary-light);
+  box-shadow: 0 0 6px #38bdf8;
+  transition: all 0.2s ease;
+}
+
+.sparky-mouth.talking {
+  animation: sparkyMouthTalk 0.25s infinite alternate ease-in-out;
+}
+
+.sparky-mouth.happy {
+  border-radius: 0 0 6px 6px;
+  height: 5px;
+}
+
+.sparky-mouth.o-shape {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
 }
 
 /* Blushing Cheeks */
@@ -5699,20 +5950,227 @@ input:checked + .toggle-slider:before {
   width: 6px;
   height: 3px;
   border-radius: 50%;
-  background: rgba(244, 63, 94, 0.6);
+  background: rgba(244, 63, 94, 0.65);
   filter: blur(0.5px);
-  opacity: 0.7;
+  opacity: 0.75;
 }
 
 .sparky-blush-left { left: 4px; }
 .sparky-blush-right { right: 4px; }
 
+/* Humanoid / Robot Body Chassis */
+.sparky-body {
+  width: 52px;
+  height: 40px;
+  background: linear-gradient(155deg, #1e293b 0%, #0f172a 100%);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 14px 14px 18px 18px;
+  margin-top: -4px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), inset 0 2px 4px rgba(255, 255, 255, 0.14);
+  z-index: 3;
+}
+
+.sparky-chest-core {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--secondary-light) 20%, var(--primary) 90%);
+  box-shadow: 0 0 10px #38bdf8, 0 0 18px rgba(99, 102, 241, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: #ffffff;
+  animation: sparkyCorePulse 2.2s ease-in-out infinite alternate;
+}
+
+.sparky-belt {
+  position: absolute;
+  bottom: 4px;
+  width: 36px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Anti-Gravity Hover Base / Thruster */
+.sparky-hover-thruster {
+  position: relative;
+  width: 24px;
+  height: 10px;
+  margin-top: -2px;
+  display: flex;
+  justify-content: center;
+  z-index: 2;
+}
+
+.sparky-thrust-ring {
+  width: 22px;
+  height: 6px;
+  border-radius: 50%;
+  background: #334155;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.sparky-thrust-glow {
+  position: absolute;
+  top: 2px;
+  width: 18px;
+  height: 16px;
+  border-radius: 50% 50% 70% 70%;
+  background: radial-gradient(ellipse at top, #38bdf8 0%, rgba(99, 102, 241, 0.5) 50%, transparent 80%);
+  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.85);
+  animation: sparkyThrustFlicker 0.2s ease-in-out infinite alternate;
+}
+
+/* Articulated Humanoid Arms & Hands */
+.sparky-arm {
+  position: absolute;
+  top: 48px;
+  width: 22px;
+  height: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform-origin: top center;
+  z-index: 6;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.sparky-arm-left {
+  left: 2px;
+  animation: sparkyArmIdleLeft 3.6s ease-in-out infinite;
+}
+
+.sparky-arm-right {
+  right: 2px;
+  animation: sparkyArmIdleRight 3.6s ease-in-out infinite;
+}
+
+.sparky-shoulder {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #334155;
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.sparky-forearm {
+  width: 8px;
+  height: 16px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #1e293b, #0f172a);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  margin-top: -2px;
+}
+
+/* Cute Chibi Hand */
+.sparky-hand {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #38bdf8 0%, #6366f1 100%);
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 10px rgba(56, 189, 248, 0.6);
+  margin-top: -2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.2s ease;
+}
+
+.sparky-thumb {
+  position: absolute;
+  top: 1px;
+  width: 5px;
+  height: 6px;
+  border-radius: 3px;
+  background: #38bdf8;
+  border: 1px solid #ffffff;
+}
+
+.sparky-arm-left .sparky-thumb { right: -3px; }
+.sparky-arm-right .sparky-thumb { left: -3px; }
+
+/* --------------------------------------------------------------------------
+   HUMANOID CHARACTER POSTURES & ACTION MODES
+   -------------------------------------------------------------------------- */
+
+/* 1. TYPING GESTURE: Arms eager, typing rapidly in mid-air */
+.pose-typing .sparky-arm-left {
+  animation: sparkyArmTypeLeft 0.3s infinite alternate ease-in-out !important;
+}
+
+.pose-typing .sparky-arm-right {
+  animation: sparkyArmTypeRight 0.3s infinite alternate ease-in-out 0.15s !important;
+}
+
+.pose-typing .sparky-head {
+  transform: translateY(2px) rotate(4deg);
+}
+
+.pose-typing .sparky-chest-core {
+  animation: sparkyCorePulse 0.6s infinite alternate !important;
+}
+
+/* 2. TALKING / EXPLAINING GESTURE: Alternating human conversational hand motions */
+.pose-talking .sparky-arm-left {
+  animation: sparkyArmTalkLeft 1.2s infinite ease-in-out !important;
+}
+
+.pose-talking .sparky-arm-right {
+  animation: sparkyArmTalkRight 1.2s infinite ease-in-out 0.6s !important;
+}
+
+.pose-talking .sparky-mouth {
+  animation: sparkyMouthTalk 0.2s infinite alternate ease-in-out;
+}
+
+.pose-talking .sparky-head {
+  animation: sparkyHeadNod 1.2s infinite ease-in-out;
+}
+
+/* 3. CHEERING / CELEBRATION GESTURE: Hands high in the air */
+.pose-cheer .sparky-arm-left {
+  animation: sparkyArmCheerLeft 0.5s infinite alternate ease-in-out !important;
+}
+
+.pose-cheer .sparky-arm-right {
+  animation: sparkyArmCheerRight 0.5s infinite alternate ease-in-out !important;
+}
+
+.pose-cheer .sparky-rig {
+  animation: sparkyJumpBounce 0.45s infinite alternate ease-in-out !important;
+}
+
+/* 4. WAVING GESTURE: Right arm raised waving hello */
+.pose-waving .sparky-arm-right {
+  animation: sparkyArmWaveRight 0.7s infinite alternate ease-in-out !important;
+}
+
+/* 5. THINKING GESTURE: Hand scratches chin / taps antenna */
+.pose-thinking .sparky-arm-right {
+  animation: sparkyThinkArm 1.8s infinite ease-in-out !important;
+}
+
+.pose-thinking .sparky-head {
+  transform: rotate(12deg) translateY(-2px);
+}
+
 /* Interactive Kid Menu */
 .sparky-interactive-card {
   position: absolute;
-  bottom: 80px;
-  right: 0;
-  width: 290px;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
   background: var(--bg-card);
   border: 2px solid var(--border-light);
   border-radius: var(--radius-xl);
@@ -5724,11 +6182,43 @@ input:checked + .toggle-slider:before {
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   animation: sparkyMenuSlide 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  transform-origin: bottom right;
+  transform-origin: bottom center;
+  z-index: 9999;
 }
 
 .sparky-interactive-card.is-hidden {
   display: none !important;
+}
+
+/* Adaptive Card/Menu Positioning based on mascot screen location */
+.sparky-mascot-root.flip-down .sparky-interactive-card {
+  bottom: auto;
+  top: 135px;
+  transform-origin: top center;
+}
+
+.sparky-mascot-root.dock-left .sparky-interactive-card {
+  right: auto;
+  left: 0;
+  transform: none;
+  transform-origin: bottom left;
+}
+
+.sparky-mascot-root.flip-down.dock-left .sparky-interactive-card {
+  transform: none;
+  transform-origin: top left;
+}
+
+.sparky-mascot-root.dock-right .sparky-interactive-card {
+  right: 0;
+  left: auto;
+  transform: none;
+  transform-origin: bottom right;
+}
+
+.sparky-mascot-root.flip-down.dock-right .sparky-interactive-card {
+  transform: none;
+  transform-origin: top right;
 }
 
 .sparky-menu-header {
@@ -5763,6 +6253,33 @@ input:checked + .toggle-slider:before {
   color: var(--text-muted);
   line-height: 1.4;
   margin: 0;
+}
+
+/* Emoji Emotional Reaction Bar */
+.sparky-emotions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 6px 10px;
+  margin: 2px 0 6px 0;
+}
+
+.sparky-emotion-pill {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 3px 6px;
+  border-radius: 6px;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.18s ease;
+}
+
+.sparky-emotion-pill:hover {
+  transform: scale(1.35) translateY(-2px);
+  background: rgba(99, 102, 241, 0.25);
 }
 
 .sparky-action-chips {
@@ -5805,26 +6322,118 @@ input:checked + .toggle-slider:before {
   color: #ffffff;
 }
 
-/* Animations */
-@keyframes sparkyFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+/* --------------------------------------------------------------------------
+   KEYFRAME ANIMATIONS (HUMAN-LIKE MOVEMENT & FLOATING)
+   -------------------------------------------------------------------------- */
+
+@keyframes sparkyHoverFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-7px) rotate(-1.5deg); }
+  50% { transform: translateY(-12px) rotate(0.5deg); }
+  75% { transform: translateY(-5px) rotate(1.5deg); }
+}
+
+@keyframes sparkyMoodFloat {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-5px); }
+}
+
+@keyframes sparkyMoodPop {
+  0% { transform: scale(0.3) rotate(-20deg); opacity: 0; }
+  60% { transform: scale(1.3) rotate(10deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 
 @keyframes sparkyAntennaWiggle {
-  0%, 100% { transform: translateX(-50%) rotate(0deg); }
-  25% { transform: translateX(-50%) rotate(-12deg); }
-  75% { transform: translateX(-50%) rotate(12deg); }
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-14deg); }
+  75% { transform: rotate(14deg); }
 }
 
 @keyframes sparkyOrbPulse {
   0% { transform: scale(1); box-shadow: 0 0 8px #38bdf8; }
-  100% { transform: scale(1.25); box-shadow: 0 0 16px #38bdf8, 0 0 24px rgba(6, 182, 212, 0.9); }
+  100% { transform: scale(1.28); box-shadow: 0 0 18px #38bdf8, 0 0 28px rgba(6, 182, 212, 0.95); }
+}
+
+@keyframes sparkyCorePulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 8px #38bdf8; }
+  100% { transform: scale(1.15); box-shadow: 0 0 16px #38bdf8, 0 0 22px rgba(99, 102, 241, 0.9); }
+}
+
+@keyframes sparkyThrustFlicker {
+  0% { height: 11px; opacity: 0.8; }
+  100% { height: 16px; opacity: 1; filter: drop-shadow(0 0 8px #38bdf8); }
 }
 
 @keyframes sparkyBlink {
   0%, 94%, 98%, 100% { transform: scaleY(1); }
   96% { transform: scaleY(0.1); }
+}
+
+@keyframes sparkyMouthTalk {
+  0% { height: 2px; width: 10px; border-radius: 2px; }
+  100% { height: 7px; width: 12px; border-radius: 4px; }
+}
+
+@keyframes sparkyHeadNod {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(3px) rotate(2deg); }
+}
+
+/* Arm Gestures */
+@keyframes sparkyArmIdleLeft {
+  0%, 100% { transform: rotate(8deg) translateY(0); }
+  50% { transform: rotate(15deg) translateY(-2px); }
+}
+
+@keyframes sparkyArmIdleRight {
+  0%, 100% { transform: rotate(-8deg) translateY(0); }
+  50% { transform: rotate(-15deg) translateY(-2px); }
+}
+
+@keyframes sparkyArmTypeLeft {
+  0% { transform: rotate(45deg) translateY(-10px) translateX(6px); }
+  100% { transform: rotate(65deg) translateY(-6px) translateX(10px); }
+}
+
+@keyframes sparkyArmTypeRight {
+  0% { transform: rotate(-45deg) translateY(-10px) translateX(-6px); }
+  100% { transform: rotate(-65deg) translateY(-6px) translateX(-10px); }
+}
+
+@keyframes sparkyArmTalkLeft {
+  0%, 100% { transform: rotate(20deg) translateY(-4px); }
+  50% { transform: rotate(55deg) translateY(-12px) translateX(4px); }
+}
+
+@keyframes sparkyArmTalkRight {
+  0%, 100% { transform: rotate(-20deg) translateY(-4px); }
+  50% { transform: rotate(-55deg) translateY(-12px) translateX(-4px); }
+}
+
+@keyframes sparkyArmCheerLeft {
+  0%, 100% { transform: rotate(140deg) translateY(-12px) translateX(-4px); }
+  50% { transform: rotate(160deg) translateY(-18px) translateX(-6px); }
+}
+
+@keyframes sparkyArmCheerRight {
+  0%, 100% { transform: rotate(-140deg) translateY(-12px) translateX(4px); }
+  50% { transform: rotate(-160deg) translateY(-18px) translateX(6px); }
+}
+
+@keyframes sparkyArmWaveRight {
+  0% { transform: rotate(-130deg) translateY(-12px); }
+  100% { transform: rotate(-165deg) translateY(-16px); }
+}
+
+@keyframes sparkyThinkArm {
+  0%, 100% { transform: rotate(-110deg) translateY(-14px) translateX(-6px); }
+  50% { transform: rotate(-125deg) translateY(-16px) translateX(-4px); }
+}
+
+@keyframes sparkyJumpBounce {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-24px) scale(1.1); }
 }
 
 @keyframes sparkyPopIn {
@@ -5841,7 +6450,7 @@ input:checked + .toggle-slider:before {
 .sparky-particle {
   position: fixed;
   pointer-events: none;
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   z-index: 10000;
   animation: sparkyParticleFly 1.2s ease-out forwards;
 }
