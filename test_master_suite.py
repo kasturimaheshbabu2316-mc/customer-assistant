@@ -303,11 +303,13 @@ def run_master_suite():
         print("=" * 70 + "\n")
         return 0
     except AssertionError as e:
+        import traceback
         print(f"\n❌ MASTER SUITE ASSERTION FAILED: {e}\n")
+        traceback.print_exc()
         return 1
     except Exception as e:
-        print(f"\n❌ MASTER SUITE UNEXPECTED ERROR: {e}\n")
         import traceback
+        print(f"\n❌ MASTER SUITE UNEXPECTED ERROR: {e}\n")
         traceback.print_exc()
         return 1
 
