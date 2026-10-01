@@ -1,7 +1,5 @@
 # OmniDesk AI — Enterprise RAG Customer Support Hub
 
-<div align="center">
-
 ![OmniDesk AI](https://img.shields.io/badge/OmniDesk%20AI-Enterprise%20Customer%20Support-blueviolet?style=for-the-badge)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
@@ -11,8 +9,6 @@
 
 > **Zero-Hallucination AI Customer Service Grounded in Verified Enterprise Knowledge Bases.**  
 > Powered by **Google Gemini 3.6 Flash**, Dense & Sparse Hybrid Search (BM25 + ChromaDB RRF), Multi-Modal Vision Claim Inspection, **FastAPI Backend**, **Support Hub SPA**, and **Streamlit Command Center**.
-
-</div>
 
 ---
 
