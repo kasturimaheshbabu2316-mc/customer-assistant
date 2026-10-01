@@ -17,7 +17,7 @@ if os.path.exists("doc/.env"):
 DEFAULT_CONFIG = {
     "embedding_model": os.getenv("EMBEDDING_MODEL", "gemini-embedding-001"),
     "generation_model": os.getenv("GENERATION_MODEL", "gemini-3.6-flash"),
-    "guardrail_threshold": float(os.getenv("GUARDRAIL_DISTANCE_THRESHOLD", "1.2")),
+    "guardrail_threshold": float(os.getenv("GUARDRAIL_DISTANCE_THRESHOLD", "0.92")),
     "top_k_chunks": int(os.getenv("TOP_K_CHUNKS", "3")),
     "temperature": float(os.getenv("GENERATION_TEMPERATURE", "0.1")),
     "chroma_path": os.getenv("CHROMA_DB_PATH", "./chroma_db"),
@@ -305,7 +305,7 @@ def generate_local_grounded_answer(query: str, matched_docs: list[str]) -> str:
         return "Orders can be cancelled or modified within a strict **60-minute window** of placement directly from your account dashboard or via support. After 60 minutes, orders enter automated warehouse picking and cannot be stopped."
     if any(w in q for w in ['balance', 'how much do i owe', 'how much balance', 'outstanding balance', 'account balance', 'amount due']):
         return "Individual account balances and order invoices are specific to your customer account. To view your current balance, please log in to your **Customer Portal** or contact our billing desk at **billing@company.com** with your Order # or Customer ID."
-    if any(w in q for w in ['pay', 'card', 'paypal', 'apple', 'price match', 'klarna', 'affirm']):
+    if any(w in q for w in ['pay', 'card', 'paypal', 'apple pay', 'price match', 'klarna', 'affirm']):
         return "We accept Visa, MasterCard, Amex, Discover, PayPal, Apple Pay, Google Pay, and Klarna / Affirm installments (0% APR). We also offer a **14-Day Price Match Guarantee** if an authorized retailer offers a lower price within 14 days of purchase."
     if any(w in q for w in ['hour', 'contact', 'agent', 'support@', 'phone', 'escalat']):
         return "Our AI Support Hub is active 24/7/365. Human support agents are available Mon-Fri 8 AM - 8 PM EST and Sat-Sun 10 AM - 6 PM EST. You can escalate via email at **support@company.com** (sub-2 hour response) or call **+1 (800) 555-APEX**."
@@ -318,23 +318,24 @@ def generate_local_grounded_answer(query: str, matched_docs: list[str]) -> str:
 
 def classify_intent_and_sentiment(query: str) -> dict:
     """
-    Analyzes customer query text to determine the core intent category and sentiment urgency.
+    Analyzes customer query text to determine the core intent category and sentiment urgency,
+    supporting multilingual queries across English, Spanish, German, Japanese, French, etc.
     """
     q = query.lower()
     
-    # 1. Intent Classification
+    # 1. Intent Classification (with multi-language support)
     intent = "General Inquiry"
-    if any(k in q for k in ["return", "refund", "restock", "money back", "30-day", "exchange"]):
+    if any(k in q for k in ["return", "refund", "restock", "money back", "30-day", "exchange", "devoluci", "reembols", "rückgabe", "erstattung", "retour", "remboursement", "返品", "返金", "devoluç", "वापस"]):
         intent = "Return & Refund"
-    elif any(k in q for k in ["ship", "delivery", "track", "customs", "duties", "overnight", "canada", "dhl", "fedex", "freight"]):
+    elif any(k in q for k in ["ship", "delivery", "track", "customs", "duties", "overnight", "canada", "dhl", "fedex", "freight", "envío", "versand", "livraison", "entrega", "発送", "शिपिंग"]):
         intent = "Shipping & Logistics"
-    elif any(k in q for k in ["warranty", "repair", "defect", "broken", "replace", "hardware", "malfunction", "damaged"]):
+    elif any(k in q for k in ["warranty", "repair", "defect", "broken", "replace", "hardware", "malfunction", "damaged", "garantía", "garantie", "保証", "वारंटी"]):
         intent = "Warranty & Claims"
-    elif any(k in q for k in ["pay", "price match", "charge", "invoice", "tax", "discount", "klarna", "affirm", "paypal", "credit", "bitcoin", "crypto"]):
+    elif any(k in q for k in ["pay", "price match", "charge", "invoice", "tax", "discount", "klarna", "affirm", "paypal", "credit", "bitcoin", "crypto", "pago", "zahlung", "paiement", "pagamento", "支払い", "भुगतान"]):
         intent = "Billing & Payment"
-    elif any(k in q for k in ["cancel", "modify", "change address", "change order", "stop order", "60 minute"]):
+    elif any(k in q for k in ["cancel", "modify", "change address", "change order", "stop order", "60 minute", "cancelar", "stornieren", "annuler", "キャンセル", "रद्द"]):
         intent = "Order Modification"
-    elif any(k in q for k in ["account", "password", "login", "auth", "sign in"]):
+    elif any(k in q for k in ["account", "password", "login", "auth", "sign in", "cuenta", "compte", "konto", "アカウント", "खाता"]):
         intent = "Account & Security"
 
     # 2. Sentiment & Urgency Classification
