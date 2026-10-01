@@ -561,7 +561,11 @@ with tab_chat:
             with st.spinner("Retrieving verified policies..."):
                 if is_online:
                     try:
-                        req_payload = {"query": prompt}
+                        recent_history = [
+                            {"role": m["role"], "content": m.get("original_query") or m["content"]}
+                            for m in st.session_state.messages[:-1][-6:]
+                        ]
+                        req_payload = {"query": prompt, "history": recent_history}
                         if st.session_state.selected_language != "Auto Detect":
                             req_payload["language"] = st.session_state.selected_language
 

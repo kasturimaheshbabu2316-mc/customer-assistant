@@ -485,16 +485,47 @@ def translate_grounded_response(answer: str, target_lang: str, query: str = "") 
 
     return answer
 
-def query_rag_pipeline(user_query: str, target_language: Optional[str] = None) -> dict:
+def _format_conversation_history(history: Optional[list[dict]]) -> str:
+    """Formats recent turns into a structured prompt context block."""
+    if not history:
+        return ""
+    valid_turns = []
+    for turn in history[-6:]:  # Keep recent 6 turns for optimal context balance
+        role = turn.get("role", "")
+        role_label = "Customer" if role in ("user", "customer") else "Assistant"
+        content = (turn.get("content") or "").strip()
+        if content:
+            valid_turns.append(f"{role_label}: {content}")
+    if not valid_turns:
+        return ""
+    return "<conversation_history>\n" + "\n".join(valid_turns) + "\n</conversation_history>\n\n"
+
+def _build_contextual_query(user_query: str, history: Optional[list[dict]]) -> str:
+    """Enhances vector retrieval for short or pronoun-heavy follow-up questions using prior turn context."""
+    if not history:
+        return user_query
+    q_lower = user_query.lower()
+    pronouns = {"it", "this", "that", "they", "them", "these", "those", "instead", "too", "also"}
+    words = set(q_lower.split())
+    if len(words) <= 4 or bool(words & pronouns):
+        for turn in reversed(history):
+            if turn.get("role") in ("user", "customer") and turn.get("content"):
+                prev_text = turn.get("content", "").strip()
+                if prev_text:
+                    return f"{prev_text} | {user_query}"
+    return user_query
+
+def query_rag_pipeline(user_query: str, target_language: Optional[str] = None, history: Optional[list[dict]] = None) -> dict:
     """
-    Complete end-to-end RAG query execution pipeline with multi-language support.
+    Complete end-to-end RAG query execution pipeline with multi-language & conversational memory support.
     """
     start_time = time.time()
     classification = classify_intent_and_sentiment(user_query)
     lang = target_language if (target_language and target_language != "Auto Detect") else detect_language(user_query)
     
-    # 1. Embed query
-    query_emb = generate_embedding(user_query)
+    # 1. Embed query (augmented with prior turn context if follow-up)
+    retrieval_query = _build_contextual_query(user_query, history)
+    query_emb = generate_embedding(retrieval_query)
 
     # 2. Retrieve top matches from ChromaDB
     n_results = min(CURRENT_SETTINGS["top_k_chunks"], max(1, collection.count()))
@@ -526,13 +557,14 @@ def query_rag_pipeline(user_query: str, target_language: Optional[str] = None) -
         }
 
     context = "\n---\n".join(documents)
+    history_context = _format_conversation_history(history)
     client = get_genai_client()
 
     if client:
         try:
             from google.genai import types
             lang_instruction = f" Respond in {lang}." if lang != "English" else ""
-            prompt = f"<context>\n{context}\n</context>\n\n<user_query>\n{user_query}\n</user_query>\n{lang_instruction}"
+            prompt = f"<context>\n{context}\n</context>\n\n{history_context}<user_query>\n{user_query}\n</user_query>\n{lang_instruction}"
             response = client.models.generate_content(
                 model=CURRENT_SETTINGS["generation_model"],
                 contents=prompt,
@@ -566,17 +598,19 @@ def query_rag_pipeline(user_query: str, target_language: Optional[str] = None) -
 # Alias for backwards compatibility
 run_rag_pipeline = query_rag_pipeline
 
-def stream_rag_pipeline(user_query: str, target_language: Optional[str] = None):
+def stream_rag_pipeline(user_query: str, target_language: Optional[str] = None, history: Optional[list[dict]] = None):
     """
     Generator yielding Server-Sent Events (SSE) chunks formatted as:
     event: <event_type>\ndata: <json_data>\n\n
+    Supports multi-turn conversational memory via history.
     """
     start_time = time.time()
     classification = classify_intent_and_sentiment(user_query)
     lang = target_language if (target_language and target_language != "Auto Detect") else detect_language(user_query)
     
-    # 1. Embed query & Retrieve
-    query_emb = generate_embedding(user_query)
+    # 1. Embed query & Retrieve (contextualized if short follow-up)
+    retrieval_query = _build_contextual_query(user_query, history)
+    query_emb = generate_embedding(retrieval_query)
     n_results = min(CURRENT_SETTINGS["top_k_chunks"], max(1, collection.count()))
     results = collection.query(
         query_embeddings=[query_emb],
@@ -615,13 +649,14 @@ def stream_rag_pipeline(user_query: str, target_language: Optional[str] = None):
         return
 
     context = "\n---\n".join(documents)
+    history_context = _format_conversation_history(history)
     client = get_genai_client()
 
     if client:
         try:
             from google.genai import types
             lang_instruction = f" Answer in {lang}." if lang != "English" else ""
-            prompt = f"<context>\n{context}\n</context>\n\n<user_query>\n{user_query}\n</user_query>\n{lang_instruction}"
+            prompt = f"<context>\n{context}\n</context>\n\n{history_context}<user_query>\n{user_query}\n</user_query>\n{lang_instruction}"
             stream = client.models.generate_content_stream(
                 model=CURRENT_SETTINGS["generation_model"],
                 contents=prompt,

@@ -82,39 +82,47 @@ flowchart TD
 ## 🌟 Key Capabilities by Phase
 
 ### 1. Phase 1: Core Grounded RAG & Real-Time SSE Token Streaming
+
 - **Dense Embedding Search**: Chunks and indexes company policies (`company_faq.txt`) into ChromaDB using 3,072-dim embeddings.
 - **Server-Sent Events (SSE)**: Streaming endpoint (`/ask/stream`) delivering sub-second token streams with verified citations.
 - **Strict Distance Guardrails**: Deflects out-of-scope/unverified inquiries to human agents to prevent hallucinations.
 
 ### 2. Phase 2: Production Hardening & Security
+
 - **Sliding-Window Rate Limiting**: Per-client IP throttling returning `HTTP 429 Too Many Requests` with dynamic `Retry-After`.
 - **Admin API Key Authorization**: Sensitive management endpoints guarded via `X-API-Key` headers.
 - **Input Validation**: Pydantic models enforcing payload size limits and non-empty checks (`422 Unprocessable Entity`).
 
 ### 3. Phase 3: Smart Escalation & Customer ID Routing
+
 - **Automated Ticket Creation**: Automatic customer profile assignment (`CUST-XXXX`), VIP tier tracking, and priority triage.
 - **Lifecycle Workflows**: Status transitions (`Open` $\to$ `In Progress` $\to$ `Resolved`), agent assignments, and resolution tracking.
 
 ### 4. Phase 4: Multi-Channel Intent Classification & CRM Export
+
 - **Intent & Urgency Classification**: Auto-tagging inquiries into `Return & Refund`, `Shipping & Logistics`, `Warranty & Claims`, `Billing & Payment`, `Order Modification`.
 - **CRM Integration**: 1-click CSV and JSON data export streams.
 - **Streamlit Command Center ([app.py](file:///c:/Users/kastu/Desktop/mahesh%20pro/app.py))**: 4-tab control center.
 
 ### 5. Phase 5: AI Agent Copilot & Live SLA Countdown Engine
+
 - **AI Reply Draft Generator (`/api/tickets/{id}/suggest-reply`)**: Synthesizes grounded resolution drafts referencing official policies.
 - **Conversation Threading & Internal Staff Notes**: Chronological thread of customer interactions with private amber-locked internal notes (`🔒 Staff Note`).
 - **Live SLA Countdown Badges**: Real-time dynamic countdowns (Urgent: 1h, High: 4h, Medium: 24h, Low: 48h).
 
 ### 6. Phase 6: Multi-Language Auto-Localization, CSAT & Quick Macros
+
 - **7-Language Localization**: Automatic language detection and localized RAG answering (English, Spanish, French, German, Japanese, Portuguese, Hindi).
 - **CSAT Feedback Telemetry**: Dynamic `👍 Helpful` and `👎 Needs Work` ratings with live scoring (`/api/analytics`).
 - **Macro Automation Rules**: Pre-configured templates (`📦 30-Day RMA`, `🛡️ 1-Yr Warranty`, `💳 Price Match`, `✈️ DHL DDP`) with automatic variable substitution (`{{customer_name}}`, `{{ticket_id}}`, `{{assigned_agent}}`).
 
 ### 7. Phase 7: Autonomous Synthetic Benchmarking & Incident Webhooks
+
 - **Synthetic Load & Accuracy Benchmark Studio**: Telemetry measuring Throughput (QPS), Latency percentiles (P50, P90, P99), Guardrail precision, and Intent classification accuracy across simulated test scenarios.
 - **Outbound Incident Webhook Alert Dispatcher**: Automatic incident dispatching to external systems (e.g. Slack `#support-alerts`, PagerDuty) on urgent VIP tickets or low CSAT ratings.
 
 ### 8. Phase 8: Hybrid Search & Multi-Modal Vision RAG Claim Inspection
+
 - **Hybrid Search (BM25 + Vector RRF)**: Reciprocal Rank Fusion combining keyword exact-matching with semantic dense embeddings for high-precision retrieval (`/api/search/hybrid`).
 - **Multi-Modal Vision Claim Inspection**: Inspects product photos and damage claims, cross-referencing visual defects against Section 4 warranty exclusion policies to verify coverage (`/api/vision/analyze-claim`).
 
@@ -163,6 +171,7 @@ flowchart TD
 │   ├── design.md               # UI/UX design tokens & visual guidelines
 │   ├── prd.md                  # Product requirements document
 │   ├── memory.md               # System context & state tracking
+│   ├── six_box_canvas.md       # The Six-Box Design Canvas (Capstone Framework)
 │   ├── rules.md                # Engineering guidelines & coding standards
 │   └── tasks.md                # Implementation roadmap
 ├── requirements.txt            # Python dependencies
@@ -230,6 +239,7 @@ python main.py
 - **Support Hub Operator SPA**: Open [app.html](file:///c:/Users/kastu/Desktop/mahesh%20pro/app.html) directly in any modern browser.
 - **Commercial Landing Page**: Open [index.html](file:///c:/Users/kastu/Desktop/mahesh%20pro/index.html).
 - **Streamlit Control Center**:
+
   ```bash
   streamlit run app.py
   ```
@@ -291,6 +301,7 @@ python test_phase6_features.py      # Multi-Language, CSAT & Quick Macros
 ### Railway / Render Deployment
 
 The repository includes ready-to-deploy cloud manifests:
+
 - `railway.json` & `nixpacks.toml`: Configured for zero-config Railway builds.
 - `Procfile`: Declares the web process `web: python main.py`.
 

@@ -12,6 +12,7 @@
 | **Vanilla JS (ES6+) & Vanilla CSS (No Frameworks)** | Instant load times, zero build-step overhead, maximum styling control with native glassmorphism, no NPM dependency vulnerabilities. | React, Next.js, Vue, TailwindCSS. |
 | **Sliding-Window Rate Limiting** | Eliminates burst boundary attacks present in fixed-window limiters, provides accurate `Retry-After` calculation. | Fixed-window counter, token bucket in Redis. |
 | **Deterministic Local Fallback Generator** | Guarantees system resilience and passes automated tests even during network disruptions or missing API keys. | Hard failure with HTTP 503, static generic error strings. |
+| **Multi-Turn Conversational Memory & Contextual Retrieval** | Retains recent conversation turns in `<conversation_history>` prompt blocks and automatically enriches short/pronoun-heavy follow-up queries with prior terms for precise ChromaDB vector retrieval. | Stateless single-turn chatbot, heavy session database locks. |
 
 ---
 

@@ -209,6 +209,7 @@ app.add_middleware(
 class QueryRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=2000, description="Customer question text")
     language: Optional[str] = Field("Auto Detect", max_length=50)
+    history: Optional[list[dict]] = Field(default=[], description="Recent conversation history turns [{'role': 'user'|'assistant', 'content': '...'}]")
 
 class QueryResponse(BaseModel):
     answer: str
@@ -332,7 +333,7 @@ def ask(req: QueryRequest):
     if not req.query.strip():
         raise HTTPException(status_code=400, detail="Query cannot be empty")
     try:
-        res = run_rag_pipeline(req.query.strip(), target_language=req.language)
+        res = run_rag_pipeline(req.query.strip(), target_language=req.language, history=req.history)
         
         # Record stats
         QUERY_STATS["total_queries"] += 1
@@ -362,7 +363,7 @@ def ask_stream(req: QueryRequest):
         QUERY_STATS["total_queries"] += 1
         QUERY_STATS["deflected_queries"] += 1
         return StreamingResponse(
-            stream_rag_pipeline(req.query.strip(), target_language=req.language),
+            stream_rag_pipeline(req.query.strip(), target_language=req.language, history=req.history),
             media_type="text/event-stream"
         )
     except Exception as e:

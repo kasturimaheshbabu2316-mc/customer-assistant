@@ -363,6 +363,7 @@ async function handleChatSubmit(event) {
   removeAttachedImage();
 
   appendChatMessage('user', query, [], null, hasImage ? `data:${imgMime};base64,${imgData}` : null);
+  CustomerState.messages.push({ role: 'user', content: query });
 
   if (hasImage) {
     await processVisionClaimQuery(query, imgData, imgMime);
@@ -413,12 +414,13 @@ async function processStreamingQuery(query) {
   const botMsgId = appendChatMessage('assistant', renderThinkingIndicator('Searching store policies...'));
   let accumulatedText = '';
   let sources = [];
+  const historyTurns = CustomerState.messages.slice(0, -1).slice(-6);
 
   try {
     const response = await fetch(`${CustomerState.backendUrl}/ask/stream`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: query, language: CustomerState.selectedLanguage })
+      body: JSON.stringify({ query: query, language: CustomerState.selectedLanguage, history: historyTurns })
     });
 
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -460,7 +462,9 @@ async function processStreamingQuery(query) {
         }
       }
     }
-    updateChatMessage(botMsgId, accumulatedText || 'I am sorry, but our documentation does not cover that. Please contact support@company.com.');
+    const finalAnswer = accumulatedText || 'I am sorry, but our documentation does not cover that. Please contact support@company.com.';
+    updateChatMessage(botMsgId, finalAnswer);
+    CustomerState.messages.push({ role: 'assistant', content: finalAnswer });
   } catch (err) {
     CustomerState.isStreaming = false;
     await processSyncQuery(query, botMsgId);
@@ -469,23 +473,27 @@ async function processStreamingQuery(query) {
 
 async function processSyncQuery(query, existingMsgId = null) {
   const botMsgId = existingMsgId || appendChatMessage('assistant', renderThinkingIndicator('Consulting store policies...'));
+  const historyTurns = CustomerState.messages.slice(0, -1).slice(-6);
   try {
     const res = await fetch(`${CustomerState.backendUrl}/ask`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: query, language: CustomerState.selectedLanguage })
+      body: JSON.stringify({ query: query, language: CustomerState.selectedLanguage, history: historyTurns })
     });
 
     if (res.ok) {
       const data = await res.json();
       updateChatMessage(botMsgId, data.answer);
+      CustomerState.messages.push({ role: 'assistant', content: data.answer });
       const sources = (data.sources || []).map((s, idx) => ({ title: s, distance: data.distances?.[idx] || 0.2 }));
       showCitationSources(sources);
     } else {
       throw new Error('Sync error');
     }
   } catch (err) {
-    updateChatMessage(botMsgId, "I am sorry, but our documentation does not cover that. Please contact support@company.com or click 'Speak to Agent' below.");
+    const errText = "I am sorry, but our documentation does not cover that. Please contact support@company.com or click 'Speak to Agent' below.";
+    updateChatMessage(botMsgId, errText);
+    CustomerState.messages.push({ role: 'assistant', content: errText });
   }
 }
 
