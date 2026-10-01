@@ -27,7 +27,7 @@
 - [knowledge_base/company_faq.txt](#knowledgebasecompanyfaqtxt)
 - [main.py](#mainpy)
 - [nixpacks.toml](#nixpackstoml)
-- [Procfile](#procfile) 
+- [Procfile](#procfile)
 - [rag_engine.py](#ragenginepy)
 - [railway.json](#railwayjson)
 - [README.md](#readmemd)

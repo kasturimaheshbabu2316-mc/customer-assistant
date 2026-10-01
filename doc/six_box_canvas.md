@@ -10,7 +10,7 @@ This document defines the formal **Six-Box Design Canvas** for **OmniDesk AI**, 
 > **Status**: **PASSED (6 / 6 Boxes Populated and Grounded)**  
 > All six dimensions are implemented, verified in active code, and tested against automated benchmarks.
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │                                       THE SIX-BOX DESIGN CANVAS                                         │
 ├───────────────────────────────────┬───────────────────────────────────┬─────────────────────────────────┤
@@ -25,21 +25,25 @@ This document defines the formal **Six-Box Design Canvas** for **OmniDesk AI**, 
 ---
 
 ## 1. Problem
+
 > *What pain? For whom?*
 
 ### 1.1 Target Stakeholders & Personas
+
 1. **End Customers (Retail Shoppers & VIP Accounts)**: Expect instantaneous, reliable answers 24/7 regarding return windows, customs duties, warranties, and order modifications.
 2. **Support Specialists (Tier 1 & Tier 2 Agents)**: Strained by massive ticket backlogs, repetitive standard questions, and context switching across unintegrated tools.
 3. **Support Operations Leads & Enterprise Executives**: Subject to compliance risks, costly dispute resolutions caused by hallucinated AI answers, and SLA breach penalties.
 
 ### 1.2 The Core Pains
-* **Hallucination & Compliance Liability**: Generic LLMs invent unverified policies (e.g., promising full refunds on final-sale electronics or custom return windows), exposing companies to legal and financial disputes.
-* **Tier 1 Support Inefficiency**: 70% to 80% of daily incoming volume consists of repetitive FAQ queries, driving up operational costs and delaying responses to high-value VIP escalations.
-* **Fragmented Agent Context**: When issues are escalated, human agents must manually decipher ticket history, calculate remaining SLA time, search policy docs, and draft replies from scratch.
+
+- **Hallucination & Compliance Liability**: Generic LLMs invent unverified policies (e.g., promising full refunds on final-sale electronics or custom return windows), exposing companies to legal and financial disputes.
+- **Tier 1 Support Inefficiency**: 70% to 80% of daily incoming volume consists of repetitive FAQ queries, driving up operational costs and delaying responses to high-value VIP escalations.
+- **Fragmented Agent Context**: When issues are escalated, human agents must manually decipher ticket history, calculate remaining SLA time, search policy docs, and draft replies from scratch.
 
 ---
 
 ## 2. Roles
+
 > *Who does what—and not what?*
 
 ```mermaid
@@ -77,13 +81,16 @@ graph TD
 ---
 
 ## 3. Handoffs
+
 > *What packet moves between roles?*
 
 OmniDesk AI enforces structured, validated JSON data packets for all cross-role interactions:
 
 ### 3.1 Customer $\to$ AI Agent: Inquiry Packet (`QueryRequest`)
-* **Transport**: `POST /ask` or `POST /ask/stream`
-* **Schema**:
+
+- **Transport**: `POST /ask` or `POST /ask/stream`
+- **Schema**:
+
   ```json
   {
     "query": "Can I return open-box items?",
@@ -96,18 +103,21 @@ OmniDesk AI enforces structured, validated JSON data packets for all cross-role 
   ```
 
 ### 3.2 AI Agent $\to$ Customer: Resolution Packet (`QueryResponse`)
-* **Transport**: SSE Stream or JSON Response
-* **Contents**:
-  * `answer`: Grounded synthesis strictly verified against knowledge base.
-  * `sources`: Verified reference clauses cited with vector distance metrics.
-  * `distances`: Cosine similarity scores per retrieved clause.
-  * `deflected`: Boolean flag indicating whether the query was within policy bounds.
-  * `intent` & `sentiment`: Categorical classifications (`Return & Refund`, `High Urgency`).
-  * `latency_ms`: Execution time telemetry.
+
+- **Transport**: SSE Stream or JSON Response
+- **Contents**:
+  - `answer`: Grounded synthesis strictly verified against knowledge base.
+  - `sources`: Verified reference clauses cited with vector distance metrics.
+  - `distances`: Cosine similarity scores per retrieved clause.
+  - `deflected`: Boolean flag indicating whether the query was within policy bounds.
+  - `intent` & `sentiment`: Categorical classifications (`Return & Refund`, `High Urgency`).
+  - `latency_ms`: Execution time telemetry.
 
 ### 3.3 AI Agent $\to$ Human Support Queue: Escalation Packet (`TicketPacket`)
-* **Transport**: Database write (`omnidesk.db`) & Real-time queue broadcast
-* **Contents**:
+
+- **Transport**: Database write (`omnidesk.db`) & Real-time queue broadcast
+- **Contents**:
+
   ```json
   {
     "ticket_id": "TCK-8492",
@@ -126,16 +136,19 @@ OmniDesk AI enforces structured, validated JSON data packets for all cross-role 
   ```
 
 ### 3.4 AI Copilot $\to$ Human Agent: Draft Proposal Packet
-* **Transport**: `GET /api/tickets/{id}/suggest-reply`
-* **Contents**: Suggested resolution email containing customer greeting, policy clause citations, recommended RMA steps, and closing signature.
+
+- **Transport**: `GET /api/tickets/{id}/suggest-reply`
+- **Contents**: Suggested resolution email containing customer greeting, policy clause citations, recommended RMA steps, and closing signature.
 
 ### 3.5 System $\to$ External Operations: Incident Webhook Packet
-* **Transport**: HTTP POST to Slack `#support-alerts` or PagerDuty
-* **Trigger**: Created on `Urgent` VIP tickets, SLA deadline $\le 30\text{m}$, or CSAT rating $\le 2/5$.
+
+- **Transport**: HTTP POST to Slack `#support-alerts` or PagerDuty
+- **Trigger**: Created on `Urgent` VIP tickets, SLA deadline $\le 30\text{m}$, or CSAT rating $\le 2/5$.
 
 ---
 
 ## 4. Tools & Data
+
 > *Where does truth live?*
 
 | Data / Component | Technology | Role & Truth Boundary |
@@ -152,11 +165,12 @@ OmniDesk AI enforces structured, validated JSON data packets for all cross-role 
 ---
 
 ## 5. Human Gates
+
 > *When must a person decide?*
 
 OmniDesk AI is designed around a **Human-in-the-Loop (HITL)** architecture. The system establishes 5 explicit human decision gates:
 
-```
+```text
 [Customer Query]
        │
        ▼
@@ -189,6 +203,7 @@ OmniDesk AI is designed around a **Human-in-the-Loop (HITL)** architecture. The 
 ---
 
 ## 6. Risks & Metrics
+
 > *How can it fail? How do we measure it?*
 
 ### 6.1 Failure Modes & Engineered Mitigations
@@ -220,12 +235,12 @@ OmniDesk AI is designed around a **Human-in-the-Loop (HITL)** architecture. The 
 Addressing the key architectural requirement: *"How is memory utilized across the platform?"*
 
 1. **Conversational Multi-Turn Memory (AI Chatbot)**:
-   * **Implementation**: `QueryRequest` accepts an optional `history` array containing recent conversation turns (`[{ role: 'user'|'assistant', content: '...' }]`).
-   * **Context Injection**: Recent turns are formatted into `<conversation_history>` blocks in Gemini synthesis prompts.
-   * **Contextual Retrieval**: Pronoun-heavy or short follow-up questions (e.g., *"What if it was opened?"*) are automatically enriched with prior inquiry terms for accurate ChromaDB vector search.
+   - **Implementation**: `QueryRequest` accepts an optional `history` array containing recent conversation turns (`[{ role: 'user'|'assistant', content: '...' }]`).
+   - **Context Injection**: Recent turns are formatted into `<conversation_history>` blocks in Gemini synthesis prompts.
+   - **Contextual Retrieval**: Pronoun-heavy or short follow-up questions (e.g., *"What if it was opened?"*) are automatically enriched with prior inquiry terms for accurate ChromaDB vector search.
 2. **In-Memory Volatile Caching**:
-   * **Rate Limiter**: Sliding-window timestamp deques stored in Python memory for $O(1)$ lookup latency.
-   * **Vector Search Acceleration**: ChromaDB caches HNSW index structures in RAM for sub-50ms search.
+   - **Rate Limiter**: Sliding-window timestamp deques stored in Python memory for $O(1)$ lookup latency.
+   - **Vector Search Acceleration**: ChromaDB caches HNSW index structures in RAM for sub-50ms search.
 3. **Persistent System Memory**:
-   * **Relational CRM Data**: Thread-safe SQLite storage (`omnidesk.db`) maintains permanent ticket histories, audit trails, and staff notes.
-   * **Project Documentation**: Documented in [`doc/memory.md`](file:///c:/Users/kastu/Desktop/mahesh%20pro/doc/memory.md) (Architecture Decisions, System Context, and failure recovery runbooks).
+   - **Relational CRM Data**: Thread-safe SQLite storage (`omnidesk.db`) maintains permanent ticket histories, audit trails, and staff notes.
+   - **Project Documentation**: Documented in [`doc/memory.md`](file:///c:/Users/kastu/Desktop/mahesh%20pro/doc/memory.md) (Architecture Decisions, System Context, and failure recovery runbooks).
