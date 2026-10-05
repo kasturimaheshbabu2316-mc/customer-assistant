@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+  <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport">
   <title>Developer &amp; Admin Gateway | OmniDesk AI</title>
   <meta name="description" content="Secure Developer Enclave & Admin Operations Gateway for OmniDesk AI Support Hub.">
   <link href="https://fonts.googleapis.com" rel="preconnect">
-  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+  <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -57,6 +57,7 @@
     }
     .dev-panel {
       background: rgba(30, 41, 59, 0.7);
+      -webkit-backdrop-filter: blur(16px);
       backdrop-filter: blur(16px);
       border: 1px solid rgba(148, 163, 184, 0.15);
       box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5),
@@ -163,10 +164,10 @@
 
     <!-- Form Container -->
     <div class="w-full rounded-2xl dev-panel p-5">
-      
+
       <!-- Console Login Form -->
       <form id="form-login" class="flex flex-col gap-3.5" onsubmit="handleConsoleLogin(event)">
-        
+
         <div class="flex flex-col gap-1">
           <label class="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider flex justify-between">
             <span>Work IAM ID / Email</span>
@@ -185,7 +186,7 @@
           </div>
           <div class="flex items-center rounded-xl dev-input px-3.5 py-2.5">
             <span class="material-symbols-outlined text-slate-500 text-[19px] mr-2.5">key</span>
-            <input id="input-dev-key" type="password" class="w-full bg-transparent border-0 outline-none text-sm text-white font-mono placeholder:text-slate-600" placeholder="admin-secret-key-2026" required>
+            <input id="input-dev-key" type="password" autocomplete="current-password" class="w-full bg-transparent border-0 outline-none text-sm text-white font-mono placeholder:text-slate-600" placeholder="admin-secret-key-2026" required>
             <button type="button" onclick="togglePassVisibility('input-dev-key', 'key-eye')" class="text-slate-500 hover:text-slate-300 p-1">
               <span id="key-eye" class="material-symbols-outlined text-[18px]">visibility</span>
             </button>
@@ -213,7 +214,7 @@
 
       <!-- Request Key Form (Hidden by default) -->
       <form id="form-request" class="hidden flex-col gap-3.5" onsubmit="handleRequestKey(event)">
-        
+
         <div class="flex flex-col gap-1">
           <label class="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider">Corporate Email Address</label>
           <div class="flex items-center rounded-xl dev-input px-3.5 py-2.5">

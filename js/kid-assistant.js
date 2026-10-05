@@ -221,7 +221,7 @@
             <button type="button" class="sparky-emotion-pill" data-emotion="🚀" title="Vroom!">🚀</button>
             <button type="button" class="sparky-emotion-pill" data-emotion="😎" title="Cool AI">😎</button>
           </div>
-          
+
           <div class="sparky-action-chips">
             <button type="button" class="sparky-chip-btn high-five-btn" id="btn-sparky-highfive">
               <span>✋</span> <strong>Give High Five!</strong>

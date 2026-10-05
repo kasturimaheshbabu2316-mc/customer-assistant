@@ -14,6 +14,7 @@ import os
 import sys
 import time
 import json
+import pytest
 import requests as _raw_requests
 from fastapi.testclient import TestClient
 from server import app
@@ -87,6 +88,23 @@ HEADERS = {
     "Content-Type": "application/json",
     "X-API-Key": ADMIN_KEY
 }
+
+@pytest.fixture
+def ticket_id():
+    t_res = requests.post(
+        f"{BASE_URL}/api/tickets",
+        json={
+            "customer_name": "Elena Rostova",
+            "customer_email": "elena@enterprise.org",
+            "customer_tier": "VIP Enterprise",
+            "priority": "Urgent",
+            "subject": "Expedited Delivery Inquiry",
+            "query": "Need tracking for international order to Europe."
+        },
+        timeout=15
+    )
+    t_data = t_res.json().get("ticket", {})
+    return t_data.get("id", "TCK-1001")
 
 def log(phase: str, step: str, detail: str = "", status: str = "PASS"):
     symbol = "🟢" if status == "PASS" else ("🔴" if status == "FAIL" else "ℹ️")
@@ -174,8 +192,22 @@ def test_phase4_intent_and_crm():
     assert json_res.status_code == 200
     log("Phase 4", "CRM Export & Intent", "CSV and JSON CRM data streams verified", "PASS")
 
-def test_phase5_copilot_and_sla(ticket_id: str):
+def test_phase5_copilot_and_sla(ticket_id: str = None):
     """Phase 5: AI Copilot & Conversation Threading."""
+    if not ticket_id:
+        t_res = requests.post(
+            f"{BASE_URL}/api/tickets",
+            json={
+                "customer_name": "Elena Rostova",
+                "customer_email": "elena@enterprise.org",
+                "customer_tier": "VIP Enterprise",
+                "priority": "Urgent",
+                "subject": "Expedited Delivery Inquiry",
+                "query": "Need tracking for international order to Europe."
+            },
+            timeout=15
+        )
+        ticket_id = t_res.json().get("ticket", {}).get("id", "TCK-1001")
     # 1. Suggest reply
     sug_res = requests.post(f"{BASE_URL}/api/tickets/{ticket_id}/suggest-reply", timeout=30)
     assert sug_res.status_code == 200
@@ -191,8 +223,22 @@ def test_phase5_copilot_and_sla(ticket_id: str):
     assert note_res.status_code == 200
     log("Phase 5", "Copilot & Threading", f"Grounded draft generated & confidential note posted to {ticket_id}", "PASS")
 
-def test_phase6_multilang_and_macros(ticket_id: str):
+def test_phase6_multilang_and_macros(ticket_id: str = None):
     """Phase 6: Multi-Language & Macro Rules."""
+    if not ticket_id:
+        t_res = requests.post(
+            f"{BASE_URL}/api/tickets",
+            json={
+                "customer_name": "Elena Rostova",
+                "customer_email": "elena@enterprise.org",
+                "customer_tier": "VIP Enterprise",
+                "priority": "Urgent",
+                "subject": "Expedited Delivery Inquiry",
+                "query": "Need tracking for international order to Europe."
+            },
+            timeout=15
+        )
+        ticket_id = t_res.json().get("ticket", {}).get("id", "TCK-1001")
     # 1. Multi-lang Spanish RAG
     es_res = requests.post(f"{BASE_URL}/ask", json={"query": "¿Cuál es la política de devoluciones?", "language": "Spanish"}, timeout=30)
     assert es_res.status_code == 200

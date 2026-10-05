@@ -9,7 +9,7 @@ function showToast(message, type = 'info') {
 
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
-  
+
   let icon = 'fa-circle-info';
   if (type === 'success') icon = 'fa-circle-check';
   if (type === 'error') icon = 'fa-triangle-exclamation';
@@ -283,8 +283,8 @@ async function handleDemoSubmit() {
       }
     }
 
-    const fullAnswer = matched 
-      ? matched.answer 
+    const fullAnswer = matched
+      ? matched.answer
       : "I am sorry, but our verified documentation does not cover that specific inquiry. Please contact our human support team at support@company.com.";
     const sourceTag = matched ? matched.source : null;
 

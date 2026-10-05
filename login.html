@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+  <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport">
   <title>Customer Sign In &amp; Registration | OmniDesk Support Hub</title>
   <meta name="description" content="Secure customer account sign in and registration portal for OmniDesk AI customer support.">
   <link href="https://fonts.googleapis.com" rel="preconnect">
-  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+  <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -95,7 +95,7 @@
         <span class="text-[11px] uppercase tracking-wider text-primary font-semibold">Customer Hub</span>
       </div>
     </a>
-    
+
     <div class="flex items-center gap-2">
       <a href="app.html" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface text-xs font-semibold clay-inset transition-colors">
         <i class="fa-solid fa-compass"></i>
@@ -165,7 +165,7 @@
 
     <!-- Main Auth Form -->
     <form id="auth-form" class="flex flex-col gap-3.5" onsubmit="handleAuthSubmit(event)">
-      
+
       <!-- Full Name (Sign Up only) -->
       <div id="field-fullname" class="hidden flex-col gap-1">
         <label class="text-xs font-bold text-on-surface-variant px-1 flex justify-between">
@@ -200,7 +200,7 @@
         </div>
         <div class="flex items-center rounded-2xl bg-surface-container-low clay-inset px-3.5 py-2.5 focus-within:bg-surface-container-lowest transition-all">
           <span class="material-symbols-outlined text-outline text-[19px] mr-2.5">lock</span>
-          <input id="input-password" type="password" class="w-full bg-transparent border-0 outline-none text-sm text-on-surface placeholder:text-outline/70" placeholder="••••••••••••" required>
+          <input id="input-password" type="password" class="w-full bg-transparent border-0 outline-none text-sm text-on-surface placeholder:text-outline/70" placeholder="••••••••••••" autocomplete="current-password" required>
           <button type="button" onclick="togglePassVisibility()" class="text-outline hover:text-on-surface p-1">
             <span id="eye-icon" class="material-symbols-outlined text-[18px]">visibility</span>
           </button>
