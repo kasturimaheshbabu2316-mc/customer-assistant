@@ -41,23 +41,20 @@
       </nav>
 
       <div class="nav-actions">
-        <!-- Theme Mode Switcher (Light / Dark Mode) -->
+        <!-- Theme Mode Switcher -->
         <button type="button" class="btn btn-secondary btn-sm theme-mode-toggle-btn" id="theme-mode-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark / Light Mode" aria-label="Toggle Dark / Light Mode">
           <i class="fa-solid fa-sun" id="theme-mode-icon"></i>
-          <span id="theme-mode-label">Light Mode</span>
+          <span id="theme-mode-label">Theme</span>
         </button>
         <a href="login.html" class="btn btn-secondary btn-sm" id="nav-btn-customer-login" title="Customer Sign In &amp; Registration">
-          <i class="fa-solid fa-user"></i> Sign In
-        </a>
-        <a href="app.html" class="btn btn-secondary btn-sm" id="nav-btn-app-portal">
-          <i class="fa-solid fa-headset"></i> Support Hub
+          <i class="fa-solid fa-user"></i> <span>Sign In</span>
         </a>
         <a href="admin-login.html" class="btn btn-outline btn-sm" id="nav-btn-admin-portal" title="Staff &amp; Admin Operations Console">
-          <i class="fa-solid fa-sliders"></i> Admin Gateway
+          <i class="fa-solid fa-sliders"></i> <span>Admin</span>
         </a>
-        <button type="button" class="btn btn-primary btn-sm" id="nav-btn-book-demo" onclick="openDemoModal()">
-          <i class="fa-solid fa-sparkles"></i> Get Started
-        </button>
+        <a href="app.html" class="btn btn-primary btn-sm" id="nav-btn-app-portal" title="Open Customer Support Hub">
+          <i class="fa-solid fa-headset"></i> <span>Support Hub</span>
+        </a>
         <button type="button" class="mobile-menu-btn" id="mobile-toggle-btn" aria-label="Toggle Navigation" title="Toggle Navigation">
           <i class="fa-solid fa-bars"></i>
         </button>
@@ -687,6 +684,5 @@
   <!-- Scripts -->
   <script src="js/clay-theme.js?v=4.0"></script>
   <script src="js/landing.js?v=4.0"></script>
-  <script src="js/kid-assistant.js?v=4.1"></script>
 </body>
 </html>
