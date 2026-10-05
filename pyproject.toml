@@ -1,22 +1,4 @@
-[tool.pytest.ini_options]
-testpaths = ["."]
-norecursedirs = [
-    ".venv",
-    "venv",
-    "node_modules",
-    "customer-agent-temp",
-    "Lib",
-    "site-packages",
-    "__pycache__",
-    "build",
-    "dist",
-]
-python_files = ["test_*.py"]
-filterwarnings = [
-    "ignore::DeprecationWarning",
-    "ignore::PendingDeprecationWarning",
-    "ignore::pytest.PytestWarning",
-]
+
 
 [tool.ruff]
 exclude = [
