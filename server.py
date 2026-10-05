@@ -110,13 +110,20 @@ def verify_admin_key(
             token = authorization.strip()
             
     current_key = globals().get("ADMIN_API_KEY") or os.getenv("ADMIN_API_KEY", "admin-secret-key-2026").strip()
-    if not token or token != current_key:
-        raise HTTPException(
-            status_code=401,
-            detail="Unauthorized: Missing or invalid Admin API Key in X-API-Key header",
-            headers={"WWW-Authenticate": "ApiKey"}
-        )
-    return True
+    if token and token == current_key:
+        return True
+
+    # Also verify if token is a valid admin session token from database
+    if token:
+        sess = database.get_session(token)
+        if sess and sess.get("role") in ["admin", "developer"]:
+            return True
+
+    raise HTTPException(
+        status_code=401,
+        detail="Unauthorized: Missing or invalid Admin API Key in X-API-Key header",
+        headers={"WWW-Authenticate": "ApiKey"}
+    )
 
 # Backward-compatibility list proxies for legacy test suites
 class TicketsDBProxy(list):
@@ -278,6 +285,154 @@ class UpdateTicketRequest(BaseModel):
     status: Optional[str] = Field(None, description="Open, In Progress, or Resolved")
     assigned_agent: Optional[str] = None
     priority: Optional[str] = None
+
+class UserRegisterRequest(BaseModel):
+    name: str = Field(..., min_length=2, max_length=100)
+    email: str = Field(..., min_length=5, max_length=120)
+    password: str = Field(..., min_length=6, max_length=128)
+
+class UserLoginRequest(BaseModel):
+    email: str = Field(..., min_length=3, max_length=120)
+    password: str = Field(..., min_length=1, max_length=128)
+
+class DevLoginRequest(BaseModel):
+    email: str = Field(..., min_length=3, max_length=120)
+    secret_key: str = Field(..., min_length=1, max_length=200)
+    mfa_token: Optional[str] = Field(None, max_length=20)
+
+class DevKeyRequest(BaseModel):
+    email: str = Field(..., min_length=5, max_length=120)
+    team: str = Field(..., min_length=2, max_length=100)
+    reason: str = Field(..., min_length=5, max_length=500)
+
+# ==============================================================================
+# AUTHENTICATION & IDENTITY APIS
+# ==============================================================================
+
+@app.post("/api/auth/register")
+def register_customer(req: UserRegisterRequest):
+    existing = database.get_user_by_email(req.email)
+    if existing:
+        raise HTTPException(status_code=409, detail="An account with this email already exists.")
+    
+    try:
+        user = database.create_user(
+            name=req.name,
+            email=req.email,
+            password=req.password,
+            role="customer",
+            tier="Standard Retail"
+        )
+        token = database.create_user_session(user["id"], role="customer")
+        return {
+            "status": "success",
+            "message": "Account created successfully!",
+            "user": user,
+            "token": token
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/auth/login")
+def login_customer(req: UserLoginRequest):
+    user = database.authenticate_user(req.email, req.password)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password.")
+    
+    token = database.create_user_session(user["id"], role=user.get("role", "customer"))
+    return {
+        "status": "success",
+        "message": f"Welcome back, {user['name']}!",
+        "user": user,
+        "token": token
+    }
+
+@app.get("/api/auth/me")
+def get_current_user(
+    x_session_token: Optional[str] = Header(None, alias="X-Session-Token"),
+    authorization: Optional[str] = Header(None, alias="Authorization")
+):
+    token = x_session_token
+    if not token and authorization:
+        if authorization.startswith("Bearer "):
+            token = authorization[7:].strip()
+        else:
+            token = authorization.strip()
+            
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated: No session token provided.")
+        
+    session = database.get_session(token)
+    if not session:
+        raise HTTPException(status_code=401, detail="Session expired or invalid. Please sign in again.")
+        
+    return {
+        "status": "success",
+        "user": {
+            "id": session["user_id"],
+            "name": session["name"],
+            "email": session["email"],
+            "tier": session["tier"],
+            "role": session["role"]
+        }
+    }
+
+@app.post("/api/auth/logout")
+def logout_user(
+    x_session_token: Optional[str] = Header(None, alias="X-Session-Token"),
+    authorization: Optional[str] = Header(None, alias="Authorization")
+):
+    token = x_session_token
+    if not token and authorization:
+        if authorization.startswith("Bearer "):
+            token = authorization[7:].strip()
+        else:
+            token = authorization.strip()
+            
+    if token:
+        database.delete_session(token)
+        
+    return {"status": "success", "message": "Successfully signed out."}
+
+@app.post("/api/auth/developer-login")
+def developer_gateway_login(req: DevLoginRequest):
+    current_key = globals().get("ADMIN_API_KEY") or os.getenv("ADMIN_API_KEY", "admin-secret-key-2026").strip()
+    
+    is_valid_key = (req.secret_key.strip() == current_key)
+    admin_user = database.authenticate_user(req.email, req.secret_key)
+    
+    if not is_valid_key and (not admin_user or admin_user.get("role") not in ["admin", "developer"]):
+        raise HTTPException(status_code=401, detail="Invalid Developer Access Key or credentials.")
+        
+    user_id = admin_user["id"] if admin_user else "ADMIN-ROOT"
+    user_name = admin_user["name"] if admin_user else "Developer Operations Lead"
+    token = database.create_user_session(user_id, role="admin")
+    
+    return {
+        "status": "success",
+        "message": f"Developer Console Authenticated. Welcome {user_name}.",
+        "admin_key": current_key,
+        "token": token,
+        "user": {
+            "id": user_id,
+            "name": user_name,
+            "email": req.email,
+            "role": "admin"
+        }
+    }
+
+@app.post("/api/auth/request-key")
+def request_developer_key(req: DevKeyRequest):
+    entry = database.record_developer_key_request(
+        email=req.email,
+        team=req.team,
+        reason=req.reason
+    )
+    return {
+        "status": "success",
+        "message": "Your Developer Access Key request has been submitted for lead review.",
+        "request": entry
+    }
 
 # ==============================================================================
 # CORE CHAT & DIAGNOSTICS APIS
@@ -939,6 +1094,26 @@ def read_admin():
     if os.path.exists("admin.html"):
         return FileResponse("admin.html")
     return {"status": "error", "message": "admin.html not found"}
+
+@app.get("/login")
+@app.get("/login.html")
+@app.get("/signup")
+def read_login():
+    if os.path.exists("login.html"):
+        return FileResponse("login.html")
+    elif os.path.exists("customer_login_sign_up_claymorphism/code.html"):
+        return FileResponse("customer_login_sign_up_claymorphism/code.html")
+    return {"status": "error", "message": "login.html not found"}
+
+@app.get("/admin/login")
+@app.get("/developer/login")
+@app.get("/admin-login.html")
+def read_admin_login():
+    if os.path.exists("admin-login.html"):
+        return FileResponse("admin-login.html")
+    elif os.path.exists("developer_admin_gateway_login_sign_up/code.html"):
+        return FileResponse("developer_admin_gateway_login_sign_up/code.html")
+    return {"status": "error", "message": "admin-login.html not found"}
 
 @app.get("/app")
 @app.get("/app.html")

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Start FastAPI backend on Railway's PORT
-uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} &
+uvicorn main:app --host 0.0.0.0 --port "${PORT:-8000}" &
 
 # Start Streamlit frontend
 export BACKEND_URL="http://127.0.0.1:${PORT:-8000}"

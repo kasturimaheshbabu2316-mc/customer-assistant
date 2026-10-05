@@ -83,8 +83,8 @@
         </a>
 
         <!-- Discrete Staff & UX Control Access Link -->
-        <a href="admin.html" class="btn btn-outline btn-sm sidebar-btn-back sidebar-btn-admin-discrete" title="Access UX &amp; Staff Operations Console">
-          <i class="fa-solid fa-lock"></i> Staff &amp; UX Console
+        <a href="admin-login.html" class="btn btn-outline btn-sm sidebar-btn-back sidebar-btn-admin-discrete" title="Access UX &amp; Staff Operations Console">
+          <i class="fa-solid fa-lock"></i> Staff Gateway
         </a>
       </div>
     </aside>
@@ -123,6 +123,22 @@
             <i class="fa-solid fa-sun" id="theme-mode-icon"></i>
             <span id="theme-mode-label">Light Mode</span>
           </button>
+          <!-- Customer Account / Auth Pill -->
+          <div id="customer-auth-status" class="customer-auth-wrap">
+            <a href="login.html" id="btn-customer-login-link" class="btn btn-primary btn-sm">
+              <i class="fa-solid fa-user"></i> Sign In
+            </a>
+            <div id="user-profile-pill" class="user-profile-pill is-hidden">
+              <span class="user-avatar-circle" id="user-avatar-initials">AR</span>
+              <div class="user-info-text">
+                <span class="user-name-display" id="user-name-display">Alex Rivera</span>
+                <span class="user-tier-badge" id="user-tier-badge">Gold VIP</span>
+              </div>
+              <button type="button" class="btn-icon btn-logout-icon" onclick="customerLogout()" title="Sign Out" aria-label="Sign Out">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+              </button>
+            </div>
+          </div>
           <button type="button" class="btn btn-secondary btn-sm" onclick="exportChatTranscript()" id="btn-export-chat" title="Export conversation as JSON">
             <i class="fa-solid fa-download"></i> Save Chat
           </button>

@@ -68,12 +68,57 @@ const CustomerState = {
 
 // Initialize Customer Portal
 document.addEventListener('DOMContentLoaded', async () => {
+  checkCustomerAuth();
   await loadFeaturesFromBackend();
   await checkBackendHealth();
   renderCustomerPolicies();
   initCustomerWelcomeGreeting();
   handleUrlParameters();
 });
+
+// Customer Authentication State Management
+function checkCustomerAuth() {
+  const token = localStorage.getItem('omni_user_token');
+  const name = localStorage.getItem('omni_user_name');
+  const email = localStorage.getItem('omni_user_email');
+  const tier = localStorage.getItem('omni_user_tier') || 'Standard Retail';
+
+  const loginLink = document.getElementById('btn-customer-login-link');
+  const profilePill = document.getElementById('user-profile-pill');
+  const nameDisplay = document.getElementById('user-name-display');
+  const tierBadge = document.getElementById('user-tier-badge');
+  const avatarInitials = document.getElementById('user-avatar-initials');
+
+  if (token && name) {
+    if (loginLink) loginLink.classList.add('is-hidden');
+    if (profilePill) profilePill.classList.remove('is-hidden');
+    if (nameDisplay) nameDisplay.textContent = name;
+    if (tierBadge) tierBadge.textContent = tier;
+    if (avatarInitials) {
+      const parts = name.trim().split(' ');
+      avatarInitials.textContent = parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0][0].toUpperCase();
+    }
+  } else {
+    if (loginLink) loginLink.classList.remove('is-hidden');
+    if (profilePill) profilePill.classList.add('is-hidden');
+  }
+}
+
+function customerLogout() {
+  const token = localStorage.getItem('omni_user_token');
+  if (token) {
+    fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: { 'X-Session-Token': token }
+    }).catch(() => {});
+  }
+  localStorage.removeItem('omni_user_token');
+  localStorage.removeItem('omni_user_id');
+  localStorage.removeItem('omni_user_name');
+  localStorage.removeItem('omni_user_email');
+  localStorage.removeItem('omni_user_tier');
+  checkCustomerAuth();
+}
 
 // Load dynamic UX features
 async function loadFeaturesFromBackend() {

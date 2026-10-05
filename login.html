@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+  <title>Customer Sign In &amp; Registration | OmniDesk Support Hub</title>
+  <meta name="description" content="Secure customer account sign in and registration portal for OmniDesk AI customer support.">
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#4648d4",
+            "on-primary": "#ffffff",
+            "primary-fixed": "#e1e0ff",
+            "primary-fixed-dim": "#c0c1ff",
+            "on-primary-fixed": "#07006c",
+            "secondary": "#006c49",
+            "secondary-container": "#6cf8bb",
+            "on-secondary-container": "#00714d",
+            "secondary-fixed": "#6ffbbe",
+            "on-secondary-fixed": "#002113",
+            "background": "#fbf9f4",
+            "surface": "#fbf9f4",
+            "on-surface": "#1b1c19",
+            "on-surface-variant": "#464554",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f5f3ee",
+            "surface-container": "#f0eee9",
+            "surface-container-high": "#eae8e3",
+            "outline": "#767586",
+            "outline-variant": "#c7c4d7",
+            "error": "#ba1a1a",
+            "error-container": "#ffdad6"
+          },
+          borderRadius: {
+            "DEFAULT": "1rem",
+            "lg": "1.5rem",
+            "xl": "2rem",
+            "full": "9999px"
+          },
+          fontFamily: {
+            sans: ["Plus Jakarta Sans", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      background: radial-gradient(circle at 15% 15%, rgba(70, 72, 212, 0.08) 0%, transparent 40%),
+                  radial-gradient(circle at 85% 85%, rgba(0, 108, 73, 0.08) 0%, transparent 40%),
+                  #fbf9f4;
+      min-height: 100vh;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .clay-card {
+      box-shadow: inset 2px 2px 4px rgba(255, 255, 255, 0.9),
+                  inset -3px -3px 6px rgba(199, 196, 215, 0.35),
+                  0 18px 36px -10px rgba(100, 116, 139, 0.18);
+    }
+    .clay-inset {
+      box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.08),
+                  inset -2px -2px 4px rgba(255, 255, 255, 0.9);
+    }
+    .clay-btn {
+      box-shadow: inset 2px 2px 3px rgba(255, 255, 255, 0.45),
+                  inset -3px -3px 5px rgba(47, 46, 190, 0.5),
+                  0 12px 24px -4px rgba(70, 72, 212, 0.35);
+    }
+    .clay-btn:active {
+      transform: scale(0.98);
+      box-shadow: inset 4px 4px 6px rgba(0, 0, 0, 0.3),
+                  inset -2px -2px 4px rgba(255, 255, 255, 0.3);
+    }
+  </style>
+</head>
+<body class="text-on-surface flex flex-col justify-between p-4 sm:p-6">
+
+  <!-- Header Navigation -->
+  <header class="w-full max-w-xl mx-auto flex items-center justify-between py-2">
+    <a href="index.html" class="flex items-center gap-2.5 text-on-surface hover:opacity-85 transition-opacity">
+      <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white shadow-md">
+        <i class="fa-solid fa-headset text-lg"></i>
+      </div>
+      <div class="flex flex-col">
+        <span class="font-bold text-lg leading-tight tracking-tight">OmniDesk<span class="text-primary font-extrabold">AI</span></span>
+        <span class="text-[11px] uppercase tracking-wider text-primary font-semibold">Customer Hub</span>
+      </div>
+    </a>
+    
+    <div class="flex items-center gap-2">
+      <a href="app.html" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface text-xs font-semibold clay-inset transition-colors">
+        <i class="fa-solid fa-compass"></i>
+        <span>Guest Access</span>
+      </a>
+      <div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-container text-xs font-bold">
+        <span class="material-symbols-outlined text-[14px]">verified_user</span>
+        <span>E2EE 256-Bit</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="w-full max-w-md mx-auto my-4 flex flex-col gap-4">
+
+    <!-- Mascot & Greeting Card -->
+    <div class="w-full rounded-2xl bg-surface-container-lowest p-4 sm:p-5 flex items-center gap-4 clay-card">
+      <div class="relative shrink-0 w-16 h-16 rounded-full bg-primary-fixed flex items-center justify-center shadow-inner">
+        <svg class="w-12 h-12 transition-transform duration-300 hover:scale-105" viewBox="0 0 48 48" fill="none">
+          <circle cx="24" cy="4.5" r="3.5" fill="#34d399"></circle>
+          <rect x="5" y="9.5" width="38" height="32" rx="16" fill="#c9cbff"></rect>
+          <rect x="9.5" y="16.5" width="29" height="17.5" rx="8.75" fill="#181a44"></rect>
+          <path d="M15 24.5c0.8-2 3.2-2 4 0" stroke="#6ffbbe" stroke-width="2.4" stroke-linecap="round"></path>
+          <path d="M29 24.5c0.8-2 3.2-2 4 0" stroke="#6ffbbe" stroke-width="2.4" stroke-linecap="round"></path>
+          <path d="M21 28.5c1 1.4 5 1.4 6 0" stroke="#6ffbbe" stroke-width="1.8" stroke-linecap="round"></path>
+        </svg>
+        <span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-secondary-fixed flex items-center justify-center">
+          <span class="w-2 h-2 rounded-full bg-secondary animate-ping"></span>
+        </span>
+      </div>
+      <div class="flex flex-col min-w-0">
+        <div class="inline-flex items-center gap-1 self-start px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold uppercase tracking-wider mb-1">
+          <span class="material-symbols-outlined text-[12px]">auto_awesome</span>
+          <span>Sparky Customer Assistant</span>
+        </div>
+        <h1 class="text-xl font-extrabold text-on-surface leading-tight" id="mascot-greeting">Welcome back!</h1>
+        <p class="text-xs text-on-surface-variant" id="mascot-sub">Sign in to track orders, file claims, and chat with AI grounded in store policies.</p>
+      </div>
+    </div>
+
+    <!-- Mode Switcher (Sign In vs Create Account) -->
+    <div class="w-full p-1.5 rounded-2xl bg-surface-container clay-inset flex items-center">
+      <button id="tab-signin" type="button" onclick="setAuthMode('signin')" class="flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-center transition-all duration-200 bg-surface-container-lowest text-primary shadow-sm">
+        Sign In
+      </button>
+      <button id="tab-signup" type="button" onclick="setAuthMode('signup')" class="flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-center transition-all duration-200 text-on-surface-variant hover:text-on-surface">
+        Create Account
+      </button>
+    </div>
+
+    <!-- Quick Demo Autofill Pill -->
+    <div class="rounded-xl bg-surface-container-lowest p-2.5 flex items-center justify-between text-xs border border-primary/20 shadow-sm">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-user-check text-primary"></i>
+        <span class="text-on-surface-variant">Demo Account: <strong class="text-on-surface">Alex Rivera (VIP)</strong></span>
+      </div>
+      <button type="button" onclick="autofillDemoCustomer()" class="px-2.5 py-1 rounded-lg bg-primary-fixed text-primary font-bold hover:bg-primary hover:text-white transition-colors">
+        Auto-Fill
+      </button>
+    </div>
+
+    <!-- Alert / Status Banner -->
+    <div id="auth-alert" class="hidden p-3 rounded-xl text-xs font-semibold flex items-center gap-2">
+      <i id="auth-alert-icon" class="fa-solid fa-circle-info"></i>
+      <span id="auth-alert-text"></span>
+    </div>
+
+    <!-- Main Auth Form -->
+    <form id="auth-form" class="flex flex-col gap-3.5" onsubmit="handleAuthSubmit(event)">
+      
+      <!-- Full Name (Sign Up only) -->
+      <div id="field-fullname" class="hidden flex-col gap-1">
+        <label class="text-xs font-bold text-on-surface-variant px-1 flex justify-between">
+          <span>Full Legal Name</span>
+          <span class="text-primary text-[11px]">Required</span>
+        </label>
+        <div class="flex items-center rounded-2xl bg-surface-container-low clay-inset px-3.5 py-2.5 focus-within:bg-surface-container-lowest transition-all">
+          <span class="material-symbols-outlined text-outline text-[19px] mr-2.5">badge</span>
+          <input id="input-name" type="text" class="w-full bg-transparent border-0 outline-none text-sm text-on-surface placeholder:text-outline/70" placeholder="e.g. Alex Rivera">
+        </div>
+      </div>
+
+      <!-- Email Address -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-bold text-on-surface-variant px-1 flex justify-between">
+          <span id="label-email">Email Address</span>
+          <span class="text-secondary text-[11px] flex items-center gap-1">
+            <i class="fa-solid fa-lock text-[10px]"></i> Secure
+          </span>
+        </label>
+        <div class="flex items-center rounded-2xl bg-surface-container-low clay-inset px-3.5 py-2.5 focus-within:bg-surface-container-lowest transition-all">
+          <span class="material-symbols-outlined text-outline text-[19px] mr-2.5">alternate_email</span>
+          <input id="input-email" type="email" class="w-full bg-transparent border-0 outline-none text-sm text-on-surface placeholder:text-outline/70" placeholder="customer@example.com" required>
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="flex flex-col gap-1">
+        <div class="flex items-center justify-between px-1">
+          <label class="text-xs font-bold text-on-surface-variant">Account Password</label>
+          <span id="label-pw-hint" class="text-[11px] text-primary">Min 6 characters</span>
+        </div>
+        <div class="flex items-center rounded-2xl bg-surface-container-low clay-inset px-3.5 py-2.5 focus-within:bg-surface-container-lowest transition-all">
+          <span class="material-symbols-outlined text-outline text-[19px] mr-2.5">lock</span>
+          <input id="input-password" type="password" class="w-full bg-transparent border-0 outline-none text-sm text-on-surface placeholder:text-outline/70" placeholder="••••••••••••" required>
+          <button type="button" onclick="togglePassVisibility()" class="text-outline hover:text-on-surface p-1">
+            <span id="eye-icon" class="material-symbols-outlined text-[18px]">visibility</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button id="btn-submit" type="submit" class="w-full py-3.5 px-6 rounded-2xl bg-primary text-on-primary font-bold text-sm sm:text-base flex items-center justify-center gap-2 clay-btn transition-all mt-1">
+        <span id="btn-text">Sign In to OmniDesk</span>
+        <i class="fa-solid fa-arrow-right text-xs"></i>
+      </button>
+
+    </form>
+
+    <!-- Social & Fast-Track SSO Options -->
+    <div class="flex items-center gap-3 my-1">
+      <div class="flex-1 h-0.5 bg-outline-variant/40"></div>
+      <span class="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">or sign in with</span>
+      <div class="flex-1 h-0.5 bg-outline-variant/40"></div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2">
+      <button type="button" onclick="simulateSocialAuth('Google')" class="py-2.5 px-3 rounded-xl bg-surface-container-lowest text-on-surface text-xs font-bold flex items-center justify-center gap-2 border border-outline-variant/40 hover:bg-surface-container-low transition-colors">
+        <svg class="w-4 h-4" viewBox="0 0 24 24">
+          <path d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.65v3.03h3.88c2.27-2.09 3.66-5.17 3.66-9.12z" fill="#4285F4"></path>
+          <path d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.03c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.13C3.27 21.36 7.35 24 12 24z" fill="#34A853"></path>
+          <path d="M5.28 14.29c-.25-.72-.38-1.49-.38-2.29s.13-1.57.38-2.29V6.57H1.26C.46 8.16 0 9.99 0 12s.46 3.84 1.26 5.43l4.02-3.14z" fill="#FBBC05"></path>
+          <path d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.27 2.64 1.26 6.57l4.02 3.14c.95-2.83 3.6-4.96 6.72-4.96z" fill="#EA4335"></path>
+        </svg>
+        <span>Google SSO</span>
+      </button>
+
+      <button type="button" onclick="simulateSocialAuth('Apple')" class="py-2.5 px-3 rounded-xl bg-surface-container-lowest text-on-surface text-xs font-bold flex items-center justify-center gap-2 border border-outline-variant/40 hover:bg-surface-container-low transition-colors">
+        <i class="fa-brands fa-apple text-base"></i>
+        <span>Apple ID</span>
+      </button>
+    </div>
+
+    <!-- Switch to Developer / Admin Gateway -->
+    <div class="mt-2 text-center pt-2 border-t border-outline-variant/30">
+      <a href="admin-login.html" class="inline-flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-primary transition-colors font-medium">
+        <i class="fa-solid fa-terminal text-primary"></i>
+        <span>Staff or Developer?</span>
+        <strong class="text-primary underline">Access Developer Gateway &rarr;</strong>
+      </a>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="w-full max-w-xl mx-auto text-center py-3 text-xs text-on-surface-variant">
+    <span>&copy; 2026 OmniDesk AI Support Hub. Grounded store policy intelligence.</span>
+  </footer>
+
+  <script>
+    let currentMode = 'signin';
+
+    function setAuthMode(mode) {
+      currentMode = mode;
+      const tabSignIn = document.getElementById('tab-signin');
+      const tabSignUp = document.getElementById('tab-signup');
+      const fieldFullName = document.getElementById('field-fullname');
+      const labelEmail = document.getElementById('label-email');
+      const btnText = document.getElementById('btn-text');
+      const mascotGreeting = document.getElementById('mascot-greeting');
+      const mascotSub = document.getElementById('mascot-sub');
+      hideAlert();
+
+      if (mode === 'signin') {
+        tabSignIn.className = "flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-center transition-all duration-200 bg-surface-container-lowest text-primary shadow-sm";
+        tabSignUp.className = "flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-center transition-all duration-200 text-on-surface-variant hover:text-on-surface";
+        fieldFullName.classList.add('hidden');
+        labelEmail.textContent = 'Email Address';
+        btnText.textContent = 'Sign In to OmniDesk';
+        mascotGreeting.textContent = 'Welcome back!';
+        mascotSub.textContent = 'Sign in to track orders, file claims, and chat with AI grounded in store policies.';
+      } else {
+        tabSignUp.className = "flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-center transition-all duration-200 bg-surface-container-lowest text-primary shadow-sm";
+        tabSignIn.className = "flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-center transition-all duration-200 text-on-surface-variant hover:text-on-surface";
+        fieldFullName.classList.remove('hidden');
+        labelEmail.textContent = 'Work or Personal Email';
+        btnText.textContent = 'Create Customer Account';
+        mascotGreeting.textContent = 'Join OmniDesk Hub!';
+        mascotSub.textContent = 'Experience instant zero-hallucination customer support and automated claims.';
+      }
+    }
+
+    function togglePassVisibility() {
+      const pass = document.getElementById('input-password');
+      const icon = document.getElementById('eye-icon');
+      if (pass.type === 'password') {
+        pass.type = 'text';
+        icon.textContent = 'visibility_off';
+      } else {
+        pass.type = 'password';
+        icon.textContent = 'visibility';
+      }
+    }
+
+    function autofillDemoCustomer() {
+      setAuthMode('signin');
+      document.getElementById('input-email').value = 'customer@example.com';
+      document.getElementById('input-password').value = 'demo12345';
+      showAlert('Demo customer credentials filled! Click Sign In to test.', 'info');
+    }
+
+    function showAlert(msg, type = 'error') {
+      const box = document.getElementById('auth-alert');
+      const text = document.getElementById('auth-alert-text');
+      const icon = document.getElementById('auth-alert-icon');
+      text.textContent = msg;
+      box.className = `p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+        type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' :
+        type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
+        'bg-blue-50 text-blue-800 border border-blue-200'
+      }`;
+      icon.className = type === 'error' ? 'fa-solid fa-triangle-exclamation text-red-600' :
+                       type === 'success' ? 'fa-solid fa-circle-check text-emerald-600' :
+                       'fa-solid fa-circle-info text-blue-600';
+    }
+
+    function hideAlert() {
+      document.getElementById('auth-alert').classList.add('hidden');
+    }
+
+    async function handleAuthSubmit(e) {
+      e.preventDefault();
+      hideAlert();
+
+      const btn = document.getElementById('btn-submit');
+      const originalText = document.getElementById('btn-text').textContent;
+      const email = document.getElementById('input-email').value.trim();
+      const password = document.getElementById('input-password').value;
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> <span>Processing...</span>`;
+
+      try {
+        if (currentMode === 'signin') {
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.detail || 'Sign in failed');
+          }
+
+          localStorage.setItem('omni_user_token', data.token);
+          localStorage.setItem('omni_user_id', data.user.id);
+          localStorage.setItem('omni_user_name', data.user.name);
+          localStorage.setItem('omni_user_email', data.user.email);
+          localStorage.setItem('omni_user_tier', data.user.tier || 'Standard Retail');
+
+          showAlert(`Success! Welcome, ${data.user.name}. Redirecting to Support Hub...`, 'success');
+          setTimeout(() => {
+            const redirect = new URLSearchParams(window.location.search).get('redirect') || 'app.html';
+            window.location.href = redirect;
+          }, 800);
+
+        } else {
+          const name = document.getElementById('input-name').value.trim();
+          if (!name) {
+            throw new Error('Please enter your full name');
+          }
+
+          const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password })
+          });
+
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.detail || 'Registration failed');
+          }
+
+          localStorage.setItem('omni_user_token', data.token);
+          localStorage.setItem('omni_user_id', data.user.id);
+          localStorage.setItem('omni_user_name', data.user.name);
+          localStorage.setItem('omni_user_email', data.user.email);
+          localStorage.setItem('omni_user_tier', data.user.tier || 'Standard Retail');
+
+          showAlert(`Account created! Welcome, ${data.user.name}. Redirecting to Support Hub...`, 'success');
+          setTimeout(() => {
+            const redirect = new URLSearchParams(window.location.search).get('redirect') || 'app.html';
+            window.location.href = redirect;
+          }, 800);
+        }
+      } catch (err) {
+        showAlert(err.message, 'error');
+        btn.disabled = false;
+        btn.innerHTML = `<span id="btn-text">${originalText}</span> <i class="fa-solid fa-arrow-right text-xs"></i>`;
+      }
+    }
+
+    function simulateSocialAuth(provider) {
+      showAlert(`Connecting with ${provider} SSO...`, 'info');
+      setTimeout(() => {
+        // Fast-track demo user session for social login
+        localStorage.setItem('omni_user_token', 'demo_sso_token_' + Date.now());
+        localStorage.setItem('omni_user_id', 'USER-GOOGLE');
+        localStorage.setItem('omni_user_name', 'Alex Rivera');
+        localStorage.setItem('omni_user_email', 'alex.rivera@gmail.com');
+        localStorage.setItem('omni_user_tier', 'Gold VIP');
+        showAlert(`Authenticated via ${provider}! Redirecting...`, 'success');
+        setTimeout(() => {
+          window.location.href = 'app.html';
+        }, 700);
+      }, 900);
+    }
+  </script>
+</body>
+</html>

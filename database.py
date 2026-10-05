@@ -14,6 +14,8 @@ import sqlite3
 import time
 import json
 import random
+import hashlib
+import secrets
 from typing import Optional, Any
 
 DB_DIR = os.getenv("DATA_DIR", "data")
@@ -117,6 +119,44 @@ def init_db():
     );
     """)
 
+    # 7. Customer & Developer Users Table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        salt TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'customer',
+        tier TEXT NOT NULL DEFAULT 'Standard Retail',
+        created_at TEXT NOT NULL
+    );
+    """)
+
+    # 8. User Auth Sessions Table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS sessions (
+        token TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        role TEXT NOT NULL,
+        created_at REAL NOT NULL,
+        expires_at REAL NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    );
+    """)
+
+    # 9. Developer Key Requests Table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS developer_key_requests (
+        id TEXT PRIMARY KEY,
+        email TEXT NOT NULL,
+        team TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        timestamp TEXT NOT NULL
+    );
+    """)
+
     conn.commit()
 
     # Seed initial data if tickets table is empty
@@ -124,6 +164,12 @@ def init_db():
     count = cursor.fetchone()["count"]
     if count == 0:
         _seed_initial_data(conn)
+
+    # Seed initial demo users if users table is empty
+    cursor.execute("SELECT COUNT(*) as count FROM users;")
+    u_count = cursor.fetchone()["count"]
+    if u_count == 0:
+        _seed_initial_users(conn)
 
     conn.close()
 
@@ -613,6 +659,186 @@ def get_customer_safe_ticket(ticket_id: str) -> Optional[dict]:
         if not m.get("is_internal_note")
     ]
     return safe_ticket
+
+# ==============================================================================
+# USER AUTHENTICATION & SESSION MANAGEMENT
+# ==============================================================================
+
+def hash_password(password: str, salt: Optional[str] = None) -> tuple[str, str]:
+    """Generates a cryptographically strong PBKDF2-HMAC-SHA256 password hash and salt."""
+    if not salt:
+        salt = secrets.token_hex(16)
+    pw_hash = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        salt.encode("utf-8"),
+        100000
+    ).hex()
+    return pw_hash, salt
+
+def verify_password(password: str, salt: str, password_hash: str) -> bool:
+    """Verifies a password against the stored salt and PBKDF2 hash using constant-time comparison."""
+    test_hash, _ = hash_password(password, salt=salt)
+    return secrets.compare_digest(test_hash, password_hash)
+
+def create_user(
+    name: str,
+    email: str,
+    password: str,
+    role: str = "customer",
+    tier: str = "Standard Retail"
+) -> dict:
+    """Creates a new user with hashed credentials."""
+    conn = _get_connection()
+    cursor = conn.cursor()
+    user_id = f"USER-{random.randint(1000, 9999)}"
+    created_at = time.strftime("%Y-%m-%d %H:%M:%S")
+    pw_hash, salt = hash_password(password)
+    
+    clean_email = email.strip().lower()
+    cursor.execute("""
+    INSERT INTO users (id, name, email, password_hash, salt, role, tier, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+    """, (user_id, name.strip(), clean_email, pw_hash, salt, role, tier, created_at))
+    conn.commit()
+    conn.close()
+    
+    return {
+        "id": user_id,
+        "name": name.strip(),
+        "email": clean_email,
+        "role": role,
+        "tier": tier,
+        "created_at": created_at
+    }
+
+def get_user_by_email(email: str) -> Optional[dict]:
+    conn = _get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE LOWER(email) = ?;", (email.strip().lower(),))
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        return None
+    return dict(row)
+
+def get_user_by_id(user_id: str) -> Optional[dict]:
+    conn = _get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE id = ?;", (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        return None
+    return dict(row)
+
+def authenticate_user(email: str, password: str) -> Optional[dict]:
+    """Authenticates email and password, returning sanitized user info on success."""
+    user = get_user_by_email(email)
+    if not user:
+        return None
+    if verify_password(password, user["salt"], user["password_hash"]):
+        user_safe = dict(user)
+        user_safe.pop("password_hash", None)
+        user_safe.pop("salt", None)
+        return user_safe
+    return None
+
+def create_user_session(user_id: str, role: str = "customer", duration_seconds: int = 86400 * 7) -> str:
+    """Generates and stores a secure session token."""
+    token = secrets.token_hex(32)
+    created_at = time.time()
+    expires_at = created_at + duration_seconds
+    conn = _get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+    INSERT INTO sessions (token, user_id, role, created_at, expires_at)
+    VALUES (?, ?, ?, ?, ?);
+    """, (token, user_id, role, created_at, expires_at))
+    conn.commit()
+    conn.close()
+    return token
+
+def get_session(token: str) -> Optional[dict]:
+    """Validates session token and returns active session + user metadata."""
+    if not token:
+        return None
+    conn = _get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+    SELECT s.token, s.user_id, s.role, s.expires_at, u.name, u.email, u.tier
+    FROM sessions s
+    JOIN users u ON s.user_id = u.id
+    WHERE s.token = ?;
+    """, (token,))
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        return None
+    if row["expires_at"] < time.time():
+        delete_session(token)
+        return None
+    return dict(row)
+
+def delete_session(token: str) -> bool:
+    """Logs out by invalidating the session token."""
+    conn = _get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM sessions WHERE token = ?;", (token,))
+    affected = cursor.rowcount > 0
+    conn.commit()
+    conn.close()
+    return affected
+
+def record_developer_key_request(email: str, team: str, reason: str) -> dict:
+    """Records an access request for Developer Gateway."""
+    req_id = f"DEVREQ-{random.randint(100, 999)}"
+    now = time.strftime("%Y-%m-%d %H:%M:%S")
+    conn = _get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+    INSERT INTO developer_key_requests (id, email, team, reason, status, timestamp)
+    VALUES (?, ?, ?, ?, 'pending', ?);
+    """, (req_id, email.strip(), team.strip(), reason.strip(), now))
+    conn.commit()
+    conn.close()
+    return {
+        "id": req_id,
+        "email": email.strip(),
+        "team": team.strip(),
+        "reason": reason.strip(),
+        "status": "pending",
+        "timestamp": now
+    }
+
+def get_developer_key_requests() -> list[dict]:
+    conn = _get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM developer_key_requests ORDER BY timestamp DESC;")
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def _seed_initial_users(conn: sqlite3.Connection):
+    """Seeds initial demo customer and admin accounts."""
+    cursor = conn.cursor()
+    now_str = time.strftime("%Y-%m-%d %H:%M:%S")
+    
+    # 1. Demo Customer (Alex Rivera - Gold VIP)
+    cust_pw_hash, cust_salt = hash_password("demo12345")
+    cursor.execute("""
+    INSERT INTO users (id, name, email, password_hash, salt, role, tier, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+    """, ("CUST-DEMO", "Alex Rivera", "customer@example.com", cust_pw_hash, cust_salt, "customer", "Gold VIP", now_str))
+
+    # 2. Demo Administrator / Developer
+    admin_pw_hash, admin_salt = hash_password("admin-secret-key-2026")
+    cursor.execute("""
+    INSERT INTO users (id, name, email, password_hash, salt, role, tier, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+    """, ("ADMIN-ROOT", "Mahesh Babu (Lead Admin)", "admin@omnidesk.ai", admin_pw_hash, admin_salt, "admin", "Enterprise Staff", now_str))
+    
+    conn.commit()
 
 # Initialize SQLite database immediately upon import
 init_db()

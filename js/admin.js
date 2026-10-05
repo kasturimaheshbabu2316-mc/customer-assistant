@@ -26,13 +26,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Authentication Gate
 function checkExistingAuth() {
   const savedKey = localStorage.getItem('omni_admin_key');
+  const savedToken = localStorage.getItem('omni_admin_token');
   const authGate = document.getElementById('admin-auth-gate');
-  if (savedKey) {
-    AdminState.apiKey = savedKey;
+  if (savedKey || savedToken) {
+    AdminState.apiKey = savedKey || savedToken;
     AdminState.isAuthenticated = true;
     if (authGate) authGate.classList.add('is-hidden');
   } else {
-    if (authGate) authGate.classList.remove('is-hidden');
+    // Redirect unauthenticated staff to Developer Gateway
+    window.location.href = 'admin-login.html';
   }
 }
 
@@ -51,11 +53,10 @@ async function handleAdminLogin(event) {
 
 function adminLogout() {
   localStorage.removeItem('omni_admin_key');
+  localStorage.removeItem('omni_admin_token');
+  localStorage.removeItem('omni_admin_email');
   AdminState.isAuthenticated = false;
-  const authGate = document.getElementById('admin-auth-gate');
-  if (authGate) authGate.classList.remove('is-hidden');
-  const keyInput = document.getElementById('admin-key-input');
-  if (keyInput) keyInput.value = '';
+  window.location.href = 'admin-login.html';
 }
 
 async function loadAllAdminData() {

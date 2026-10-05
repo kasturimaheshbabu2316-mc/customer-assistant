@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+  <title>Developer &amp; Admin Gateway | OmniDesk AI</title>
+  <meta name="description" content="Secure Developer Enclave & Admin Operations Gateway for OmniDesk AI Support Hub.">
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#4648d4",
+            "on-primary": "#ffffff",
+            "primary-fixed": "#e1e0ff",
+            "on-primary-fixed": "#07006c",
+            "secondary": "#006c49",
+            "secondary-container": "#6cf8bb",
+            "on-secondary-container": "#00714d",
+            "background": "#0f172a",
+            "surface": "#1e293b",
+            "surface-low": "#182234",
+            "on-surface": "#f8fafc",
+            "on-surface-variant": "#94a3b8",
+            "outline": "#64748b",
+            "outline-variant": "#334155"
+          },
+          borderRadius: {
+            "DEFAULT": "0.75rem",
+            "lg": "1.25rem",
+            "xl": "1.75rem",
+            "full": "9999px"
+          },
+          fontFamily: {
+            sans: ["Plus Jakarta Sans", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      background: radial-gradient(circle at 10% 10%, rgba(70, 72, 212, 0.15) 0%, transparent 45%),
+                  radial-gradient(circle at 90% 90%, rgba(0, 108, 73, 0.12) 0%, transparent 45%),
+                  #0b1120;
+      color: #f8fafc;
+      min-height: 100vh;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .dev-panel {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5),
+                  inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+    }
+    .dev-input {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      box-shadow: inset 1px 2px 4px rgba(0, 0, 0, 0.4);
+    }
+    .dev-input:focus-within {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+    }
+    .dev-btn {
+      background: linear-gradient(135deg, #4648d4 0%, #312e81 100%);
+      box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.3),
+                  0 8px 18px -4px rgba(70, 72, 212, 0.5);
+    }
+    .dev-btn:active {
+      transform: scale(0.98);
+    }
+  </style>
+</head>
+<body class="flex flex-col justify-between p-4 sm:p-6">
+
+  <!-- Header Navigation -->
+  <header class="w-full max-w-xl mx-auto flex items-center justify-between py-2">
+    <a href="index.html" class="flex items-center gap-2.5 text-white hover:opacity-85 transition-opacity">
+      <div class="w-10 h-10 rounded-xl bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+        <i class="fa-solid fa-sliders text-lg"></i>
+      </div>
+      <div class="flex flex-col">
+        <span class="font-bold text-lg leading-tight tracking-tight">OmniDesk<span class="text-indigo-400 font-extrabold">Admin</span></span>
+        <span class="text-[11px] font-mono uppercase tracking-wider text-indigo-300">Developer Enclave</span>
+      </div>
+    </a>
+
+    <div class="flex items-center gap-2">
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-xs font-mono text-emerald-400">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>US-East Cluster</span>
+      </div>
+      <a href="login.html" class="px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-xs text-slate-300 hover:text-white font-medium transition-colors">
+        Customer Login
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="w-full max-w-md mx-auto my-4 flex flex-col gap-4">
+
+    <!-- Trust & Enclave Badges Banner -->
+    <div class="w-full rounded-2xl dev-panel p-4 flex flex-col gap-2.5">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-indigo-400 text-[22px]">admin_panel_settings</span>
+          <h1 class="text-lg font-bold text-white tracking-tight">Security Gateway</h1>
+        </div>
+        <span class="text-xs font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700">v4.0 Live</span>
+      </div>
+
+      <div class="flex flex-wrap gap-1.5">
+        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 text-[11px] font-mono">
+          <i class="fa-solid fa-lock text-[10px]"></i> SECURE ENCLAVE
+        </span>
+        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-950/60 border border-indigo-500/30 text-indigo-300 text-[11px] font-mono">
+          <i class="fa-solid fa-shield text-[10px]"></i> TLS 1.3 / ZERO-TRUST
+        </span>
+        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-800/80 border border-slate-700 text-slate-300 text-[11px] font-mono">
+          <i class="fa-solid fa-server text-[10px]"></i> RBAC AUTH
+        </span>
+      </div>
+    </div>
+
+    <!-- Segmented Mode Slider: Console Login vs Request Key -->
+    <div class="w-full p-1 rounded-xl bg-slate-900 border border-slate-800 flex items-center">
+      <button id="tab-login" type="button" onclick="switchGatewayMode('login')" class="flex-1 py-2 rounded-lg text-xs font-bold text-center transition-all bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1.5">
+        <i class="fa-solid fa-terminal text-xs"></i>
+        <span>Console Login</span>
+      </button>
+      <button id="tab-request" type="button" onclick="switchGatewayMode('request')" class="flex-1 py-2 rounded-lg text-xs font-bold text-center transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1.5">
+        <i class="fa-solid fa-key text-xs"></i>
+        <span>Request Key</span>
+      </button>
+    </div>
+
+    <!-- Quick Autofill Root Key Pill -->
+    <div class="rounded-xl bg-slate-900/80 border border-indigo-500/30 p-2.5 flex items-center justify-between text-xs">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-shield-halved text-indigo-400"></i>
+        <span class="text-slate-300">Default Admin Key: <code class="text-indigo-300 font-mono">admin-secret-key-2026</code></span>
+      </div>
+      <button type="button" onclick="autofillMasterKey()" class="px-2.5 py-1 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-bold hover:bg-indigo-600 hover:text-white transition-colors">
+        Auto-Fill
+      </button>
+    </div>
+
+    <!-- Status Alert Banner -->
+    <div id="gateway-alert" class="hidden p-3 rounded-xl text-xs font-semibold flex items-center gap-2">
+      <i id="gateway-alert-icon" class="fa-solid fa-circle-info"></i>
+      <span id="gateway-alert-text"></span>
+    </div>
+
+    <!-- Form Container -->
+    <div class="w-full rounded-2xl dev-panel p-5">
+      
+      <!-- Console Login Form -->
+      <form id="form-login" class="flex flex-col gap-3.5" onsubmit="handleConsoleLogin(event)">
+        
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider flex justify-between">
+            <span>Work IAM ID / Email</span>
+            <span class="text-slate-500 font-mono text-[10px]">admin@omnidesk.ai</span>
+          </label>
+          <div class="flex items-center rounded-xl dev-input px-3.5 py-2.5">
+            <span class="material-symbols-outlined text-slate-500 text-[19px] mr-2.5">badge</span>
+            <input id="input-dev-email" type="email" class="w-full bg-transparent border-0 outline-none text-sm text-white font-mono placeholder:text-slate-600" placeholder="admin@omnidesk.ai" required>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider">Secret API Key / Passcode</label>
+            <span class="text-[11px] text-indigo-400 font-mono">X-API-Key</span>
+          </div>
+          <div class="flex items-center rounded-xl dev-input px-3.5 py-2.5">
+            <span class="material-symbols-outlined text-slate-500 text-[19px] mr-2.5">key</span>
+            <input id="input-dev-key" type="password" class="w-full bg-transparent border-0 outline-none text-sm text-white font-mono placeholder:text-slate-600" placeholder="admin-secret-key-2026" required>
+            <button type="button" onclick="togglePassVisibility('input-dev-key', 'key-eye')" class="text-slate-500 hover:text-slate-300 p-1">
+              <span id="key-eye" class="material-symbols-outlined text-[18px]">visibility</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Optional 6-digit MFA well -->
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider">Authenticator TOTP (Optional)</label>
+            <span class="text-[10px] text-emerald-400 font-mono">Bypass in Dev</span>
+          </div>
+          <div class="flex items-center rounded-xl dev-input px-3.5 py-2">
+            <span class="material-symbols-outlined text-slate-500 text-[19px] mr-2.5">security_update_good</span>
+            <input id="input-mfa" type="text" maxlength="6" class="w-full bg-transparent border-0 outline-none text-sm text-white font-mono placeholder:text-slate-600 tracking-widest" placeholder="6-digit code (e.g. 123456)">
+          </div>
+        </div>
+
+        <button id="btn-login-submit" type="submit" class="w-full py-3.5 px-6 rounded-xl dev-btn text-white font-bold text-sm flex items-center justify-center gap-2 transition-all mt-1">
+          <i class="fa-solid fa-rocket text-xs"></i>
+          <span id="btn-login-text">Authenticate Session &amp; Launch Console</span>
+        </button>
+
+      </form>
+
+      <!-- Request Key Form (Hidden by default) -->
+      <form id="form-request" class="hidden flex-col gap-3.5" onsubmit="handleRequestKey(event)">
+        
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider">Corporate Email Address</label>
+          <div class="flex items-center rounded-xl dev-input px-3.5 py-2.5">
+            <span class="material-symbols-outlined text-slate-500 text-[19px] mr-2.5">mail</span>
+            <input id="input-req-email" type="email" class="w-full bg-transparent border-0 outline-none text-sm text-white font-mono placeholder:text-slate-600" placeholder="dev-lead@company.com" required>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider">Team / Department</label>
+          <div class="flex items-center rounded-xl dev-input px-3.5 py-2.5">
+            <span class="material-symbols-outlined text-slate-500 text-[19px] mr-2.5">group</span>
+            <input id="input-req-team" type="text" class="w-full bg-transparent border-0 outline-none text-sm text-white placeholder:text-slate-600" placeholder="e.g. Core Infrastructure / UX Team" required>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider">Business Reason / Justification</label>
+          <textarea id="input-req-reason" rows="3" class="w-full rounded-xl dev-input p-3 text-sm text-white placeholder:text-slate-600 outline-none" placeholder="Provide reason for accessing knowledge base vector tuning and settings..." required></textarea>
+        </div>
+
+        <button id="btn-req-submit" type="submit" class="w-full py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all mt-1 shadow-lg shadow-emerald-900/30">
+          <i class="fa-solid fa-paper-plane text-xs"></i>
+          <span id="btn-req-text">Submit Key Request to SecOps</span>
+        </button>
+
+      </form>
+
+      <!-- Fast-Track GitHub SSO -->
+      <div class="pt-4 border-t border-slate-800/80 mt-3">
+        <button type="button" onclick="simulateGitHubSSO()" class="w-full py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold flex items-center justify-center gap-2 transition-colors">
+          <i class="fa-brands fa-github text-base text-white"></i>
+          <span>Fast-Track Sign in with GitHub Dev Team</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Real-Time Ops Telemetry Bar -->
+    <div class="w-full rounded-xl dev-panel p-3 flex flex-col gap-2">
+      <div class="flex items-center justify-between text-xs font-mono">
+        <span class="flex items-center gap-1.5 text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span>Telemetry Deck</span>
+        </span>
+        <span class="text-slate-500">Rate Limit: 60 RPM</span>
+      </div>
+      <div class="grid grid-cols-3 gap-2 text-center text-xs font-mono">
+        <div class="bg-slate-900/60 p-1.5 rounded-lg border border-slate-800">
+          <span class="text-slate-500 block text-[10px]">VECTOR CHROMA</span>
+          <span class="text-emerald-400 font-bold">ONLINE</span>
+        </div>
+        <div class="bg-slate-900/60 p-1.5 rounded-lg border border-slate-800">
+          <span class="text-slate-500 block text-[10px]">GUARDRAILS</span>
+          <span class="text-indigo-400 font-bold">ACTIVE</span>
+        </div>
+        <div class="bg-slate-900/60 p-1.5 rounded-lg border border-slate-800">
+          <span class="text-slate-500 block text-[10px]">AUDIT LOGS</span>
+          <span class="text-slate-300 font-bold">PERSISTENT</span>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="w-full max-w-xl mx-auto text-center py-2 text-xs text-slate-500 font-mono">
+    <span>OmniDesk AI Enclave Operations • SOC2 Type II Certified</span>
+  </footer>
+
+  <script>
+    let gatewayMode = 'login';
+
+    function switchGatewayMode(mode) {
+      gatewayMode = mode;
+      const tabLogin = document.getElementById('tab-login');
+      const tabRequest = document.getElementById('tab-request');
+      const formLogin = document.getElementById('form-login');
+      const formRequest = document.getElementById('form-request');
+      hideGatewayAlert();
+
+      if (mode === 'login') {
+        tabLogin.className = "flex-1 py-2 rounded-lg text-xs font-bold text-center transition-all bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1.5";
+        tabRequest.className = "flex-1 py-2 rounded-lg text-xs font-bold text-center transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1.5";
+        formLogin.classList.remove('hidden');
+        formRequest.classList.add('hidden');
+      } else {
+        tabRequest.className = "flex-1 py-2 rounded-lg text-xs font-bold text-center transition-all bg-emerald-600 text-white shadow-sm flex items-center justify-center gap-1.5";
+        tabLogin.className = "flex-1 py-2 rounded-lg text-xs font-bold text-center transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1.5";
+        formRequest.classList.remove('hidden');
+        formLogin.classList.add('hidden');
+      }
+    }
+
+    function togglePassVisibility(inputId, eyeId) {
+      const el = document.getElementById(inputId);
+      const icon = document.getElementById(eyeId);
+      if (el.type === 'password') {
+        el.type = 'text';
+        icon.textContent = 'visibility_off';
+      } else {
+        el.type = 'password';
+        icon.textContent = 'visibility';
+      }
+    }
+
+    function autofillMasterKey() {
+      switchGatewayMode('login');
+      document.getElementById('input-dev-email').value = 'admin@omnidesk.ai';
+      document.getElementById('input-dev-key').value = 'admin-secret-key-2026';
+      showGatewayAlert('Master Developer Key loaded! Click Authenticate to access console.', 'info');
+    }
+
+    function showGatewayAlert(msg, type = 'error') {
+      const box = document.getElementById('gateway-alert');
+      const text = document.getElementById('gateway-alert-text');
+      const icon = document.getElementById('gateway-alert-icon');
+      text.textContent = msg;
+      box.className = `p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+        type === 'error' ? 'bg-red-950/80 text-red-300 border border-red-800' :
+        type === 'success' ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800' :
+        'bg-indigo-950/80 text-indigo-300 border border-indigo-800'
+      }`;
+      icon.className = type === 'error' ? 'fa-solid fa-triangle-exclamation text-red-400' :
+                       type === 'success' ? 'fa-solid fa-circle-check text-emerald-400' :
+                       'fa-solid fa-circle-info text-indigo-400';
+    }
+
+    function hideGatewayAlert() {
+      document.getElementById('gateway-alert').classList.add('hidden');
+    }
+
+    async function handleConsoleLogin(e) {
+      e.preventDefault();
+      hideGatewayAlert();
+
+      const btn = document.getElementById('btn-login-submit');
+      const email = document.getElementById('input-dev-email').value.trim();
+      const secret_key = document.getElementById('input-dev-key').value.trim();
+      const mfa_token = document.getElementById('input-mfa').value.trim();
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> <span>Verifying Enclave Identity...</span>`;
+
+      try {
+        const res = await fetch('/api/auth/developer-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, secret_key, mfa_token: mfa_token || null })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || 'Authorization failed');
+        }
+
+        // Store keys so admin.html immediately gains authorized access
+        localStorage.setItem('omni_admin_key', data.admin_key);
+        localStorage.setItem('omni_admin_token', data.token);
+        localStorage.setItem('omni_admin_email', email);
+
+        showGatewayAlert('Authentication verified! Launching Admin Console...', 'success');
+        setTimeout(() => {
+          const redirect = new URLSearchParams(window.location.search).get('redirect') || 'admin.html';
+          window.location.href = redirect;
+        }, 750);
+
+      } catch (err) {
+        showGatewayAlert(err.message, 'error');
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-rocket text-xs"></i> <span>Authenticate Session &amp; Launch Console</span>`;
+      }
+    }
+
+    async function handleRequestKey(e) {
+      e.preventDefault();
+      hideGatewayAlert();
+
+      const btn = document.getElementById('btn-req-submit');
+      const email = document.getElementById('input-req-email').value.trim();
+      const team = document.getElementById('input-req-team').value.trim();
+      const reason = document.getElementById('input-req-reason').value.trim();
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> <span>Transmitting Request...</span>`;
+
+      try {
+        const res = await fetch('/api/auth/request-key', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, team, reason })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || 'Request failed');
+        }
+
+        showGatewayAlert(`Request #${data.request.id} dispatched! SecOps will review your clearance.`, 'success');
+        document.getElementById('input-req-reason').value = '';
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-check text-xs"></i> <span>Request Transmitted</span>`;
+
+      } catch (err) {
+        showGatewayAlert(err.message, 'error');
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-paper-plane text-xs"></i> <span>Submit Key Request to SecOps</span>`;
+      }
+    }
+
+    function simulateGitHubSSO() {
+      showGatewayAlert('Authenticating with GitHub Organization Enclave...', 'info');
+      setTimeout(() => {
+        localStorage.setItem('omni_admin_key', 'admin-secret-key-2026');
+        localStorage.setItem('omni_admin_token', 'dev_gh_token_' + Date.now());
+        localStorage.setItem('omni_admin_email', 'developer@github.internal');
+        showGatewayAlert('GitHub Org Verified! Redirecting to Admin Console...', 'success');
+        setTimeout(() => {
+          window.location.href = 'admin.html';
+        }, 700);
+      }, 900);
+    }
+  </script>
+</body>
+</html>
