@@ -173,6 +173,14 @@
     }
 
     init() {
+      // AI Assistant runs EXCLUSIVELY on Customer Support Hub (app.html) to help customers resolve queries quickly
+      const isSupportApp = window.location.pathname.endsWith('app.html') || !!document.getElementById('chat-input-form');
+      if (!isSupportApp) {
+        const existing = document.getElementById('sparky-mascot-root');
+        if (existing) existing.remove();
+        return;
+      }
+
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => this.injectDOM());
       } else {
@@ -189,66 +197,57 @@
       container.className = 'sparky-mascot-root';
 
       container.innerHTML = `
-        <!-- Floating Speech Bubble -->
-        <div id="sparky-bubble" class="sparky-speech-bubble" style="${this.isAsleep ? 'display: none;' : ''}">
-          <p class="sparky-speech-text" id="sparky-speech-text">${this.dialogues[0]}</p>
+        <!-- Floating Speech Bubble (Hidden by default to prevent screen clutter) -->
+        <div id="sparky-bubble" class="sparky-speech-bubble" style="display: none;">
+          <p class="sparky-speech-text" id="sparky-speech-text"></p>
           <button type="button" class="sparky-speech-close" id="sparky-bubble-close" title="Dismiss" aria-label="Dismiss speech">✕</button>
         </div>
 
         <!-- Floating Emotional Mood Emoji Halo -->
-        <div class="sparky-mood-halo" id="sparky-mood-halo" title="Sparky's Emotion (Click me!)">
-          <span class="sparky-mood-emoji" id="sparky-mood-emoji">${this.currentEmotion}</span>
+        <div class="sparky-mood-halo" id="sparky-mood-halo" title="Quick Query Copilot (Click me!)">
+          <span class="sparky-mood-emoji" id="sparky-mood-emoji">⚡</span>
         </div>
 
-        <!-- Interactive Kid Menu Card with Emotional Reactions -->
+        <!-- Interactive Quick Query Hub Card -->
         <div id="sparky-menu" class="sparky-interactive-card is-hidden">
           <div class="sparky-menu-header">
             <span class="sparky-menu-title">
-              <span>🎈</span> Sparky's Playful Hub
+              <span>⚡</span> Quick Query Copilot
             </span>
-            <span class="sparky-menu-badge">AI Humanoid Buddy</span>
+            <span class="sparky-menu-badge">Zero-Hallucination AI</span>
           </div>
-          <p class="sparky-menu-subtitle">Tap an emotion to watch me react, or pick a question:</p>
-
-          <!-- Interactive Emotional Emojis Bar -->
-          <div class="sparky-emotions-bar" id="sparky-emotions-bar">
-            <button type="button" class="sparky-emotion-pill" data-emotion="🥰" title="Love & Joy">🥰</button>
-            <button type="button" class="sparky-emotion-pill" data-emotion="🥳" title="Party Time!">🥳</button>
-            <button type="button" class="sparky-emotion-pill" data-emotion="🤔" title="Deep Thought">🤔</button>
-            <button type="button" class="sparky-emotion-pill" data-emotion="💡" title="Got an Idea!">💡</button>
-            <button type="button" class="sparky-emotion-pill" data-emotion="💖" title="Warm Hug">💖</button>
-            <button type="button" class="sparky-emotion-pill" data-emotion="🔥" title="Super Fast">🔥</button>
-            <button type="button" class="sparky-emotion-pill" data-emotion="🚀" title="Vroom!">🚀</button>
-            <button type="button" class="sparky-emotion-pill" data-emotion="😎" title="Cool AI">😎</button>
-          </div>
+          <p class="sparky-menu-subtitle">Select a common inquiry for immediate resolution grounded in store policies:</p>
 
           <div class="sparky-action-chips">
-            <button type="button" class="sparky-chip-btn high-five-btn" id="btn-sparky-highfive">
-              <span>✋</span> <strong>Give High Five!</strong>
-            </button>
             <button type="button" class="sparky-chip-btn" onclick="Sparky.askQuestion('Where is my package and delivery tracking status?')">
-              <span>📦</span> Where's my package?
+              <span>📦</span> <strong>Track Package / Delivery Status</strong>
             </button>
             <button type="button" class="sparky-chip-btn" onclick="Sparky.askQuestion('What is your 30-day return policy and refund process?')">
-              <span>💸</span> Can I get a refund?
+              <span>🔄</span> <strong>30-Day Return &amp; Refund Policy</strong>
+            </button>
+            <button type="button" class="sparky-chip-btn" onclick="Sparky.askQuestion('What is covered under the 1-year manufacturer warranty?')">
+              <span>🛡️</span> <strong>1-Year Warranty Claim Inspection</strong>
+            </button>
+            <button type="button" class="sparky-chip-btn" onclick="Sparky.askQuestion('Can I cancel an order I placed 20 minutes ago?')">
+              <span>⏱️</span> <strong>60-Minute Order Cancellation</strong>
             </button>
             <button type="button" class="sparky-chip-btn" onclick="Sparky.askQuestion('Do you offer a 14-day price match guarantee?')">
-              <span>💳</span> Price Match Guarantee?
+              <span>💳</span> <strong>14-Day Price Match Guarantee</strong>
             </button>
-            <button type="button" class="sparky-chip-btn" id="btn-sparky-secret">
-              <span>🍦</span> Tell me a secret tip!
+            <button type="button" class="sparky-chip-btn" onclick="Sparky.askQuestion('How do international shipping and customs duties work?')">
+              <span>✈️</span> <strong>International Shipping &amp; Customs</strong>
             </button>
-            <button type="button" class="sparky-chip-btn" id="btn-sparky-roam">
-              <span>📍</span> <strong id="sparky-roam-label">Drag & Move (Free Placement)</strong>
+            <button type="button" class="sparky-chip-btn high-five-btn" onclick="if(typeof openHumanEscalationModal === 'function') openHumanEscalationModal(); document.getElementById('sparky-menu')?.classList.add('is-hidden');">
+              <span>🤝</span> <strong>Speak to Human Agent</strong>
             </button>
             <button type="button" class="sparky-chip-btn" id="btn-sparky-sleep" style="margin-top: 4px; opacity: 0.85;">
-              <span>💤</span> Nap Time (Minimize)
+              <span>💤</span> Minimize Copilot
             </button>
           </div>
         </div>
 
         <!-- Full Articulated Mascot Rig (Head, Visor, Body & Moving Hands) -->
-        <button type="button" class="sparky-avatar-btn" id="sparky-avatar-btn" title="Sparky the AI Companion" aria-label="Sparky the AI Companion">
+        <button type="button" class="sparky-avatar-btn" id="sparky-avatar-btn" title="Quick Query AI Copilot" aria-label="Quick Query AI Copilot">
           <div class="sparky-rig pose-idle" id="sparky-rig">
             <!-- Left Arm with Hand & Thumb -->
             <div class="sparky-arm sparky-arm-left" id="sparky-arm-left">
@@ -427,9 +426,7 @@
           this.anchor.y = this.pos.y;
           this.target.x = this.pos.x;
           this.target.y = this.pos.y;
-          this.doJumpAnimation();
-          this.playGiggleSound();
-          this.setEmotion('🚀', "Placed! I'll stay right here. Drag me anytime! ✨", 'cheer');
+          this.playPopTap();
           setTimeout(() => { this.hasDragged = false; }, 150);
         } else {
           this.hasDragged = false;
@@ -457,9 +454,9 @@
             this.wakeUp();
             return;
           }
-          this.playGiggleSound();
+          this.playChimeSound();
           this.doJumpAnimation();
-          this.setEmotion('🥰', "Yay! You tapped me! How can I help you today? ✨", 'cheer');
+          this.setEmotion('⚡', null, 'cheer');
           if (menu) {
             menu.classList.toggle('is-hidden');
           }
@@ -807,14 +804,8 @@
     }
 
     startDialogueCycle() {
-      setInterval(() => {
-        if (this.isAsleep || this.isTyping || this.isStreaming) return;
-        const menu = document.getElementById('sparky-menu');
-        if (menu && !menu.classList.contains('is-hidden')) return;
-
-        this.dialogueIndex = (this.dialogueIndex + 1) % this.dialogues.length;
-        this.speak(this.dialogues[this.dialogueIndex]);
-      }, 22000);
+      // Kept passive so speech bubbles never pop up unsolicited over customer screens
+      return;
     }
 
     doJumpAnimation() {

@@ -321,9 +321,10 @@
     }
 
     injectUI() {
-      if (document.getElementById('clay-theme-dock')) return;
-
-      const dock = document.createElement('div');
+      // Keep UI clean & professional: remove any floating dock widget
+      const existing = document.getElementById('clay-theme-dock');
+      if (existing) existing.remove();
+      return;
       dock.id = 'clay-theme-dock';
       dock.className = 'clay-theme-dock';
       dock.innerHTML = `
