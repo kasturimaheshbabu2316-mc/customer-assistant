@@ -652,7 +652,7 @@ async function loadPipelineSettings() {
       document.getElementById('setting-threshold-val').textContent = s.guardrail_threshold || 1.2;
       document.getElementById('setting-topk-slider').value = s.top_k_chunks || 2;
       document.getElementById('setting-topk-val').textContent = s.top_k_chunks || 2;
-      document.getElementById('setting-gen-model').value = s.generation_model || 'gemini-3.6-flash';
+      document.getElementById('setting-gen-model').value = s.generation_model || 'gemini-1.5-flash';
       document.getElementById('setting-system-prompt').value = s.system_instruction || '';
     }
   } catch (e) {

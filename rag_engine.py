@@ -3,10 +3,18 @@ import re
 import time
 import json
 import uuid
-import hashlib
+import math
+import base64
+from collections import Counter
 from typing import Optional
 import chromadb
 from dotenv import load_dotenv
+
+# Try importing rank_bm25; if not installed, pure-python BM25 fallback is provided
+try:
+    from rank_bm25 import BM25Okapi
+except ImportError:
+    BM25Okapi = None
 
 # Load environment configuration from .env and doc/.env
 load_dotenv()
@@ -15,9 +23,9 @@ if os.path.exists("doc/.env"):
 
 # Runtime Configuration State
 DEFAULT_CONFIG = {
-    "embedding_model": os.getenv("EMBEDDING_MODEL", "gemini-embedding-001"),
-    "generation_model": os.getenv("GENERATION_MODEL", "gemini-3.6-flash"),
-    "guardrail_threshold": float(os.getenv("GUARDRAIL_DISTANCE_THRESHOLD", "0.92")),
+    "embedding_model": os.getenv("EMBEDDING_MODEL", "text-embedding-004"),
+    "generation_model": os.getenv("GENERATION_MODEL", "gemini-1.5-flash"),
+    "guardrail_threshold": float(os.getenv("GUARDRAIL_DISTANCE_THRESHOLD", "1.2")),
     "top_k_chunks": int(os.getenv("TOP_K_CHUNKS", "3")),
     "temperature": float(os.getenv("GENERATION_TEMPERATURE", "0.1")),
     "chroma_path": os.getenv("CHROMA_DB_PATH", "./chroma_db"),
@@ -45,8 +53,10 @@ DEFAULT_KB_PATH = CURRENT_SETTINGS["knowledge_base_path"]
 
 # Lazy / safe client initialization
 _client = None
+_gemini_api_working = True
 
-def get_gemini_api_key():
+def get_gemini_api_key() -> str:
+    """Retrieve key from GEMINI_API_KEY environment variable."""
     return (
         os.getenv("GEMINI_API_KEY") or
         os.getenv("GOOGLE_GEMINI_AP_KEY") or
@@ -63,24 +73,24 @@ def get_genai_client():
         try:
             from google import genai
             from google.genai import types
-            _client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=12000))
+            _client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=10000))
         except Exception as e:
             print(f"[Gemini Client Init Note] {e}")
             return None
     return _client
 
-# Initialize ChromaDB persistent vector store
+# Initialize ChromaDB persistent vector store pointing to ./chroma_db (or ./data/chroma_db) with collection name support_kb
 chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
 collection = chroma_client.get_or_create_collection(
     name="support_kb",
     metadata={"hnsw:space": "cosine"}
 )
 
-def get_pipeline_settings():
+def get_pipeline_settings() -> dict:
     return dict(CURRENT_SETTINGS)
 
-def update_pipeline_settings(new_settings: dict):
-    global EMBEDDING_MODEL, GENERATION_MODEL, GUARDRAIL_THRESHOLD, TOP_K_CHUNKS, TEMPERATURE
+def update_pipeline_settings(new_settings: dict) -> dict:
+    global EMBEDDING_MODEL, GENERATION_MODEL, GUARDRAIL_THRESHOLD, TOP_K_CHUNKS, TEMPERATURE, _gemini_api_working
     for key, val in new_settings.items():
         if key in CURRENT_SETTINGS and val is not None:
             if key in ["guardrail_threshold", "temperature"]:
@@ -95,6 +105,7 @@ def update_pipeline_settings(new_settings: dict):
     GUARDRAIL_THRESHOLD = CURRENT_SETTINGS["guardrail_threshold"]
     TOP_K_CHUNKS = CURRENT_SETTINGS["top_k_chunks"]
     TEMPERATURE = CURRENT_SETTINGS["temperature"]
+    _gemini_api_working = True
     return CURRENT_SETTINGS
 
 FALLBACK_THEMES = [
@@ -120,14 +131,11 @@ def _get_target_dimension() -> int:
             return len(embs[0])
     except Exception:
         pass
-    return 3072
+    return 768
 
-def _generate_deterministic_embedding(text: str, dim: Optional[int] = None) -> list[float]:
-    """Semantic-guided fallback embedding generator for offline / CI testing."""
+def _generate_deterministic_embedding(text: str, dim: int = 768) -> list[float]:
+    """Semantic-guided fallback embedding generator for offline / CI testing with exact 768 dimensions."""
     import random
-    if dim is None:
-        dim = _get_target_dimension()
-    
     t_lower = text.lower()
     vec = [0.0] * dim
     matched_any = False
@@ -145,7 +153,6 @@ def _generate_deterministic_embedding(text: str, dim: Optional[int] = None) -> l
                 vec[j] += matches * t_vec[j]
                 
     if not matched_any:
-        # Pseudo-random noise vector for queries outside verified documentation
         rng = random.Random(f"unrelated_{t_lower}")
         vec = [rng.uniform(-1.0, 1.0) for _ in range(dim)]
         
@@ -155,75 +162,50 @@ def _generate_deterministic_embedding(text: str, dim: Optional[int] = None) -> l
     return vec
 
 def generate_embedding(text: str) -> list[float]:
-    """Generates embedding via Gemini embedding model or fallback mock."""
-    client = get_genai_client()
-    if client:
-        try:
-            emb_res = client.models.embed_content(
-                model=CURRENT_SETTINGS["embedding_model"],
-                contents=text
-            )
-            return emb_res.embeddings[0].values
-        except Exception as e:
-            print(f"[Embedding API Warning] {e}. Falling back to deterministic vector.")
-    return _generate_deterministic_embedding(text)
-
-def parse_faq_sections(full_text: str) -> list[dict]:
-    """Parses FAQ text into structured policy sections."""
-    sections = []
-    raw_sections = re.split(r'\n(?=\d+\.\s+[A-Z\s,&/]+)', full_text)
-    
-    for sec in raw_sections:
-        clean_sec = sec.strip()
-        if not clean_sec or clean_sec.startswith('='):
-            continue
-        
-        lines = clean_sec.split('\n')
-        title_line = lines[0].strip()
-        body = '\n'.join(lines[1:]).strip() if len(lines) > 1 else clean_sec
-        
-        # Match "1. RETURN AND EXCHANGE POLICY"
-        m = re.match(r'(\d+)\.\s+(.*)', title_line)
-        if m:
-            sec_num = m.group(1)
-            sec_title = m.group(2).title()
-            title = f"Section {sec_num}: {sec_title}"
-        else:
-            title = title_line[:60]
-        
-        tokens = max(1, len(clean_sec) // 4)
-        sections.append({
-            "title": title,
-            "content": clean_sec,
-            "tokens": tokens
-        })
-    
-    # Fallback to standard chunking if no numbered sections found
-    if not sections:
-        raw_chunks = chunk_text(full_text)
-        for idx, chunk in enumerate(raw_chunks):
-            sections.append({
-                "title": f"Policy Section {idx + 1}",
-                "content": chunk,
-                "tokens": max(1, len(chunk) // 4)
-            })
-            
-    return sections
+    """Generates embedding standardized to 768 dimensions (text-embedding-004) or deterministic fallback."""
+    global _gemini_api_working
+    if _gemini_api_working:
+        client = get_genai_client()
+        if client:
+            try:
+                emb_res = client.models.embed_content(
+                    model=CURRENT_SETTINGS["embedding_model"],
+                    contents=text
+                )
+                values = emb_res.embeddings[0].values
+                if len(values) == 768:
+                    return values
+                elif len(values) > 768:
+                    vec = values[:768]
+                    norm = sum(x * x for x in vec) ** 0.5
+                    return [x / norm for x in vec] if norm > 0 else vec
+            except Exception as e:
+                err_str = str(e)
+                if any(k in err_str for k in ["404", "400", "403", "API_KEY_INVALID", "NOT_FOUND"]):
+                    _gemini_api_working = False
+    return _generate_deterministic_embedding(text, dim=768)
 
 def chunk_text(text: str, chunk_size: int = 400, overlap: int = 80) -> list[str]:
+    """Chunks text into 400-char pieces with 80-char overlap."""
     chunks = []
     start = 0
-    while start < len(text):
-        end = min(start + chunk_size, len(text))
+    text_len = len(text)
+    while start < text_len:
+        end = min(start + chunk_size, text_len)
         chunk = text[start:end].strip()
         if chunk:
             chunks.append(chunk)
-        if end == len(text):
+        if end >= text_len:
             break
         start += chunk_size - overlap
     return chunks
 
 def ingest_faq(file_path: str = None, force_reindex: bool = False):
+    """
+    Read text, chunk it into 400-char pieces with 80-char overlap,
+    generate embeddings (768 dimensions), and upsert into ChromaDB.
+    """
+    global collection
     if file_path is None:
         file_path = CURRENT_SETTINGS["knowledge_base_path"]
 
@@ -231,37 +213,68 @@ def ingest_faq(file_path: str = None, force_reindex: bool = False):
         print(f"Knowledge file {file_path} does not exist.")
         return
 
+    # Dimension self-healing: ensure collection matches 768 dims
+    target_dim = 768
+    curr_dim = _get_target_dimension()
+    if collection.count() > 0 and curr_dim != target_dim:
+        print(f"[ChromaDB Reset] Collection dimension {curr_dim} != {target_dim}. Re-creating collection...")
+        try:
+            chroma_client.delete_collection("support_kb")
+        except Exception:
+            pass
+        collection = chroma_client.get_or_create_collection(
+            name="support_kb",
+            metadata={"hnsw:space": "cosine"}
+        )
+        force_reindex = True
+
     if collection.count() > 0 and not force_reindex:
-        print(f"Collection already contains {collection.count()} chunks. Ready.")
         return
 
     if force_reindex and collection.count() > 0:
-        all_ids = collection.get()["ids"]
-        if all_ids:
-            collection.delete(ids=all_ids)
-        print("Existing collection purged for re-indexing.")
+        try:
+            all_ids = collection.get()["ids"]
+            if all_ids:
+                collection.delete(ids=all_ids)
+        except Exception:
+            pass
 
     with open(file_path, "r", encoding="utf-8") as f:
         full_text = f.read()
 
-    sections = parse_faq_sections(full_text)
-    print(f"Ingesting {len(sections)} sections into ChromaDB from {file_path}...")
+    chunks = chunk_text(full_text, chunk_size=400, overlap=80)
     
-    for idx, sec in enumerate(sections):
+    ids = []
+    embeddings = []
+    documents = []
+    metadatas = []
+
+    for idx, chunk in enumerate(chunks):
         cid = f"chunk_{idx}"
-        emb = generate_embedding(sec["content"])
-        collection.add(
-            ids=[cid],
-            embeddings=[emb],
-            documents=[sec["content"]],
-            metadatas=[{
-                "title": sec["title"],
-                "source": os.path.basename(file_path),
-                "tokens": sec["tokens"],
-                "chunk_id": idx
-            }]
-        )
-    print(f"Ingestion complete. Total items in DB: {collection.count()}")
+        emb = generate_embedding(chunk)
+        m = re.search(r'(\d+)\.\s+([A-Z\s,&/]+)', chunk)
+        if m:
+            sec_title = m.group(2).strip().title()
+            title = f"Section {m.group(1)}: {sec_title}"
+        else:
+            title = f"Policy Clause {idx + 1}"
+            
+        ids.append(cid)
+        embeddings.append(emb)
+        documents.append(chunk)
+        metadatas.append({
+            "title": title,
+            "source": os.path.basename(file_path),
+            "tokens": max(1, len(chunk) // 4),
+            "chunk_id": idx
+        })
+
+    collection.upsert(
+        ids=ids,
+        embeddings=embeddings,
+        documents=documents,
+        metadatas=metadatas
+    )
 
 def get_all_chunks() -> list[dict]:
     """Returns all knowledge chunks stored in ChromaDB."""
@@ -306,7 +319,7 @@ def add_knowledge_chunk(title: str, content: str, source: str = "custom_policy.t
         "created_at": time.time()
     }
     
-    collection.add(
+    collection.upsert(
         ids=[cid],
         embeddings=[emb],
         documents=[content],
@@ -361,12 +374,12 @@ def generate_local_grounded_answer(query: str, matched_docs: list[str]) -> str:
 
 def classify_intent_and_sentiment(query: str) -> dict:
     """
-    Analyzes customer query text to determine the core intent category and sentiment urgency,
-    supporting multilingual queries across English, Spanish, German, Japanese, French, etc.
+    Return {"intent": str, "sentiment": str} categorized into Return & Refund,
+    Shipping & Logistics, Warranty & Claims, Billing & Payment, or General Inquiry.
     """
     q = query.lower()
     
-    # 1. Intent Classification (with multi-language support)
+    # 1. Intent Classification
     intent = "General Inquiry"
     if any(k in q for k in ["return", "refund", "restock", "money back", "30-day", "exchange", "devoluci", "reembols", "rückgabe", "erstattung", "retour", "remboursement", "返品", "返金", "devoluç", "वापस"]):
         intent = "Return & Refund"
@@ -396,37 +409,19 @@ def classify_intent_and_sentiment(query: str) -> dict:
     }
 
 def detect_language(text: str) -> str:
-    """
-    Detects the primary language of the customer query.
-    Supported: English, Spanish, French, German, Japanese, Portuguese, Hindi.
-    """
+    """Detects query language: English, Spanish, French, German, Japanese, Portuguese, Hindi."""
     if not text:
         return "English"
-    
-    # 1. Unicode script checks
     if any('\u3040' <= char <= '\u309f' or '\u30a0' <= char <= '\u30ff' for char in text):
         return "Japanese"
     if any('\u0900' <= char <= '\u097f' for char in text):
         return "Hindi"
 
-    # 2. Keyword heuristic checks with scoring
     t = text.lower()
-    
-    scores = {
-        "Spanish": 0,
-        "Portuguese": 0,
-        "French": 0,
-        "German": 0,
-        "English": 0
-    }
-    
-    # Portuguese indicators
+    scores = {"Spanish": 0, "Portuguese": 0, "French": 0, "German": 0, "English": 0}
     pt_unique = ["qual", "olá", "ola", "obrigado", "obrigada", "você", "voce", "não", "nao", "troca", "prazo", "rastreamento", "entregue", "devolução", "devolucao", "reembolso"]
-    # Spanish indicators
     es_unique = ["cuál", "cual", "hola", "gracias", "cómo", "como", "envío", "envio", "garantía", "garantia", "días", "cancelar", "precio", "cuánto", "tiempo", "devolución", "devolucion", "reembolso"]
-    # French indicators
     fr_unique = ["bonjour", "remboursement", "retour", "livraison", "combien", "garantie", "délai", "annuler", "merci", "payer", "carte", "quelle", "quel", "est-ce"]
-    # German indicators
     de_unique = ["hallo", "rückgabe", "ruckgabe", "versand", "erstattung", "garantie", "bestellung", "stornieren", "danke", "lieferung", "dauer", "wie", "ist", "das"]
 
     if "qual" in t or "obrigado" in t or "você" in t or "troca" in t or "prazo" in t:
@@ -450,7 +445,6 @@ def detect_language(text: str) -> str:
     best_lang = max(scores, key=scores.get)
     if scores[best_lang] > 0:
         return best_lang
-        
     return "English"
 
 LOCAL_TRANSLATIONS = {
@@ -530,11 +524,10 @@ def translate_grounded_response(answer: str, target_lang: str, query: str = "") 
     return answer
 
 def _format_conversation_history(history: Optional[list[dict]]) -> str:
-    """Formats recent turns into a structured prompt context block."""
     if not history:
         return ""
     valid_turns = []
-    for turn in history[-6:]:  # Keep recent 6 turns for optimal context balance
+    for turn in history[-6:]:
         role = turn.get("role", "")
         role_label = "Customer" if role in ("user", "customer") else "Assistant"
         content = (turn.get("content") or "").strip()
@@ -545,7 +538,6 @@ def _format_conversation_history(history: Optional[list[dict]]) -> str:
     return "<conversation_history>\n" + "\n".join(valid_turns) + "\n</conversation_history>\n\n"
 
 def _build_contextual_query(user_query: str, history: Optional[list[dict]]) -> str:
-    """Enhances vector retrieval for short or pronoun-heavy follow-up questions using prior turn context."""
     if not history:
         return user_query
     q_lower = user_query.lower()
@@ -559,11 +551,16 @@ def _build_contextual_query(user_query: str, history: Optional[list[dict]]) -> s
                     return f"{prev_text} | {user_query}"
     return user_query
 
-def query_rag_pipeline(user_query: str, target_language: Optional[str] = None, history: Optional[list[dict]] = None) -> dict:
+def run_rag_pipeline(query: str, target_language: str = "Auto Detect", history: list = None) -> dict:
     """
-    Complete end-to-end RAG query execution pipeline with multi-language & conversational memory support.
+    Query ChromaDB vectors with a distance threshold (default 1.2).
+    If cosine distance > threshold, mark as deflected (deflected=True) with fallback customer-service guidance.
+    If under threshold, ground prompt using retrieved clauses and generate an answer using Google Gemini (gemini-1.5-flash).
+    Return { "answer": str, "sources": list[str], "distances": list[float], "deflected": bool, "latency_ms": int, "language": str, "model": str }
     """
+    global _gemini_api_working
     start_time = time.time()
+    user_query = query
     classification = classify_intent_and_sentiment(user_query)
     lang = target_language if (target_language and target_language != "Auto Detect") else detect_language(user_query)
     
@@ -580,9 +577,8 @@ def query_rag_pipeline(user_query: str, target_language: Optional[str] = None, h
 
     documents = results.get("documents", [[]])[0]
     distances = results.get("distances", [[]])[0]
-    metadatas = results.get("metadatas", [[]])[0]
 
-    # Guardrail: Distance check
+    # Guardrail: Distance check against threshold (default 1.2)
     is_deflected = not documents or (distances and distances[0] > CURRENT_SETTINGS["guardrail_threshold"])
     if is_deflected:
         latency = int((time.time() - start_time) * 1000)
@@ -594,35 +590,38 @@ def query_rag_pipeline(user_query: str, target_language: Optional[str] = None, h
             "distances": [float(d) for d in distances] if distances else [],
             "deflected": True,
             "latency_ms": latency,
-            "intent": classification["intent"],
-            "sentiment": classification["sentiment"],
             "language": lang,
-            "model": CURRENT_SETTINGS["generation_model"]
+            "model": CURRENT_SETTINGS["generation_model"],
+            "intent": classification["intent"],
+            "sentiment": classification["sentiment"]
         }
 
     context = "\n---\n".join(documents)
     history_context = _format_conversation_history(history)
-    client = get_genai_client()
+    answer = None
 
-    if client:
-        try:
-            from google.genai import types
-            lang_instruction = f" Respond in {lang}." if lang != "English" else ""
-            prompt = f"<context>\n{context}\n</context>\n\n{history_context}<user_query>\n{user_query}\n</user_query>\n{lang_instruction}"
-            response = client.models.generate_content(
-                model=CURRENT_SETTINGS["generation_model"],
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=CURRENT_SETTINGS["system_instruction"] + lang_instruction,
-                    temperature=CURRENT_SETTINGS["temperature"],
+    if _gemini_api_working:
+        client = get_genai_client()
+        if client:
+            try:
+                from google.genai import types
+                lang_instruction = f" Respond in {lang}." if lang != "English" else ""
+                prompt = f"<context>\n{context}\n</context>\n\n{history_context}<user_query>\n{user_query}\n</user_query>\n{lang_instruction}"
+                response = client.models.generate_content(
+                    model=CURRENT_SETTINGS["generation_model"],
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=CURRENT_SETTINGS["system_instruction"] + lang_instruction,
+                        temperature=CURRENT_SETTINGS["temperature"],
+                    )
                 )
-            )
-            answer = response.text.strip()
-        except Exception as e:
-            print(f"[Gemini Generate Warning] {e}. Using grounded fallback generator.")
-            raw_answer = generate_local_grounded_answer(user_query, documents)
-            answer = translate_grounded_response(raw_answer, lang, user_query)
-    else:
+                answer = response.text.strip()
+            except Exception as e:
+                err_str = str(e)
+                if any(k in err_str for k in ["404", "400", "403", "API_KEY_INVALID", "NOT_FOUND"]):
+                    _gemini_api_working = False
+
+    if not answer:
         raw_answer = generate_local_grounded_answer(user_query, documents)
         answer = translate_grounded_response(raw_answer, lang, user_query)
 
@@ -633,26 +632,26 @@ def query_rag_pipeline(user_query: str, target_language: Optional[str] = None, h
         "distances": [float(d) for d in distances] if distances else [],
         "deflected": False,
         "latency_ms": latency,
-        "intent": classification["intent"],
-        "sentiment": classification["sentiment"],
         "language": lang,
-        "model": CURRENT_SETTINGS["generation_model"]
+        "model": CURRENT_SETTINGS["generation_model"],
+        "intent": classification["intent"],
+        "sentiment": classification["sentiment"]
     }
 
-# Alias for backwards compatibility
-run_rag_pipeline = query_rag_pipeline
+# Alias for backwards compatibility with server.py imports
+query_rag_pipeline = run_rag_pipeline
 
-def stream_rag_pipeline(user_query: str, target_language: Optional[str] = None, history: Optional[list[dict]] = None):
+def stream_rag_pipeline(query: str, target_language: str = "Auto Detect", history: list = None):
     """
-    Generator yielding Server-Sent Events (SSE) chunks formatted as:
-    event: <event_type>\ndata: <json_data>\n\n
-    Supports multi-turn conversational memory via history.
+    Generator yielding Server-Sent Events (SSE) data: {"token": "..."}\n\n
+    Also yields event: sources, event: token, event: done for full protocol compatibility.
     """
+    global _gemini_api_working
     start_time = time.time()
+    user_query = query
     classification = classify_intent_and_sentiment(user_query)
     lang = target_language if (target_language and target_language != "Auto Detect") else detect_language(user_query)
     
-    # 1. Embed query & Retrieve (contextualized if short follow-up)
     retrieval_query = _build_contextual_query(user_query, history)
     query_emb = generate_embedding(retrieval_query)
     n_results = min(CURRENT_SETTINGS["top_k_chunks"], max(1, collection.count()))
@@ -663,12 +662,9 @@ def stream_rag_pipeline(user_query: str, target_language: Optional[str] = None, 
 
     documents = results.get("documents", [[]])[0]
     distances = results.get("distances", [[]])[0]
-    metadatas = results.get("metadatas", [[]])[0]
 
-    # Guardrail check
     is_deflected = not documents or (distances and distances[0] > CURRENT_SETTINGS["guardrail_threshold"])
     
-    # Send Sources Event First
     sources_payload = {
         "sources": [] if is_deflected else documents,
         "distances": [float(d) for d in distances] if distances else [],
@@ -686,45 +682,49 @@ def stream_rag_pipeline(user_query: str, target_language: Optional[str] = None, 
             fallback_msg = translate_grounded_response(fallback_msg, lang, user_query)
             
         for word in fallback_msg.split(" "):
-            yield f"event: token\ndata: {json.dumps({'token': word + ' '})}\n\n"
-            time.sleep(0.02)
+            chunk_data = json.dumps({"token": word + " "})
+            yield f"event: token\ndata: {chunk_data}\n\n"
+            time.sleep(0.01)
         latency = int((time.time() - start_time) * 1000)
         yield f"event: done\ndata: {json.dumps({'latency_ms': latency, 'model': CURRENT_SETTINGS['generation_model'], 'deflected': True, 'intent': classification['intent'], 'sentiment': classification['sentiment'], 'language': lang})}\n\n"
         return
 
     context = "\n---\n".join(documents)
     history_context = _format_conversation_history(history)
-    client = get_genai_client()
+    streamed_successfully = False
 
-    if client:
-        try:
-            from google.genai import types
-            lang_instruction = f" Answer in {lang}." if lang != "English" else ""
-            prompt = f"<context>\n{context}\n</context>\n\n{history_context}<user_query>\n{user_query}\n</user_query>\n{lang_instruction}"
-            stream = client.models.generate_content_stream(
-                model=CURRENT_SETTINGS["generation_model"],
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=CURRENT_SETTINGS["system_instruction"] + lang_instruction,
-                    temperature=CURRENT_SETTINGS["temperature"],
+    if _gemini_api_working:
+        client = get_genai_client()
+        if client:
+            try:
+                from google.genai import types
+                lang_instruction = f" Answer in {lang}." if lang != "English" else ""
+                prompt = f"<context>\n{context}\n</context>\n\n{history_context}<user_query>\n{user_query}\n</user_query>\n{lang_instruction}"
+                stream = client.models.generate_content_stream(
+                    model=CURRENT_SETTINGS["generation_model"],
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=CURRENT_SETTINGS["system_instruction"] + lang_instruction,
+                        temperature=CURRENT_SETTINGS["temperature"],
+                    )
                 )
-            )
-            for chunk in stream:
-                if chunk.text:
-                    yield f"event: token\ndata: {json.dumps({'token': chunk.text})}\n\n"
-        except Exception as e:
-            print(f"[Gemini Stream Warning] {e}. Streaming via grounded fallback.")
-            raw_answer = generate_local_grounded_answer(user_query, documents)
-            answer = translate_grounded_response(raw_answer, lang, user_query)
-            for word in answer.split(" "):
-                yield f"event: token\ndata: {json.dumps({'token': word + ' '})}\n\n"
-                time.sleep(0.025)
-    else:
+                for chunk in stream:
+                    if chunk.text:
+                        streamed_successfully = True
+                        chunk_data = json.dumps({"token": chunk.text})
+                        yield f"event: token\ndata: {chunk_data}\n\n"
+            except Exception as e:
+                err_str = str(e)
+                if any(k in err_str for k in ["404", "400", "403", "API_KEY_INVALID", "NOT_FOUND"]):
+                    _gemini_api_working = False
+
+    if not streamed_successfully:
         raw_answer = generate_local_grounded_answer(user_query, documents)
         answer = translate_grounded_response(raw_answer, lang, user_query)
         for word in answer.split(" "):
-            yield f"event: token\ndata: {json.dumps({'token': word + ' '})}\n\n"
-            time.sleep(0.025)
+            chunk_data = json.dumps({"token": word + " "})
+            yield f"event: token\ndata: {chunk_data}\n\n"
+            time.sleep(0.01)
 
     latency = int((time.time() - start_time) * 1000)
     yield f"event: done\ndata: {json.dumps({'latency_ms': latency, 'model': CURRENT_SETTINGS['generation_model'], 'deflected': False, 'intent': classification['intent'], 'sentiment': classification['sentiment'], 'language': lang})}\n\n"
@@ -732,7 +732,6 @@ def stream_rag_pipeline(user_query: str, target_language: Optional[str] = None, 
 def generate_local_copilot_draft(ticket_query: str, customer_name: str, customer_tier: str, documents: list[str]) -> str:
     first_name = customer_name.split()[0] if customer_name else "there"
     vip_greeting = " As one of our priority account members, your inquiry has been fast-tracked." if ("VIP" in customer_tier or "Pro" in customer_tier) else ""
-    
     grounded_info = documents[0] if documents else "our team is actively looking into the details of your request."
     
     return (
@@ -745,12 +744,39 @@ def generate_local_copilot_draft(ticket_query: str, customer_name: str, customer
         "The OmniDesk Support Team"
     )
 
-def generate_agent_reply_draft(ticket_query: str, customer_name: str, customer_tier: str = "Standard Retail", intent: str = "General Inquiry") -> dict:
+def generate_agent_reply_draft(
+    ticket_id: Optional[str] = None,
+    ticket_query: Optional[str] = None,
+    customer_name: Optional[str] = None,
+    customer_tier: Optional[str] = "Standard Retail",
+    intent: Optional[str] = "General Inquiry"
+) -> dict:
     """
-    AI Copilot Generator: Creates a personalized, grounded response draft for a human support agent.
+    Retrieve ticket details, search relevant KB clauses, and synthesize an agent resolution draft.
+    Supports invocation with ticket_id or explicit ticket_query and customer fields.
     """
+    global _gemini_api_working
     start_time = time.time()
-    query_emb = generate_embedding(ticket_query)
+    
+    # If ticket_id provided, look up ticket in database
+    if ticket_id and not ticket_query:
+        try:
+            import database
+            t = database.get_ticket_by_id(str(ticket_id).upper())
+            if t:
+                ticket_query = t.get("query", "")
+                customer_name = customer_name or t.get("customer_name", "Valued Customer")
+                customer_tier = customer_tier or t.get("customer_tier", "Standard Retail")
+                intent = intent or t.get("intent", "General Inquiry")
+        except Exception:
+            pass
+
+    query_text = ticket_query or str(ticket_id or "General support inquiry")
+    cust_name = customer_name or "Valued Customer"
+    cust_tier = customer_tier or "Standard Retail"
+    cat_intent = intent or "General Inquiry"
+
+    query_emb = generate_embedding(query_text)
     results = collection.query(
         query_embeddings=[query_emb],
         n_results=min(3, max(1, collection.count()))
@@ -758,52 +784,256 @@ def generate_agent_reply_draft(ticket_query: str, customer_name: str, customer_t
     documents = results.get("documents", [[]])[0]
     context = "\n---\n".join(documents) if documents else "No specific policy clause found."
 
-    client = get_genai_client()
-    tier_note = f" (Account Tier: {customer_tier})" if customer_tier else ""
-
-    copilot_system_prompt = (
-        "You are OmniDesk AI Copilot assisting a human customer support specialist. "
-        "Draft a warm, polite, professional, and definitive resolution email to the customer based on verified store policies. "
-        "Include clear next steps, address the customer by first name, cite relevant policy conditions (e.g. 30-day window, DDP customs, 1-year warranty), "
-        "and sign off as 'The OmniDesk Support Team'."
-    )
-
-    if client:
-        try:
-            from google.genai import types
-            prompt = (
-                f"<verified_policies>\n{context}\n</verified_policies>\n\n"
-                f"Customer Name: {customer_name}{tier_note}\n"
-                f"Inquiry Category: {intent}\n"
-                f"Customer Message: {ticket_query}\n\n"
-                "Please generate a complete, ready-to-send agent reply draft:"
-            )
-            res = client.models.generate_content(
-                model=CURRENT_SETTINGS["generation_model"],
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=copilot_system_prompt,
-                    temperature=0.3
+    draft = None
+    if _gemini_api_working:
+        client = get_genai_client()
+        if client:
+            try:
+                from google.genai import types
+                tier_note = f" (Account Tier: {cust_tier})" if cust_tier else ""
+                copilot_system_prompt = (
+                    "You are OmniDesk AI Copilot assisting a human customer support specialist. "
+                    "Draft a warm, polite, professional, and definitive resolution email to the customer based on verified store policies. "
+                    "Include clear next steps, address the customer by first name, cite relevant policy conditions (e.g. 30-day window, DDP customs, 1-year warranty), "
+                    "and sign off as 'The OmniDesk Support Team'."
                 )
-            )
-            draft = res.text.strip()
-        except Exception as e:
-            print(f"[Copilot Draft Warning] {e}. Using deterministic copilot draft generator.")
-            draft = generate_local_copilot_draft(ticket_query, customer_name, customer_tier, documents)
-    else:
-        draft = generate_local_copilot_draft(ticket_query, customer_name, customer_tier, documents)
+                prompt = (
+                    f"<verified_policies>\n{context}\n</verified_policies>\n\n"
+                    f"Customer Name: {cust_name}{tier_note}\n"
+                    f"Inquiry Category: {cat_intent}\n"
+                    f"Customer Message: {query_text}\n\n"
+                    "Please generate a complete, ready-to-send agent reply draft:"
+                )
+                res = client.models.generate_content(
+                    model=CURRENT_SETTINGS["generation_model"],
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=copilot_system_prompt,
+                        temperature=0.3
+                    )
+                )
+                draft = res.text.strip()
+            except Exception as e:
+                err_str = str(e)
+                if any(k in err_str for k in ["404", "400", "403", "API_KEY_INVALID", "NOT_FOUND"]):
+                    _gemini_api_working = False
+
+    if not draft:
+        draft = generate_local_copilot_draft(query_text, cust_name, cust_tier, documents)
 
     latency = int((time.time() - start_time) * 1000)
     return {
+        "ticket_id": ticket_id,
+        "customer_name": cust_name,
+        "customer_tier": cust_tier,
+        "intent": cat_intent,
         "suggested_reply": draft,
         "sources": documents,
         "latency_ms": latency
     }
 
+def _tokenize_text(text: str) -> list[str]:
+    return [w.lower() for w in re.findall(r'\b[a-zA-Z0-9_-]+\b', text) if len(w) > 1]
+
+def bm25_search(query: str, top_k: int = 3) -> list[dict]:
+    """Keyword search using rank_bm25 across indexed chunks in ChromaDB."""
+    chunks = get_all_chunks()
+    if not chunks:
+        return []
+    
+    query_tokens = _tokenize_text(query)
+    if not query_tokens:
+        return chunks[:top_k]
+    
+    doc_tokens_list = [_tokenize_text(c["content"] + " " + c["title"]) for c in chunks]
+    
+    scores = []
+    if BM25Okapi is not None:
+        try:
+            bm25 = BM25Okapi(doc_tokens_list)
+            raw_scores = bm25.get_scores(query_tokens)
+            for idx, chunk in enumerate(chunks):
+                scores.append((float(raw_scores[idx]), chunk))
+        except Exception:
+            scores = []
+            
+    if not scores:
+        N = len(chunks)
+        doc_lens = [len(dt) for dt in doc_tokens_list]
+        avgdl = sum(doc_lens) / max(1, N)
+        dfs = Counter()
+        for dt in doc_tokens_list:
+            unique_terms = set(dt)
+            for term in query_tokens:
+                if term in unique_terms:
+                    dfs[term] += 1
+        k1 = 1.5
+        b = 0.75
+        for idx, (chunk, dt, dl) in enumerate(zip(chunks, doc_tokens_list, doc_lens)):
+            score = 0.0
+            term_counts = Counter(dt)
+            for term in query_tokens:
+                if term not in term_counts:
+                    continue
+                tf = term_counts[term]
+                df = dfs[term]
+                idf = math.log(1 + (N - df + 0.5) / (df + 0.5))
+                denom = tf + k1 * (1 - b + b * (dl / avgdl))
+                score += idf * ((tf * (k1 + 1)) / denom)
+            scores.append((score, chunk))
+            
+    scores.sort(key=lambda x: x[0], reverse=True)
+    ranked = []
+    for score, chunk in scores[:top_k]:
+        ranked.append({
+            "id": chunk["id"],
+            "title": chunk["title"],
+            "content": chunk["content"],
+            "bm25_score": round(score, 4),
+            "source": chunk.get("source", "company_faq.txt")
+        })
+    return ranked
+
+def hybrid_search_rag(query: str, top_k: int = 3, rrf_k: int = 60) -> dict:
+    """
+    Reciprocal Rank Fusion (RRF) combining dense ChromaDB vector search and BM25 sparse search.
+    """
+    start_time = time.time()
+    query_emb = generate_embedding(query)
+    
+    n_results = min(top_k * 2, max(1, collection.count()))
+    vector_results = collection.query(
+        query_embeddings=[query_emb],
+        n_results=n_results
+    )
+    vec_docs = vector_results.get("documents", [[]])[0]
+    vec_metas = vector_results.get("metadatas", [[]])[0]
+    vec_dists = vector_results.get("distances", [[]])[0]
+    
+    bm25_results = bm25_search(query, top_k=top_k * 2)
+    
+    rrf_scores = {}
+    doc_map = {}
+    
+    for rank, (doc, meta, dist) in enumerate(zip(vec_docs, vec_metas, vec_dists)):
+        cid = meta.get("title", f"vec_{rank}")
+        doc_map[cid] = {"content": doc, "title": meta.get("title", "Policy Clause"), "vector_distance": round(float(dist), 4)}
+        rrf_scores[cid] = rrf_scores.get(cid, 0.0) + (1.0 / (rrf_k + rank + 1))
+        
+    for rank, b_item in enumerate(bm25_results):
+        cid = b_item["title"]
+        if cid not in doc_map:
+            doc_map[cid] = {"content": b_item["content"], "title": b_item["title"], "bm25_score": b_item["bm25_score"]}
+        else:
+            doc_map[cid]["bm25_score"] = b_item["bm25_score"]
+        rrf_scores[cid] = rrf_scores.get(cid, 0.0) + (1.0 / (rrf_k + rank + 1))
+        
+    sorted_items = sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
+    fused_results = []
+    for cid, score in sorted_items:
+        item = dict(doc_map[cid])
+        item["rrf_score"] = round(score, 5)
+        fused_results.append(item)
+        
+    latency = int((time.time() - start_time) * 1000)
+    return {
+        "status": "success",
+        "query": query,
+        "results_count": len(fused_results),
+        "fused_results": fused_results,
+        "latency_ms": latency
+    }
+
+def analyze_claim_image(
+    image_bytes: Optional[bytes] = None,
+    description: Optional[str] = None,
+    image_base64: Optional[str] = None,
+    claim_description: Optional[str] = None,
+    mime_type: str = "image/jpeg"
+) -> dict:
+    """
+    Inspect damage photo/receipt using Gemini Vision and return policy coverage assessment.
+    Supports both image_bytes/description and image_base64/claim_description signatures.
+    """
+    global _gemini_api_working
+    start_time = time.time()
+    
+    resolved_desc = (description or claim_description or "").strip()
+    
+    if image_bytes and not image_base64:
+        image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+    elif image_base64 and not image_bytes:
+        try:
+            image_bytes = base64.b64decode(image_base64)
+        except Exception:
+            pass
+
+    desc_lower = resolved_desc.lower()
+    is_drop_damage = any(w in desc_lower for w in ["drop", "cracked screen", "shattered", "water", "spill", "smashed"])
+    is_defect = any(w in desc_lower for w in ["flicker", "stopped working", "power", "dead pixel", "won't charge", "defective", "malfunction"])
+    
+    if is_drop_damage:
+        verdict = "Requires Apex Care+ / Non-Warranty Repair"
+        verdict_status = "accidental_damage"
+        approved = False
+        notes = "Physical accidental drop/impact damage detected. Standard 1-Year Warranty excludes accidental damage. Recommending Apex Care+ $29 deductible repair."
+    elif is_defect:
+        verdict = "Approved for 1-Year Warranty Replacement"
+        verdict_status = "warranty_approved"
+        approved = True
+        notes = "Hardware failure consistent with internal component/manufacturing defect. Eligible for expedited 2-day warranty replacement."
+    else:
+        verdict = "Intake Review Required"
+        verdict_status = "manual_review"
+        approved = False
+        notes = "Receipt/hardware verification in progress. Our warranty specialist will inspect the serial barcode label."
+        
+    warranty_policy = (
+        "Section 4: Warranty & Repair Coverage. 1-Year Limited Manufacturer Warranty covers defects in materials "
+        "and manufacturing workmanship. Does NOT cover cosmetic wear, accidental drops, or water damage."
+    )
+
+    if _gemini_api_working and image_bytes and len(image_bytes) > 0:
+        client = get_genai_client()
+        if client:
+            try:
+                from google.genai import types
+                vision_prompt = (
+                    f"You are OmniDesk AI Vision Claim Inspector. Analyze this customer claim image against store policy:\n"
+                    f"<policy>\n{warranty_policy}\n</policy>\n"
+                    f"Customer claim notes: {resolved_desc}\n\n"
+                    "Assess if the image shows manufacturing defect, accidental impact damage, or standard wear. "
+                    "Provide a 2-sentence formal assessment."
+                )
+                image_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
+                res = client.models.generate_content(
+                    model=CURRENT_SETTINGS["generation_model"],
+                    contents=[image_part, vision_prompt],
+                    config=types.GenerateContentConfig(
+                        system_instruction="Assess customer hardware damage objectively according to warranty rules.",
+                        temperature=0.2
+                    )
+                )
+                notes = res.text.strip()
+            except Exception as e:
+                err_str = str(e)
+                if any(k in err_str for k in ["404", "400", "403", "API_KEY_INVALID", "NOT_FOUND"]):
+                    _gemini_api_working = False
+
+    latency = int((time.time() - start_time) * 1000)
+    return {
+        "status": "success",
+        "claim_verdict": verdict,
+        "verdict_status": verdict_status,
+        "is_warranty_covered": approved,
+        "assessment_notes": notes,
+        "grounded_policy_clause": "Section 4: Warranty and Repair Coverage",
+        "latency_ms": latency
+    }
+
 def run_synthetic_benchmark(num_queries: int = 8) -> dict:
     """
-    Executes a standardized synthetic load & accuracy benchmark across
-    diverse customer intent categories, guardrails, and multilingual scenarios.
+    Simulate load test and return throughput (QPS), P50/P90 latencies, and accuracy stats.
     """
     test_battery = [
         {"q": "What is the return window for open-box electronics?", "expected_intent": "Return & Refund", "should_deflect": False, "lang": "English"},
@@ -872,188 +1102,9 @@ def run_synthetic_benchmark(num_queries: int = 8) -> dict:
         "detailed_results": results
     }
 
-# ==============================================================================
-# PHASE 8: HYBRID SEARCH (BM25 + VECTOR RRF) & MULTI-MODAL VISION RAG
-# ==============================================================================
-
-import math
-from collections import Counter
-import base64
-
-def _tokenize_text(text: str) -> list[str]:
-    return [w.lower() for w in re.findall(r'\b[a-zA-Z0-9_-]+\b', text) if len(w) > 1]
-
-def bm25_search(query: str, top_k: int = 3) -> list[dict]:
-    """Computes BM25 lexical scores across all indexed chunks in ChromaDB."""
-    chunks = get_all_chunks()
-    if not chunks:
-        return []
-    
-    query_tokens = _tokenize_text(query)
-    if not query_tokens:
-        return chunks[:top_k]
-    
-    N = len(chunks)
-    doc_tokens_list = [_tokenize_text(c["content"] + " " + c["title"]) for c in chunks]
-    doc_lens = [len(dt) for dt in doc_tokens_list]
-    avgdl = sum(doc_lens) / max(1, N)
-    
-    dfs = Counter()
-    for dt in doc_tokens_list:
-        unique_terms = set(dt)
-        for term in query_tokens:
-            if term in unique_terms:
-                dfs[term] += 1
-                
-    k1 = 1.5
-    b = 0.75
-    
-    scores = []
-    for idx, (chunk, dt, dl) in enumerate(zip(chunks, doc_tokens_list, doc_lens)):
-        score = 0.0
-        term_counts = Counter(dt)
-        for term in query_tokens:
-            if term not in term_counts:
-                continue
-            tf = term_counts[term]
-            df = dfs[term]
-            idf = math.log(1 + (N - df + 0.5) / (df + 0.5))
-            denom = tf + k1 * (1 - b + b * (dl / avgdl))
-            score += idf * ((tf * (k1 + 1)) / denom)
-        scores.append((score, chunk))
-        
-    scores.sort(key=lambda x: x[0], reverse=True)
-    ranked = []
-    for score, chunk in scores[:top_k]:
-        ranked.append({
-            "id": chunk["id"],
-            "title": chunk["title"],
-            "content": chunk["content"],
-            "bm25_score": round(score, 4),
-            "source": chunk.get("source", "company_faq.txt")
-        })
-    return ranked
-
-def hybrid_search_rag(query: str, top_k: int = 3, rrf_k: int = 60) -> dict:
-    """
-    Executes Hybrid Retrieval combining Dense ChromaDB Vector Search + Sparse BM25
-    using Reciprocal Rank Fusion (RRF).
-    """
-    start_time = time.time()
-    query_emb = generate_embedding(query)
-    
-    n_results = min(top_k * 2, max(1, collection.count()))
-    vector_results = collection.query(
-        query_embeddings=[query_emb],
-        n_results=n_results
-    )
-    vec_docs = vector_results.get("documents", [[]])[0]
-    vec_metas = vector_results.get("metadatas", [[]])[0]
-    vec_dists = vector_results.get("distances", [[]])[0]
-    
-    bm25_results = bm25_search(query, top_k=top_k * 2)
-    
-    rrf_scores = {}
-    doc_map = {}
-    
-    for rank, (doc, meta, dist) in enumerate(zip(vec_docs, vec_metas, vec_dists)):
-        cid = meta.get("title", f"vec_{rank}")
-        doc_map[cid] = {"content": doc, "title": meta.get("title", "Policy Clause"), "vector_distance": round(float(dist), 4)}
-        rrf_scores[cid] = rrf_scores.get(cid, 0.0) + (1.0 / (rrf_k + rank + 1))
-        
-    for rank, b_item in enumerate(bm25_results):
-        cid = b_item["title"]
-        if cid not in doc_map:
-            doc_map[cid] = {"content": b_item["content"], "title": b_item["title"], "bm25_score": b_item["bm25_score"]}
-        else:
-            doc_map[cid]["bm25_score"] = b_item["bm25_score"]
-        rrf_scores[cid] = rrf_scores.get(cid, 0.0) + (1.0 / (rrf_k + rank + 1))
-        
-    sorted_items = sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
-    fused_results = []
-    for cid, score in sorted_items:
-        item = dict(doc_map[cid])
-        item["rrf_score"] = round(score, 5)
-        fused_results.append(item)
-        
-    latency = int((time.time() - start_time) * 1000)
-    return {
-        "status": "success",
-        "query": query,
-        "results_count": len(fused_results),
-        "fused_results": fused_results,
-        "latency_ms": latency
-    }
-
-def analyze_claim_image(
-    image_base64: str = "",
-    claim_description: str = "",
-    mime_type: str = "image/jpeg"
-) -> dict:
-    """
-    Multi-Modal Vision RAG: Inspects uploaded customer hardware damage, serial barcodes, or receipts.
-    Evaluates against official store warranty policies (Section 4).
-    """
-    start_time = time.time()
-    
-    client = get_genai_client()
-    warranty_policy = (
-        "Section 4: Warranty & Repair Coverage. 1-Year Limited Manufacturer Warranty covers defects in materials "
-        "and manufacturing workmanship. Does NOT cover cosmetic wear, accidental drops, or water damage."
-    )
-    
-    desc_lower = claim_description.lower()
-    is_drop_damage = any(w in desc_lower for w in ["drop", "cracked screen", "shattered", "water", "spill", "smashed"])
-    is_defect = any(w in desc_lower for w in ["flicker", "stopped working", "power", "dead pixel", "won't charge", "defective", "malfunction"])
-    
-    if is_drop_damage:
-        verdict = "Requires Apex Care+ / Non-Warranty Repair"
-        verdict_status = "accidental_damage"
-        approved = False
-        notes = "Physical accidental drop/impact damage detected. Standard 1-Year Warranty excludes accidental damage. Recommending Apex Care+ $29 deductible repair."
-    elif is_defect:
-        verdict = "Approved for 1-Year Warranty Replacement"
-        verdict_status = "warranty_approved"
-        approved = True
-        notes = "Hardware failure consistent with internal component/manufacturing defect. Eligible for expedited 2-day warranty replacement."
-    else:
-        verdict = "Intake Review Required"
-        verdict_status = "manual_review"
-        approved = False
-        notes = "Receipt/hardware verification in progress. Our warranty specialist will inspect the serial barcode label."
-        
-    if client and image_base64:
-        try:
-            from google.genai import types
-            img_bytes = base64.b64decode(image_base64)
-            vision_prompt = (
-                f"You are OmniDesk AI Vision Claim Inspector. Analyze this customer claim image against store policy:\n"
-                f"<policy>\n{warranty_policy}\n</policy>\n"
-                f"Customer claim notes: {claim_description}\n\n"
-                "Assess if the image shows manufacturing defect, accidental impact damage, or standard wear. "
-                "Provide a 2-sentence formal assessment."
-            )
-            
-            image_part = types.Part.from_bytes(data=img_bytes, mime_type=mime_type)
-            res = client.models.generate_content(
-                model=CURRENT_SETTINGS["generation_model"],
-                contents=[image_part, vision_prompt],
-                config=types.GenerateContentConfig(
-                    system_instruction="Assess customer hardware damage objectively according to warranty rules.",
-                    temperature=0.2
-                )
-            )
-            notes = res.text.strip()
-        except Exception as e:
-            print(f"[Vision RAG Fallback] {e}")
-
-    latency = int((time.time() - start_time) * 1000)
-    return {
-        "status": "success",
-        "claim_verdict": verdict,
-        "verdict_status": verdict_status,
-        "is_warranty_covered": approved,
-        "assessment_notes": notes,
-        "grounded_policy_clause": "Section 4: Warranty and Repair Coverage",
-        "latency_ms": latency
-    }
+# Dimension auto-healing & auto-ingestion on module load
+try:
+    if collection.count() == 0 and os.path.exists(DEFAULT_KB_PATH):
+        ingest_faq(DEFAULT_KB_PATH)
+except Exception as e:
+    print(f"[Initial KB Ingest Note] {e}")

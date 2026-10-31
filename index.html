@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OmniDesk AI | Enterprise RAG Customer Support Hub</title>
-  <meta name="description" content="Zero-hallucination AI customer service grounded in verified store policies and enterprise knowledge bases. Powered by Google Gemini 3 Flash and ChromaDB.">
-  <meta name="keywords" content="Customer Support AI, RAG, Gemini 3 Flash, ChromaDB, Vector Search, Automated Customer Service">
+  <meta name="description" content="Zero-hallucination AI customer service grounded in verified store policies and enterprise knowledge bases. Powered by Google Gemini 1.5 Flash and ChromaDB.">
+  <meta name="keywords" content="Customer Support AI, RAG, Gemini 1.5 Flash, ChromaDB, Vector Search, Automated Customer Service">
   <link rel="stylesheet" href="css/style.css?v=4.0">
   <link rel="stylesheet" href="css/cyberpunk.css?v=4.0">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -69,7 +69,7 @@
         <div class="hero-badge-wrap">
           <div class="badge badge-glow-primary">
             <span class="pulse-dot"></span>
-            <span>Powered by Gemini 3 Flash &amp; ChromaDB RAG</span>
+            <span>Powered by Gemini 1.5 Flash &amp; ChromaDB RAG</span>
           </div>
         </div>
 
@@ -78,7 +78,7 @@
         </h1>
 
         <p class="hero-subtitle">
-          Eliminate fabricated answers and inconsistent support. OmniDesk AI combines dense vector embeddings with Gemini 3 Flash to resolve 85%+ of customer inquiries in under 500ms with 100% verified citations.
+          Eliminate fabricated answers and inconsistent support. OmniDesk AI combines dense vector embeddings with Gemini 1.5 Flash to resolve 85%+ of customer inquiries in under 500ms with 100% verified citations.
         </p>
 
         <div class="hero-cta-group">
@@ -142,7 +142,7 @@
                 </div>
                 <span>2. Vector Embedding</span>
               </div>
-              <p>3,072-dimensional dense embeddings via Google <code>gemini-embedding-001</code>.</p>
+              <p>768-dimensional dense embeddings via Google <code>text-embedding-004</code>.</p>
             </div>
 
             <div class="rag-node" id="node-retrieve">
@@ -160,7 +160,7 @@
                 <div class="rag-node-icon feature-icon-emerald">
                   <i class="fa-solid fa-robot"></i>
                 </div>
-                <span>4. Gemini 3 Flash</span>
+                <span>4. Gemini 1.5 Flash</span>
               </div>
               <p>Empathetic, zero-hallucination grounded answer with exact context references.</p>
             </div>
@@ -447,7 +447,7 @@
             </div>
             <ul class="pricing-features-list">
               <li><i class="fa-solid fa-check"></i> Up to 2,500 queries / month</li>
-              <li><i class="fa-solid fa-check"></i> Google gemini-embedding-001</li>
+              <li><i class="fa-solid fa-check"></i> Google text-embedding-004 (768-D)</li>
               <li><i class="fa-solid fa-check"></i> ChromaDB Vector Storage</li>
               <li><i class="fa-solid fa-check"></i> Verified Context Citations</li>
               <li><i class="fa-solid fa-check"></i> Standard Email Support</li>
@@ -467,7 +467,7 @@
             </div>
             <ul class="pricing-features-list">
               <li><i class="fa-solid fa-check"></i> Up to 35,000 queries / month</li>
-              <li><i class="fa-solid fa-check"></i> Gemini 3 Flash Low-Latency RAG</li>
+              <li><i class="fa-solid fa-check"></i> Gemini 1.5 Flash Low-Latency RAG</li>
               <li><i class="fa-solid fa-check"></i> Multi-document knowledge base</li>
               <li><i class="fa-solid fa-check"></i> Real-time Deflection Analytics</li>
               <li><i class="fa-solid fa-check"></i> Custom Guardrails &amp; Escalations</li>
@@ -514,7 +514,7 @@
               <i class="fa-solid fa-chevron-down faq-icon"></i>
             </button>
             <div class="faq-answer">
-              OmniDesk operates on a strict deterministic RAG protocol. First, the user inquiry is vectorized and searched against your verified ChromaDB vector store. A strict distance threshold (1.2) discards non-matching queries. Then, Gemini 3 Flash is executed with temperature 0.1 and strict system constraints: if a fact is not in the context, it gracefully refuses rather than inventing details.
+              OmniDesk operates on a strict deterministic RAG protocol. First, the user inquiry is vectorized and searched against your verified ChromaDB vector store. A strict distance threshold (1.2) discards non-matching queries. Then, Gemini 1.5 Flash is executed with temperature 0.1 and strict system constraints: if a fact is not in the context, it gracefully refuses rather than inventing details.
             </div>
           </div>
 
@@ -547,7 +547,7 @@
               <i class="fa-solid fa-chevron-down faq-icon"></i>
             </button>
             <div class="faq-answer">
-              Thanks to ChromaDB's in-memory indexing and the sub-second inference speeds of Gemini 3 Flash, the full pipeline retrieval and grounded generation lifecycle typically completes in under 350 to 500 milliseconds.
+              Thanks to ChromaDB's in-memory indexing and the sub-second inference speeds of Gemini 1.5 Flash, the full pipeline retrieval and grounded generation lifecycle typically completes in under 350 to 500 milliseconds.
             </div>
           </div>
         </div>
@@ -589,7 +589,7 @@
             <span>OmniDesk<span class="brand-secondary-text">AI</span></span>
           </a>
           <p>
-            The enterprise-grade zero-hallucination customer support platform powered by Gemini 3 Flash and ChromaDB vector retrieval.
+            The enterprise-grade zero-hallucination customer support platform powered by Gemini 1.5 Flash and ChromaDB vector retrieval.
           </p>
           <div class="nav-actions">
             <a href="#" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
@@ -615,7 +615,7 @@
           <h4>Architecture</h4>
           <ul class="footer-links">
             <li><a href="#how-it-works">RAG Pipeline</a></li>
-            <li><a href="#features">Gemini 3 Flash</a></li>
+            <li><a href="#features">Gemini 1.5 Flash</a></li>
             <li><a href="#features">ChromaDB Vector Store</a></li>
             <li><a href="http://localhost:8000/docs" target="_blank" rel="noopener">FastAPI Swagger Docs</a></li>
             <li><a href="#faq">Security &amp; Privacy</a></li>

@@ -226,7 +226,7 @@ class QueryResponse(BaseModel):
     deflected: Optional[bool] = False
     latency_ms: Optional[int] = 0
     language: Optional[str] = "English"
-    model: Optional[str] = "gemini-3.6-flash"
+    model: Optional[str] = "gemini-1.5-flash"
 
 class FeedbackRequest(BaseModel):
     query: Optional[str] = ""
@@ -735,9 +735,9 @@ def get_ticket(ticket_id: str, public: Optional[bool] = Query(False, description
     t_copy = dict(ticket)
     t_copy["sla_details"] = calculate_sla_details(ticket)
     return {
+        **t_copy,
         "status": "success",
-        "ticket": t_copy,
-        **t_copy
+        "ticket": t_copy
     }
 
 @app.get("/api/tickets/public/{ticket_id}")
@@ -749,8 +749,7 @@ def get_public_ticket(ticket_id: str):
     t_copy["sla_details"] = calculate_sla_details(ticket)
     return {
         "status": "success",
-        "ticket": t_copy,
-        **t_copy
+        "ticket": t_copy
     }
 
 @app.post("/api/tickets/{ticket_id}/suggest-reply")

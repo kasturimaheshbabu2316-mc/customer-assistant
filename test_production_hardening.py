@@ -2,23 +2,21 @@ import os
 import time
 from fastapi.testclient import TestClient
 
-# Set up test environment variables
-os.environ["RATE_LIMIT_PER_MINUTE"] = "10"  # Small rate limit for testing
-os.environ["ADMIN_API_KEY"] = "super-secret-test-key-123"
-
-# Re-import server with test configuration
 import server
 from server import app, rate_limiter
-
-# Explicitly ensure test config is active regardless of module import order
-server.ADMIN_API_KEY = "super-secret-test-key-123"
-server.RATE_LIMIT_PER_MINUTE = 10
-server.rate_limiter.limit = 10
 
 def run_hardening_tests():
     print("==================================================")
     print("RUNNING PHASE 2 PRODUCTION HARDENING TESTS")
     print("==================================================")
+
+    orig_key = server.ADMIN_API_KEY
+    orig_rpm = server.RATE_LIMIT_PER_MINUTE
+    orig_limit = server.rate_limiter.limit
+    server.ADMIN_API_KEY = "super-secret-test-key-123"
+    server.RATE_LIMIT_PER_MINUTE = 10
+    server.rate_limiter.limit = 10
+    server.rate_limiter.requests.clear()
     
     client = TestClient(app)
     
@@ -98,6 +96,10 @@ def run_hardening_tests():
     assert info_data["admin_auth_enabled"] is True, "admin_auth_enabled should be True"
     assert info_data["rate_limit_per_min"] == 10, "rate_limit_per_min should be 10"
     print(f" PASS: Diagnostics confirmed: auth_enabled={info_data['admin_auth_enabled']}, rate_limit={info_data['rate_limit_per_min']}")
+    server.ADMIN_API_KEY = orig_key
+    server.RATE_LIMIT_PER_MINUTE = orig_rpm
+    server.rate_limiter.limit = orig_limit
+    server.rate_limiter.requests.clear()
 
     print("\n==================================================")
     print("ALL PRODUCTION HARDENING TESTS PASSED! ")

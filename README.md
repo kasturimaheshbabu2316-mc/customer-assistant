@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
 > **Zero-Hallucination AI Customer Service Grounded in Verified Enterprise Knowledge Bases.**  
-> Powered by **Google Gemini 3.6 Flash**, Dense & Sparse Hybrid Search (BM25 + ChromaDB RRF), Multi-Modal Vision Claim Inspection, **FastAPI Backend**, **Support Hub SPA**, and **Streamlit Command Center**.
+> Powered by **Google Gemini 1.5 Flash**, Dense & Sparse Hybrid Search (BM25 + ChromaDB RRF), Multi-Modal Vision Claim Inspection, **FastAPI Backend**, **Support Hub SPA**, and **Streamlit Command Center**.
 
 ---
 
@@ -49,7 +49,7 @@ flowchart TD
         C1["Language Detection (7 Languages)"]
         C2["Hybrid Search (BM25 + ChromaDB RRF)"]
         C3["Multi-Modal Vision Claim Inspection"]
-        C4["Gemini 3.6 Flash Grounded Synthesizer"]
+        C4["Gemini 1.5 Flash Grounded Synthesizer"]
         C5["Intent & Sentiment Classifier"]
     end
 

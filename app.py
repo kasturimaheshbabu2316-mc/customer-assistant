@@ -396,7 +396,7 @@ with st.sidebar:
 
     st.markdown("---")
     st.subheader("🎛️ Pipeline Settings")
-    model_choice = st.selectbox("Generation Model", ["gemini-3.6-flash", "gemini-1.5-flash", "gemini-1.5-pro"], index=0)
+    model_choice = st.selectbox("Generation Model", ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"], index=0)
     threshold = st.slider("Guardrail Deflection Threshold", min_value=0.2, max_value=2.0, value=0.90, step=0.05, help="Vector distance beyond which queries are deflected to human support.")
     top_k = st.slider("Retrieved Chunks (Top-K)", min_value=1, max_value=8, value=3)
 
@@ -627,7 +627,7 @@ with tab_kb:
 
     kb_col1, kb_col2, kb_col3 = st.columns([2, 1, 1])
     kb_col1.metric("Indexed Policy Clauses", f"{len(chunks)} Vectors", "ChromaDB Persistent")
-    kb_col2.metric("Embedding Dimension", "768-D", "gemini-embedding-001")
+    kb_col2.metric("Embedding Dimension", "768-D", "text-embedding-004")
     
     # Download JSON Backup
     if is_online and chunks:

@@ -38,6 +38,15 @@ class ResponseWrapper:
         for line in self.text.splitlines():
             yield line.encode("utf-8")
 
+def _is_live_omnidesk():
+    try:
+        r = _raw_requests.get(f"{BASE_URL}/health", timeout=0.5)
+        return r.status_code == 200 and "OmniDesk" in r.text
+    except Exception:
+        return False
+
+_use_live = _is_live_omnidesk()
+
 class SmartClient:
     @staticmethod
     def _clean_kwargs(kwargs):
@@ -45,35 +54,43 @@ class SmartClient:
 
     @staticmethod
     def get(url, **kwargs):
-        try:
-            return _raw_requests.get(url, **kwargs)
-        except Exception:
-            path = url.replace(BASE_URL, "")
-            return ResponseWrapper(_local_client.get(path, **SmartClient._clean_kwargs(kwargs)))
+        if _use_live:
+            try:
+                return _raw_requests.get(url, **kwargs)
+            except Exception:
+                pass
+        path = url.replace(BASE_URL, "")
+        return ResponseWrapper(_local_client.get(path, **SmartClient._clean_kwargs(kwargs)))
 
     @staticmethod
     def post(url, **kwargs):
-        try:
-            return _raw_requests.post(url, **kwargs)
-        except Exception:
-            path = url.replace(BASE_URL, "")
-            return ResponseWrapper(_local_client.post(path, **SmartClient._clean_kwargs(kwargs)))
+        if _use_live:
+            try:
+                return _raw_requests.post(url, **kwargs)
+            except Exception:
+                pass
+        path = url.replace(BASE_URL, "")
+        return ResponseWrapper(_local_client.post(path, **SmartClient._clean_kwargs(kwargs)))
 
     @staticmethod
     def patch(url, **kwargs):
-        try:
-            return _raw_requests.patch(url, **kwargs)
-        except Exception:
-            path = url.replace(BASE_URL, "")
-            return ResponseWrapper(_local_client.patch(path, **SmartClient._clean_kwargs(kwargs)))
+        if _use_live:
+            try:
+                return _raw_requests.patch(url, **kwargs)
+            except Exception:
+                pass
+        path = url.replace(BASE_URL, "")
+        return ResponseWrapper(_local_client.patch(path, **SmartClient._clean_kwargs(kwargs)))
 
     @staticmethod
     def delete(url, **kwargs):
-        try:
-            return _raw_requests.delete(url, **kwargs)
-        except Exception:
-            path = url.replace(BASE_URL, "")
-            return ResponseWrapper(_local_client.delete(path, **SmartClient._clean_kwargs(kwargs)))
+        if _use_live:
+            try:
+                return _raw_requests.delete(url, **kwargs)
+            except Exception:
+                pass
+        path = url.replace(BASE_URL, "")
+        return ResponseWrapper(_local_client.delete(path, **SmartClient._clean_kwargs(kwargs)))
 
 requests = SmartClient()
 
