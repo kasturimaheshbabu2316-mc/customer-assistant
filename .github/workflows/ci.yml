@@ -1,4 +1,5 @@
 name: OmniDesk AI — Automated CI/CD Regression Pipeline
+# Workflow validated against GitHub Actions runner schema
 
 on:
   push:
@@ -33,6 +34,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio httpx
 
       - name: Start OmniDesk FastAPI Backend
         run: |
