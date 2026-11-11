@@ -14,6 +14,7 @@ import os
 import sys
 import time
 import json
+from typing import Optional, Any, Iterable, cast
 import pytest
 import requests as _raw_requests
 from fastapi.testclient import TestClient
@@ -24,9 +25,7 @@ ADMIN_KEY = os.environ.get("ADMIN_API_KEY", "admin-secret-key-2026")
 
 _local_client = TestClient(app)
 
-@pytest.fixture
-def ticket_id():
-    return None
+# ticket_id fixture defined below
 
 class ResponseWrapper:
     def __init__(self, raw_res):
@@ -39,9 +38,11 @@ class ResponseWrapper:
         return self._res.json()
 
     def iter_lines(self):
-        if hasattr(self._res, "iter_lines") and callable(self._res.iter_lines):
+        res_any = cast(Any, self._res)
+        if hasattr(res_any, "iter_lines") and callable(res_any.iter_lines):
             try:
-                for l in self._res.iter_lines():
+                raw_lines: Any = res_any.iter_lines()
+                for l in cast(Iterable[Any], raw_lines):
                     yield l
                 return
             except Exception:
@@ -213,7 +214,7 @@ def test_phase4_intent_and_crm():
     assert json_res.status_code == 200
     log("Phase 4", "CRM Export & Intent", "CSV and JSON CRM data streams verified", "PASS")
 
-def test_phase5_copilot_and_sla(ticket_id: str = None):
+def test_phase5_copilot_and_sla(ticket_id: Optional[str] = None):
     """Phase 5: AI Copilot & Conversation Threading."""
     if not ticket_id:
         t_res = requests.post(
@@ -244,7 +245,7 @@ def test_phase5_copilot_and_sla(ticket_id: str = None):
     assert note_res.status_code == 200
     log("Phase 5", "Copilot & Threading", f"Grounded draft generated & confidential note posted to {ticket_id}", "PASS")
 
-def test_phase6_multilang_and_macros(ticket_id: str = None):
+def test_phase6_multilang_and_macros(ticket_id: Optional[str] = None):
     """Phase 6: Multi-Language & Macro Rules."""
     if not ticket_id:
         t_res = requests.post(

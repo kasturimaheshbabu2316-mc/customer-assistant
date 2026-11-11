@@ -9,6 +9,7 @@ import os
 import sys
 import time
 import base64
+import typing
 import requests as _raw_requests
 from fastapi.testclient import TestClient
 from server import app
@@ -28,9 +29,11 @@ class ResponseWrapper:
         return self._res.json()
 
     def iter_lines(self):
-        if hasattr(self._res, "iter_lines") and callable(self._res.iter_lines):
+        res_any = typing.cast(typing.Any, self._res)
+        if hasattr(res_any, "iter_lines") and callable(res_any.iter_lines):
             try:
-                for l in self._res.iter_lines():
+                raw_lines: typing.Any = res_any.iter_lines()
+                for l in typing.cast(typing.Iterable[typing.Any], raw_lines):
                     yield l
                 return
             except Exception:

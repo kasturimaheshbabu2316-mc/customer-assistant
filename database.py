@@ -382,7 +382,8 @@ def create_ticket(ticket_data: dict) -> dict:
 
     conn.commit()
     conn.close()
-    return get_ticket_by_id(ticket_data["id"])
+    res = get_ticket_by_id(ticket_data["id"])
+    return res if res is not None else ticket_data
 
 def update_ticket(ticket_id: str, updates: dict) -> Optional[dict]:
     """Updates fields on an existing ticket."""

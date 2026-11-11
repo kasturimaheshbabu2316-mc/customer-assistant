@@ -15,7 +15,7 @@ from PIL import Image
 from dotenv import load_dotenv
 
 try:
-    from rank_bm25 import BM25Okapi
+    from rank_bm25 import BM25Okapi  # type: ignore
 except ImportError:
     BM25Okapi = None
 
@@ -77,7 +77,7 @@ def get_genai_client():
         return None
     if _client is None:
         try:
-            if genai:
+            if genai and types:
                 _client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=10000))
         except Exception as e:
             print(f"[Gemini Client Init Note] {e}")
@@ -197,13 +197,17 @@ def generate_embedding(text: str) -> list[float]:
                     model=CURRENT_SETTINGS["embedding_model"],
                     contents=text
                 )
-                values = emb_res.embeddings[0].values
-                if len(values) == 768:
-                    return values
-                elif len(values) > 768:
-                    vec = values[:768]
-                    norm = sum(x * x for x in vec) ** 0.5
-                    return [x / norm for x in vec] if norm > 0 else vec
+                if emb_res and emb_res.embeddings and len(emb_res.embeddings) > 0:
+                    first_emb = emb_res.embeddings[0]
+                    raw_values = getattr(first_emb, "values", None)
+                    if raw_values is not None:
+                        values: list[float] = list(raw_values)
+                        if len(values) == 768:
+                            return values
+                        elif len(values) > 768:
+                            vec = values[:768]
+                            norm = sum(x * x for x in vec) ** 0.5
+                            return [x / norm for x in vec] if norm > 0 else vec
             except Exception as e:
                 err_str = str(e)
                 if any(k in err_str for k in ["404", "400", "403", "API_KEY_INVALID", "NOT_FOUND"]):
@@ -225,14 +229,14 @@ def chunk_text(text: str, chunk_size: int = 400, overlap: int = 80) -> list[str]
         start += chunk_size - overlap
     return chunks
 
-def ingest_faq(file_path: str = None, force_reindex: bool = False):
+def ingest_faq(file_path: Optional[str] = None, force_reindex: bool = False):
     """
     Read text, chunk it into ~400-char pieces with 80-char overlap,
     generate embeddings (768 dimensions), and upsert into ChromaDB with metadata.
     """
     global collection
     if file_path is None:
-        file_path = CURRENT_SETTINGS["knowledge_base_path"]
+        file_path = str(CURRENT_SETTINGS.get("knowledge_base_path") or "knowledge_base/company_faq.txt")
 
     if not os.path.exists(file_path):
         print(f"Knowledge file {file_path} does not exist.")
@@ -327,15 +331,15 @@ def get_all_chunks() -> list[dict]:
     try:
         data = collection.get(include=["documents", "metadatas"])
         chunks = []
-        ids = data.get("ids", [])
-        docs = data.get("documents", [])
-        metas = data.get("metadatas", [])
+        ids = data.get("ids") or []
+        docs = data.get("documents") or []
+        metas = data.get("metadatas") or []
         
         for i, cid in enumerate(ids):
-            meta = metas[i] if (i < len(metas) and metas[i]) else {}
+            meta = metas[i] if (metas and i < len(metas) and metas[i]) else {}
             title = meta.get("title") or f"Knowledge Chunk {cid}"
             source = meta.get("source") or "company_faq.txt"
-            content = docs[i] if i < len(docs) else ""
+            content = docs[i] if (docs and i < len(docs) and docs[i] is not None) else ""
             tokens = meta.get("tokens") or max(1, len(content) // 4)
             chunks.append({
                 "id": cid,
@@ -487,7 +491,7 @@ def detect_language(text: str) -> str:
         if w in t:
             scores["German"] += 2
             
-    best_lang = max(scores, key=scores.get)
+    best_lang = max(scores, key=lambda k: scores[k])
     if scores[best_lang] > 0:
         return best_lang
     return "English"
@@ -596,7 +600,7 @@ def _build_contextual_query(user_query: str, history: Optional[list[dict]]) -> s
                     return f"{prev_text} | {user_query}"
     return user_query
 
-def run_rag_pipeline(query: str, target_language: str = "Auto Detect", history: list = None) -> dict:
+def run_rag_pipeline(query: str, target_language: str = "Auto Detect", history: Optional[list] = None) -> dict:
     """
     Query ChromaDB vectors with a distance threshold (default 1.2).
     If cosine distance > threshold, mark as deflected (deflected=True) with fallback customer-service guidance.
@@ -620,8 +624,10 @@ def run_rag_pipeline(query: str, target_language: str = "Auto Detect", history: 
         n_results=n_results
     )
 
-    documents = results.get("documents", [[]])[0]
-    distances = results.get("distances", [[]])[0]
+    docs_res = results.get("documents")
+    dists_res = results.get("distances")
+    documents: list[str] = docs_res[0] if (docs_res and len(docs_res) > 0 and docs_res[0] is not None) else []
+    distances: list[float] = dists_res[0] if (dists_res and len(dists_res) > 0 and dists_res[0] is not None) else []
 
     # Guardrail: Distance check against threshold (default 1.2)
     is_deflected = not documents or (distances and distances[0] > CURRENT_SETTINGS["guardrail_threshold"])
@@ -647,7 +653,7 @@ def run_rag_pipeline(query: str, target_language: str = "Auto Detect", history: 
 
     if _gemini_api_working:
         client = get_genai_client()
-        if client:
+        if client and types:
             try:
                 lang_instruction = f" Respond in {lang}." if lang != "English" else ""
                 prompt = f"<context>\n{context}\n</context>\n\n{history_context}<user_query>\n{user_query}\n</user_query>\n{lang_instruction}"
@@ -659,7 +665,7 @@ def run_rag_pipeline(query: str, target_language: str = "Auto Detect", history: 
                         temperature=CURRENT_SETTINGS["temperature"],
                     )
                 )
-                answer = response.text.strip()
+                answer = response.text.strip() if response.text else ""
             except Exception as e:
                 err_str = str(e)
                 if any(k in err_str for k in ["404", "400", "403", "API_KEY_INVALID", "NOT_FOUND"]):
@@ -685,7 +691,7 @@ def run_rag_pipeline(query: str, target_language: str = "Auto Detect", history: 
 # Alias for backwards compatibility with server.py imports
 query_rag_pipeline = run_rag_pipeline
 
-def stream_rag_pipeline(query: str, target_language: str = "Auto Detect", history: list = None):
+def stream_rag_pipeline(query: str, target_language: str = "Auto Detect", history: Optional[list] = None):
     """
     Generator yielding Server-Sent Events (SSE) data: {"token": "..."}\n\n
     Also yields event: sources, event: token, event: done for full protocol compatibility.
@@ -704,8 +710,10 @@ def stream_rag_pipeline(query: str, target_language: str = "Auto Detect", histor
         n_results=n_results
     )
 
-    documents = results.get("documents", [[]])[0]
-    distances = results.get("distances", [[]])[0]
+    docs_res = results.get("documents")
+    dists_res = results.get("distances")
+    documents: list[str] = docs_res[0] if (docs_res and len(docs_res) > 0 and docs_res[0] is not None) else []
+    distances: list[float] = dists_res[0] if (dists_res and len(dists_res) > 0 and dists_res[0] is not None) else []
 
     is_deflected = not documents or (distances and distances[0] > CURRENT_SETTINGS["guardrail_threshold"])
     
@@ -739,7 +747,7 @@ def stream_rag_pipeline(query: str, target_language: str = "Auto Detect", histor
 
     if _gemini_api_working:
         client = get_genai_client()
-        if client:
+        if client and types:
             try:
                 lang_instruction = f" Answer in {lang}." if lang != "English" else ""
                 prompt = f"<context>\n{context}\n</context>\n\n{history_context}<user_query>\n{user_query}\n</user_query>\n{lang_instruction}"
@@ -824,13 +832,14 @@ def generate_agent_reply_draft(
         query_embeddings=[query_emb],
         n_results=min(3, max(1, collection.count()))
     )
-    documents = results.get("documents", [[]])[0]
+    docs_res = results.get("documents")
+    documents: list[str] = docs_res[0] if (docs_res and len(docs_res) > 0 and docs_res[0] is not None) else []
     context = "\n---\n".join(documents) if documents else "No specific policy clause found."
 
     draft = None
     if _gemini_api_working:
         client = get_genai_client()
-        if client:
+        if client and types:
             try:
                 tier_note = f" (Account Tier: {cust_tier})" if cust_tier else ""
                 copilot_system_prompt = (
@@ -854,7 +863,7 @@ def generate_agent_reply_draft(
                         temperature=0.3
                     )
                 )
-                draft = res.text.strip()
+                draft = res.text.strip() if res.text else ""
             except Exception as e:
                 err_str = str(e)
                 if any(k in err_str for k in ["404", "400", "403", "API_KEY_INVALID", "NOT_FOUND"]):
@@ -948,9 +957,12 @@ def hybrid_search_rag(query: str, top_k: int = 3, rrf_k: int = 60) -> dict:
         query_embeddings=[query_emb],
         n_results=n_results
     )
-    vec_docs = vector_results.get("documents", [[]])[0]
-    vec_metas = vector_results.get("metadatas", [[]])[0]
-    vec_dists = vector_results.get("distances", [[]])[0]
+    v_docs_res = vector_results.get("documents")
+    v_metas_res = vector_results.get("metadatas")
+    v_dists_res = vector_results.get("distances")
+    vec_docs = v_docs_res[0] if (v_docs_res and len(v_docs_res) > 0 and v_docs_res[0] is not None) else []
+    vec_metas = v_metas_res[0] if (v_metas_res and len(v_metas_res) > 0 and v_metas_res[0] is not None) else []
+    vec_dists = v_dists_res[0] if (v_dists_res and len(v_dists_res) > 0 and v_dists_res[0] is not None) else []
     
     bm25_results = bm25_search(query, top_k=top_k * 2)
     
@@ -1045,7 +1057,7 @@ def analyze_claim_image(
 
     if _gemini_api_working and image_bytes and len(image_bytes) > 0:
         client = get_genai_client()
-        if client:
+        if client and types:
             try:
                 vision_prompt = (
                     f"You are OmniDesk AI Vision Claim Inspector. Analyze this customer claim image against store policy:\n"
@@ -1063,7 +1075,7 @@ def analyze_claim_image(
                         temperature=0.2
                     )
                 )
-                notes = res.text.strip()
+                notes = res.text.strip() if res.text else ""
             except Exception as e:
                 err_str = str(e)
                 if any(k in err_str for k in ["404", "400", "403", "API_KEY_INVALID", "NOT_FOUND"]):
@@ -1107,8 +1119,10 @@ def run_synthetic_benchmark(num_queries: int = 8) -> dict:
         query_emb = generate_embedding(item["q"])
         n_results = min(CURRENT_SETTINGS["top_k_chunks"], max(1, collection.count()))
         v_res = collection.query(query_embeddings=[query_emb], n_results=n_results)
-        docs = v_res.get("documents", [[]])[0]
-        distances = v_res.get("distances", [[]])[0]
+        v_docs_res = v_res.get("documents")
+        v_dists_res = v_res.get("distances")
+        docs: list[str] = v_docs_res[0] if (v_docs_res and len(v_docs_res) > 0 and v_docs_res[0] is not None) else []
+        distances: list[float] = v_dists_res[0] if (v_dists_res and len(v_dists_res) > 0 and v_dists_res[0] is not None) else []
         is_deflected = not docs or (distances and distances[0] > CURRENT_SETTINGS["guardrail_threshold"])
         lat = max(1, int((time.time() - item_start) * 1000))
         latencies.append(lat)
