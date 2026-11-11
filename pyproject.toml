@@ -5,6 +5,8 @@ exclude = [
     ".venv",
     "node_modules",
     "customer-agent-temp",
+    ".agents",
+    ".agent",
 ]
 
 [tool.pyright]
@@ -12,6 +14,8 @@ exclude = [
     "**/.venv",
     "**/node_modules",
     "**/customer-agent-temp",
+    "**/.agents",
+    "**/.agent",
 ]
 
 [project]
