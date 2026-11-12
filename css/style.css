@@ -2558,6 +2558,12 @@ input:checked + .toggle-slider:before {
   color: var(--text-muted);
 }
 
+.auth-error-message {
+  color: var(--accent-rose, #ef4444);
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
 .status-btn-refresh {
   padding: 0.2rem 0.4rem;
   font-size: 0.75rem;

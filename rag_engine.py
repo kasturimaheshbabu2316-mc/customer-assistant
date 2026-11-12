@@ -48,13 +48,13 @@ DEFAULT_CONFIG = {
 
 CURRENT_SETTINGS = dict(DEFAULT_CONFIG)
 
-EMBEDDING_MODEL = CURRENT_SETTINGS["embedding_model"]
-GENERATION_MODEL = CURRENT_SETTINGS["generation_model"]
-GUARDRAIL_THRESHOLD = CURRENT_SETTINGS["guardrail_threshold"]
-TOP_K_CHUNKS = CURRENT_SETTINGS["top_k_chunks"]
-TEMPERATURE = CURRENT_SETTINGS["temperature"]
-CHROMA_PATH = CURRENT_SETTINGS["chroma_path"]
-DEFAULT_KB_PATH = CURRENT_SETTINGS["knowledge_base_path"]
+EMBEDDING_MODEL: str = str(CURRENT_SETTINGS["embedding_model"])
+GENERATION_MODEL: str = str(CURRENT_SETTINGS["generation_model"])
+GUARDRAIL_THRESHOLD: float = float(CURRENT_SETTINGS["guardrail_threshold"])
+TOP_K_CHUNKS: int = int(CURRENT_SETTINGS["top_k_chunks"])
+TEMPERATURE: float = float(CURRENT_SETTINGS["temperature"])
+CHROMA_PATH: str = str(CURRENT_SETTINGS["chroma_path"])
+DEFAULT_KB_PATH: str = str(CURRENT_SETTINGS["knowledge_base_path"])
 
 # Lazy / safe client initialization & circuit breaker
 _client = None

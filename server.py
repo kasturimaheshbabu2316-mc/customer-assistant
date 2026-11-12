@@ -188,11 +188,12 @@ def dispatch_webhook_alert(event_type: str, title: str, payload: dict, severity:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
-        if os.path.exists(DEFAULT_KB_PATH):
-            ingest_faq(DEFAULT_KB_PATH)
-            print(f"Knowledge base ({DEFAULT_KB_PATH}) ingested successfully.")
+        kb_path = str(DEFAULT_KB_PATH)
+        if os.path.exists(kb_path):
+            ingest_faq(kb_path)
+            print(f"Knowledge base ({kb_path}) ingested successfully.")
         else:
-            print(f"{DEFAULT_KB_PATH} not found, skipping startup ingestion.")
+            print(f"{kb_path} not found, skipping startup ingestion.")
     except Exception as e:
         print(f"Startup ingestion note: {e}")
     yield
