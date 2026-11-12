@@ -2,8 +2,8 @@ from fastapi import FastAPI, HTTPException, Request, Header, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse, Response, FileResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
-from typing import Optional
+from pydantic import BaseModel, Field, model_validator
+from typing import Optional, Any
 import os
 import time
 import random
@@ -11,6 +11,9 @@ import json
 import csv
 import io
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
+
+load_dotenv()
 
 import database
 from rag_engine import (
@@ -21,6 +24,8 @@ from rag_engine import (
     generate_agent_reply_draft,
     generate_support_response,
     detect_escalation_intent,
+    detect_language,
+    translate_grounded_response,
     GeminiEmbeddingFunction,
     parse_faq_sections,
     ingest_policy_text,
@@ -42,6 +47,7 @@ from rag_engine import (
 
 SERVER_START_TIME = time.time()
 ADMIN_API_KEY = os.getenv("ADMIN_API_KEY", "admin-secret-key-2026").strip()
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "").strip()
 RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
 
 # ==============================================================================
@@ -103,6 +109,19 @@ def check_rate_limit(request: Request):
 # ==============================================================================
 # ADMIN AUTHENTICATION DEPENDENCY
 # ==============================================================================
+def get_configured_admin_password() -> str:
+    """Returns ADMIN_PASSWORD from .env, falling back to ADMIN_API_KEY or 'admin-secret-key-2026'."""
+    env_admin_pw = os.getenv("ADMIN_PASSWORD", "").strip()
+    if env_admin_pw:
+        return env_admin_pw
+    env_admin_key = os.getenv("ADMIN_API_KEY", "").strip()
+    if env_admin_key:
+        return env_admin_key
+    global_key = str(globals().get("ADMIN_API_KEY", "")).strip()
+    if global_key:
+        return global_key
+    return "admin-secret-key-2026"
+
 def verify_admin_key(
     x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
     x_admin_key: Optional[str] = Header(None, alias="X-Admin-Key"),
@@ -115,8 +134,15 @@ def verify_admin_key(
         else:
             token = authorization.strip()
             
-    current_key = globals().get("ADMIN_API_KEY") or os.getenv("ADMIN_API_KEY", "admin-secret-key-2026").strip()
-    valid_keys = {k for k in (current_key, os.getenv("ADMIN_API_KEY", "").strip(), "admin-secret-key-2026") if k}
+    expected_pw = get_configured_admin_password()
+    valid_keys = {expected_pw}
+    if os.getenv("ADMIN_API_KEY", "").strip():
+        valid_keys.add(os.getenv("ADMIN_API_KEY", "").strip())
+    if globals().get("ADMIN_API_KEY"):
+        valid_keys.add(str(globals()["ADMIN_API_KEY"]).strip())
+    if not os.getenv("ADMIN_PASSWORD") and not os.getenv("ADMIN_API_KEY"):
+        valid_keys.add("admin-secret-key-2026")
+
     if token and token in valid_keys:
         return True
 
@@ -224,7 +250,7 @@ app.add_middleware(
 class QueryRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=2000, description="Customer question text")
     language: Optional[str] = Field("Auto Detect", max_length=50)
-    history: Optional[list[dict]] = Field(default=[], description="Recent conversation history turns [{'role': 'user'|'assistant', 'content': '...'}]")
+    history: Optional[list[dict[str, Any]]] = Field(default=[], description="Recent conversation history turns [{'role': 'user'|'assistant', 'content': '...'}]")
 
 class QueryResponse(BaseModel):
     answer: str
@@ -235,12 +261,55 @@ class QueryResponse(BaseModel):
     language: Optional[str] = "English"
     model: Optional[str] = "gemini-1.5-flash"
 
+class ChatRequest(BaseModel):
+    query: Optional[str] = Field(None, max_length=2000, description="Customer question text")
+    message: Optional[str] = Field(None, max_length=2000, description="Customer question alias")
+    email: Optional[str] = Field(None, max_length=120, description="Customer email")
+    customer_email: Optional[str] = Field(None, max_length=120, description="Customer email alias")
+    history: Optional[list[dict[str, Any]]] = Field(default=[], description="Recent conversation history turns")
+    language: Optional[str] = Field("Auto Detect", max_length=50)
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_query_or_message(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            raw_q = data.get("query")
+            raw_msg = data.get("message")
+            q = raw_q if (raw_q is not None and str(raw_q).strip()) else raw_msg
+            if q is None or not str(q).strip():
+                raise ValueError("Query or message cannot be empty")
+            clean_q = str(q).strip()
+            data["query"] = clean_q
+            data["message"] = clean_q
+            
+            raw_email = data.get("email")
+            raw_cust_email = data.get("customer_email")
+            em = raw_email if (raw_email is not None and str(raw_email).strip()) else raw_cust_email
+            if em is not None and str(em).strip():
+                clean_em = str(em).strip()
+                data["email"] = clean_em
+                data["customer_email"] = clean_em
+        return data
+
 class FeedbackRequest(BaseModel):
     query: Optional[str] = ""
-    rating: int = Field(5, ge=1, le=5)
-    is_positive: bool = True
+    rating: Optional[int] = Field(None, ge=1, le=5)
+    score: Optional[int] = Field(None, ge=1, le=5)
+    is_positive: Optional[bool] = None
     comment: Optional[str] = ""
     language: Optional[str] = "English"
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_feedback(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            r = data.get("rating") if data.get("rating") is not None else data.get("score")
+            if r is None:
+                r = 5
+            data["rating"] = int(r)
+            if data.get("is_positive") is None:
+                data["is_positive"] = (int(r) >= 4)
+        return data
 
 class ApplyMacroRequest(BaseModel):
     macro_id: str = Field(..., min_length=1)
@@ -284,22 +353,67 @@ class CreateTicketRequest(BaseModel):
     customer_name: str = Field(..., min_length=1, max_length=100)
     customer_email: str = Field(..., min_length=3, max_length=120)
     customer_tier: Optional[str] = Field("Standard Retail", max_length=50)
-    subject: str = Field(..., min_length=2, max_length=200)
-    query: str = Field(..., min_length=2, max_length=3000)
+    subject: Optional[str] = Field(None, max_length=200)
+    query: Optional[str] = Field(None, max_length=3000)
+    message: Optional[str] = Field(None, max_length=3000)
     priority: Optional[str] = Field("Medium", description="Urgent, High, Medium, or Low")
     intent: Optional[str] = None
     sentiment: Optional[str] = None
     transcript_snippet: Optional[str] = Field("", max_length=1000)
+
+    @model_validator(mode="before")
+    @classmethod
+    def set_ticket_defaults(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            raw_q = data.get("query")
+            raw_msg = data.get("message")
+            q = raw_q if (raw_q is not None and str(raw_q).strip()) else raw_msg
+            if q is None or not str(q).strip():
+                raise ValueError("query or message is required and cannot be empty")
+            clean_q = str(q).strip()
+            data["query"] = clean_q
+            data["message"] = clean_q
+            if not data.get("subject") or not str(data.get("subject")).strip():
+                data["subject"] = f"Inquiry: {clean_q[:40]}..."
+        return data
 
 class TicketMessageRequest(BaseModel):
     sender: str = Field("Support Agent", min_length=1, max_length=100)
     text: str = Field(..., min_length=1, max_length=5000)
     is_internal_note: Optional[bool] = False
 
+class TicketReplyRequest(BaseModel):
+    message: Optional[str] = Field(None, max_length=5000, description="Reply message text")
+    text: Optional[str] = Field(None, max_length=5000, description="Message text alias")
+    sender: Optional[str] = Field("Support Agent", max_length=100, description="Sender name")
+    is_internal_note: Optional[bool] = Field(False, description="Whether this is a staff-only internal note")
+    status: Optional[str] = Field(None, description="Optional new ticket status, e.g. In Progress, Resolved")
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_reply_text(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            raw_text = data.get("text")
+            raw_msg = data.get("message")
+            msg = raw_text if (raw_text is not None and str(raw_text).strip()) else raw_msg
+            if msg is None or not str(msg).strip():
+                raise ValueError("Reply text or message cannot be empty")
+            clean_msg = str(msg).strip()
+            data["text"] = clean_msg
+            data["message"] = clean_msg
+        return data
+
 class UpdateTicketRequest(BaseModel):
     status: Optional[str] = Field(None, description="Open, In Progress, or Resolved")
     assigned_agent: Optional[str] = None
     priority: Optional[str] = None
+
+class AdminLoginRequest(BaseModel):
+    password: Optional[str] = Field(None, max_length=256, description="Admin password or API key")
+    secret_key: Optional[str] = Field(None, max_length=256, description="Admin secret key alias")
+    admin_password: Optional[str] = Field(None, max_length=256, description="Admin password alias")
+    key: Optional[str] = Field(None, max_length=256, description="Admin key alias")
+    email: Optional[str] = Field(None, max_length=120, description="Admin email")
 
 class UserRegisterRequest(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
@@ -408,6 +522,37 @@ def logout_user(
         database.delete_session(token)
         
     return {"status": "success", "message": "Successfully signed out."}
+
+@app.post("/api/admin/login")
+def admin_login_endpoint(req: AdminLoginRequest):
+    provided = (req.password or req.secret_key or req.admin_password or req.key or "").strip()
+    
+    expected_pw = get_configured_admin_password()
+    is_valid = bool(provided) and (provided == expected_pw)
+    admin_user = None
+    if not is_valid and req.email and provided:
+        admin_user = database.authenticate_user(req.email, provided)
+        if admin_user and admin_user.get("role") in ["admin", "developer"]:
+            is_valid = True
+            
+    if not is_valid:
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized: Invalid Admin credentials."
+        )
+        
+    user_id = admin_user["id"] if admin_user else "ADMIN-ROOT"
+    user_name = admin_user["name"] if admin_user else "Admin Operations"
+    token = database.create_user_session(user_id, role="admin")
+    
+    return {
+        "status": "success",
+        "message": f"Admin session authenticated. Welcome {user_name}.",
+        "token": token,
+        "access_token": token,
+        "token_type": "bearer",
+        "role": "admin"
+    }
 
 @app.post("/api/auth/developer-login")
 def developer_gateway_login(req: DevLoginRequest):
@@ -540,6 +685,62 @@ def ask_stream(req: QueryRequest):
         print(f"Stream error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/chat", dependencies=[Depends(check_rate_limit)])
+def chat_endpoint(req: ChatRequest):
+    """
+    Customer RAG chat with grounded policies, order context injection,
+    and automatic live ticket escalation for frustrated inquiries.
+    """
+    user_query = (req.query or req.message or "").strip()
+    if not user_query:
+        raise HTTPException(status_code=422, detail="Query cannot be empty")
+        
+    email = (req.email or req.customer_email or "").strip() or None
+    try:
+        res = generate_support_response(
+            user_query=user_query,
+            chat_history=req.history,
+            customer_email=email
+        )
+        
+        target_lang = req.language or "Auto Detect"
+        lang = target_lang if target_lang != "Auto Detect" else detect_language(user_query)
+        final_answer = res.get("answer", "")
+        if lang != "English" and final_answer:
+            final_answer = translate_grounded_response(final_answer, lang, user_query)
+            
+        QUERY_STATS["total_queries"] += 1
+        if not res.get("deflected"):
+            QUERY_STATS["deflected_queries"] += 1
+        QUERY_STATS["total_latency_ms"] += res.get("latency_ms", 300)
+        
+        database.add_audit_log(
+            query=user_query[:80],
+            status="Deflected (Escalated)" if res.get("deflected") else "Resolved (100% Grounded)",
+            distance=round(res["distances"][0], 2) if res.get("distances") else 0.0,
+            matched=res["sources"][0][:50] if res.get("sources") else "None",
+            latency_ms=res.get("latency_ms", 0)
+        )
+        
+        return {
+            "status": "success",
+            "answer": final_answer,
+            "response": final_answer,
+            "sources": res.get("sources", []),
+            "sections": res.get("sections", []),
+            "distances": res.get("distances", []),
+            "deflected": res.get("deflected", False),
+            "latency_ms": res.get("latency_ms", 0),
+            "order": res.get("order"),
+            "ticket": res.get("ticket"),
+            "intent": res.get("intent", "General Inquiry"),
+            "sentiment": res.get("sentiment", "Standard"),
+            "language": lang
+        }
+    except Exception as e:
+        print(f"Chat endpoint error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ==============================================================================
 # TICKETS, SLA ENGINE & COPILOT APIS
 # ==============================================================================
@@ -588,9 +789,15 @@ def calculate_sla_details(ticket: dict) -> dict:
 @app.get("/api/tickets")
 def list_tickets(
     status: Optional[str] = Query(None, description="Filter by status: Open, In Progress, Resolved"),
-    priority: Optional[str] = Query(None, description="Filter by priority: Urgent, High, Medium, Low")
+    priority: Optional[str] = Query(None, description="Filter by priority: Urgent, High, Medium, Low"),
+    email: Optional[str] = Query(None, description="Filter by customer email"),
+    customer_email: Optional[str] = Query(None, description="Alias for customer email filter")
 ):
+    target_email = email or customer_email
     tickets = database.get_all_tickets(status=status, priority=priority)
+    if target_email:
+        clean_email = target_email.strip().lower()
+        tickets = [t for t in tickets if str(t.get("customer_email", "")).strip().lower() == clean_email]
     
     enriched = []
     for t in tickets:
@@ -608,16 +815,19 @@ def create_ticket(req: CreateTicketRequest):
     ticket_id = f"TCK-{random.randint(1050, 9999)}"
     cust_id = req.customer_id.strip() if req.customer_id else f"CUST-{random.randint(1000, 9999)}"
     
-    classification = classify_intent_and_sentiment(req.query)
+    query_text = (req.query or req.message or "").strip()
+    classification = classify_intent_and_sentiment(query_text)
     intent = req.intent.strip() if req.intent else classification["intent"]
     sentiment = req.sentiment.strip() if req.sentiment else classification["sentiment"]
     now_ts = time.time()
+    
+    subject_text = (req.subject or f"Inquiry: {query_text[:40]}...").strip()
     
     initial_messages = [
         {
             "id": "msg_1",
             "sender": req.customer_name.strip(),
-            "text": req.query.strip(),
+            "text": query_text,
             "is_internal_note": False,
             "timestamp": time.strftime("%b %d, %H:%M")
         }
@@ -631,14 +841,14 @@ def create_ticket(req: CreateTicketRequest):
         "customer_tier": req.customer_tier.strip() if req.customer_tier else "Standard Retail",
         "intent": intent,
         "sentiment": sentiment,
-        "subject": req.subject.strip(),
-        "query": req.query.strip(),
+        "subject": subject_text,
+        "query": query_text,
         "priority": req.priority.title() if req.priority else "Medium",
         "status": "Open",
         "created_at": time.strftime("%b %d, %H:%M"),
         "created_ts": now_ts,
         "assigned_agent": "Unassigned",
-        "transcript_snippet": req.transcript_snippet.strip() if req.transcript_snippet else req.query[:120],
+        "transcript_snippet": req.transcript_snippet.strip() if req.transcript_snippet else query_text[:120],
         "messages": initial_messages
     }
     
@@ -814,15 +1024,84 @@ def add_ticket_message_endpoint(ticket_id: str, req: TicketMessageRequest):
         "ticket": t_copy
     }
 
-@app.patch("/api/tickets/{ticket_id}")
-def update_ticket_endpoint(ticket_id: str, req: UpdateTicketRequest):
-    t = database.get_ticket_by_id(ticket_id.upper())
+@app.post("/api/tickets/{ticket_id}/reply")
+def reply_ticket_endpoint(ticket_id: str, req: TicketReplyRequest):
+    clean_tid = ticket_id.strip()
+    t = database.get_ticket_by_id(clean_tid.upper()) or database.get_ticket_by_id(clean_tid)
     if not t:
         raise HTTPException(status_code=404, detail=f"Ticket {ticket_id} not found")
+    actual_tid = t["id"]
         
-    updates = {}
+    msg_text = (req.text or req.message or "").strip()
+    sender_name = req.sender.strip() if req.sender else "Support Agent"
+    
+    new_msg = database.add_ticket_message(
+        ticket_id=actual_tid,
+        sender=sender_name,
+        text=msg_text,
+        is_internal_note=bool(req.is_internal_note)
+    )
+    
+    updates: dict[str, Any] = {}
     if req.status:
-        updates["status"] = req.status.title()
+        st_val = req.status.strip()
+        updates["status"] = "In Progress" if st_val.lower() == "in progress" else st_val.title()
+    elif not req.is_internal_note and t.get("status") == "Open":
+        updates["status"] = "In Progress"
+        
+    if sender_name not in ("Valued Customer", "Customer", "User") and t.get("assigned_agent") in (None, "", "Unassigned"):
+        updates["assigned_agent"] = sender_name
+        
+    if updates:
+        database.update_ticket(actual_tid, updates)
+        
+    updated = database.get_ticket_by_id(actual_tid)
+    t_copy = dict(updated or t)
+    t_copy["sla_details"] = calculate_sla_details(t_copy)
+    return {
+        "status": "success",
+        "message": "Reply posted to ticket thread",
+        "reply": new_msg,
+        "ticket_message": new_msg,
+        "ticket": t_copy,
+        "state": t_copy
+    }
+
+@app.get("/api/tickets/{ticket_id}/State")
+@app.get("/api/tickets/{ticket_id}/state")
+def get_ticket_state(ticket_id: str):
+    clean_tid = ticket_id.strip()
+    ticket = database.get_ticket_by_id(clean_tid.upper()) or database.get_ticket_by_id(clean_tid)
+    if not ticket:
+        raise HTTPException(status_code=404, detail=f"Ticket {ticket_id} not found")
+    t_copy = dict(ticket)
+    t_copy["sla_details"] = calculate_sla_details(ticket)
+    return {
+        "status": "success",
+        "ticket_id": t_copy["id"],
+        "ticket_status": t_copy.get("status"),
+        "status_name": t_copy.get("status"),
+        "assigned_agent": t_copy.get("assigned_agent"),
+        "messages": t_copy.get("messages", []),
+        "sla_details": t_copy["sla_details"],
+        "ticket": t_copy,
+        "state": t_copy
+    }
+
+@app.patch("/api/tickets/{ticket_id}")
+@app.post("/api/tickets/{ticket_id}")
+@app.put("/api/tickets/{ticket_id}")
+def update_ticket_endpoint(ticket_id: str, req: UpdateTicketRequest):
+    clean_tid = ticket_id.strip()
+    t = database.get_ticket_by_id(clean_tid.upper()) or database.get_ticket_by_id(clean_tid)
+    if not t:
+        raise HTTPException(status_code=404, detail=f"Ticket {ticket_id} not found")
+    actual_tid = t["id"]
+        
+    updates: dict[str, Any] = {}
+    if req.status:
+        st_val = req.status.strip()
+        updates["status"] = "In Progress" if st_val.lower() == "in progress" else st_val.title()
     if req.assigned_agent:
         updates["assigned_agent"] = req.assigned_agent.strip()
     if req.priority:
@@ -921,6 +1200,23 @@ def get_admin_rag_policy():
         "chunks": chunks
     }
 
+@app.get("/api/rag/status")
+@app.get("/api/admin/rag/status")
+def get_rag_status():
+    """Live RAG policy hot-reload & chunk inspection."""
+    kb_path = os.getenv("KNOWLEDGE_BASE_PATH", "knowledge_base/company_faq.txt")
+    chunks = get_all_chunks()
+    settings = get_pipeline_settings()
+    return {
+        "status": "ready",
+        "kb_path": kb_path,
+        "total_chunks": len(chunks),
+        "embedding_model": settings.get("embedding_model", "models/text-embedding-004"),
+        "generation_model": settings.get("generation_model", "gemini-2.5-flash"),
+        "guardrail_threshold": settings.get("guardrail_threshold", 0.85),
+        "chunks": chunks
+    }
+
 @app.post("/api/admin/rag-upload", dependencies=[Depends(verify_admin_key)])
 async def admin_rag_upload(request: Request):
     r"""
@@ -993,15 +1289,23 @@ async def admin_rag_upload(request: Request):
 @app.get("/api/orders/{order_id}")
 def get_order_endpoint(order_id: str):
     """Fetches details for an order ID (e.g. ORD-1001)."""
-    order = database.get_order(order_id)
+    clean_id = order_id.strip()
+    order = database.get_order(clean_id) or database.get_order(clean_id.upper())
     if not order:
         raise HTTPException(status_code=404, detail=f"Order {order_id} not found")
     return {"status": "success", "order": order}
 
 @app.get("/api/orders")
-def get_orders_endpoint():
-    """Lists all seeded customer orders."""
+def get_orders_endpoint(
+    email: Optional[str] = Query(None, description="Filter orders by customer email"),
+    customer_email: Optional[str] = Query(None, description="Alias for email filter")
+):
+    """Lists customer orders, optionally filtered by customer email."""
+    target_email = email or customer_email
     orders = database.get_all_orders()
+    if target_email and target_email.strip():
+        clean_email = target_email.strip().lower()
+        orders = [o for o in orders if str(o.get("customer_email", "")).strip().lower() == clean_email]
     return {"status": "success", "total": len(orders), "orders": orders}
 
 # ==============================================================================
@@ -1038,22 +1342,25 @@ def update_features(req: FeaturesUpdateRequest):
         "features": updated
     }
 
+@app.post("/api/csat")
 @app.post("/api/feedback")
 def submit_feedback(req: FeedbackRequest):
+    rating_val = req.rating if req.rating is not None else 5
+    is_pos = req.is_positive if req.is_positive is not None else (rating_val >= 4)
     fb_entry = database.add_feedback(
         query=req.query[:100] if req.query else "Live Assistant Query",
-        rating=req.rating,
-        is_positive=req.is_positive,
+        rating=rating_val,
+        is_positive=is_pos,
         comment=req.comment.strip() if req.comment else "",
         language=req.language or "English"
     )
         
     # Phase 7: Trigger Outbound Webhook on Low CSAT rating
-    if req.rating <= 2 or not req.is_positive:
+    if rating_val <= 2 or not is_pos:
         dispatch_webhook_alert(
             event_type="low_csat_alert",
-            title=f"⚠️ Low CSAT Rating Received ({req.rating}/5.0)",
-            payload={"rating": req.rating, "comment": req.comment, "query": req.query, "language": req.language},
+            title=f"⚠️ Low CSAT Rating Received ({rating_val}/5.0)",
+            payload={"rating": rating_val, "comment": req.comment, "query": req.query, "language": req.language},
             severity="medium",
             destination="Slack #csat-telemetry"
         )
@@ -1150,6 +1457,7 @@ def apply_ticket_macro(ticket_id: str, req: ApplyMacroRequest):
         "ticket": t_copy
     }
 
+@app.get("/api/metrics")
 @app.get("/api/analytics")
 def get_analytics():
     total_q = QUERY_STATS["total_queries"]
@@ -1161,15 +1469,27 @@ def get_analytics():
     feedbacks = database.get_all_feedback()
     webhooks = database.get_webhook_logs(limit=5)
     audits = database.get_audit_logs(limit=10)
+    tickets = database.get_all_tickets()
+    total_tickets = len(tickets)
+    open_tickets = sum(1 for t in tickets if t.get("status") == "Open")
+    resolved_tickets = sum(1 for t in tickets if t.get("status") == "Resolved")
+    uptime = int(time.time() - SERVER_START_TIME)
 
     return {
+        "status": "success",
         "deflection_rate": rate,
         "avg_latency_s": avg_latency,
         "total_inquiries": total_q,
+        "total_queries": total_q,
         "csat_score": metrics["average_rating"],
+        "average_csat": metrics["average_rating"],
         "csat_positive_percent": metrics["csat_score_percent"],
         "total_feedbacks": metrics["total_feedback"],
         "feedback_count": metrics["total_feedback"],
+        "total_tickets": total_tickets,
+        "open_tickets": open_tickets,
+        "resolved_tickets": resolved_tickets,
+        "uptime_seconds": uptime,
         "recent_feedback": feedbacks[:5],
         "recent_webhooks": webhooks,
         "audit_logs": audits
@@ -1184,10 +1504,33 @@ class HybridSearchRequest(BaseModel):
     top_k: Optional[int] = Field(3, ge=1, le=20)
     rrf_k: Optional[int] = Field(60, ge=1, le=200)
 
-class VisionClaimRequest(BaseModel):
+class AnalyzeImageRequest(BaseModel):
     image_base64: Optional[str] = Field("", max_length=7000000, description="Base64 image string (max ~5MB)")
-    claim_description: str = Field(..., min_length=1, max_length=2000, description="Customer claim explanation")
+    image: Optional[str] = Field(None, max_length=7000000, description="Alias for image_base64")
+    claim_description: Optional[str] = Field(None, max_length=2000, description="Customer claim explanation")
+    description: Optional[str] = Field(None, max_length=2000, description="Alias for claim_description")
     mime_type: Optional[str] = Field("image/jpeg", max_length=50)
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_desc(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            raw_claim = data.get("claim_description")
+            raw_desc = data.get("description")
+            desc = raw_claim if (raw_claim is not None and str(raw_claim).strip()) else raw_desc
+            if desc is None or not str(desc).strip():
+                raise ValueError("claim_description or description cannot be empty")
+            clean_desc = str(desc).strip()
+            data["claim_description"] = clean_desc
+            data["description"] = clean_desc
+            raw_img = data.get("image_base64")
+            raw_alias = data.get("image")
+            img = raw_img if (raw_img is not None and str(raw_img).strip()) else raw_alias
+            if img:
+                data["image_base64"] = str(img).strip()
+        return data
+
+VisionClaimRequest = AnalyzeImageRequest
 
 @app.post("/api/search/hybrid", dependencies=[Depends(check_rate_limit)])
 def hybrid_search(req: HybridSearchRequest):
@@ -1196,62 +1539,48 @@ def hybrid_search(req: HybridSearchRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/analyze-image", dependencies=[Depends(check_rate_limit)])
 @app.post("/api/vision/analyze-claim", dependencies=[Depends(check_rate_limit)])
-def analyze_claim(req: VisionClaimRequest):
+def analyze_claim(req: AnalyzeImageRequest):
     try:
+        img_b64 = req.image_base64 or req.image or ""
+        claim_desc = req.claim_description or req.description or ""
         return analyze_claim_image(
-            image_base64=req.image_base64 or "",
-            claim_description=req.claim_description.strip(),
+            image_base64=img_b64,
+            claim_description=claim_desc.strip(),
             mime_type=req.mime_type or "image/jpeg"
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/admin")
-@app.get("/admin.html")
-def read_admin():
-    if os.path.exists("admin.html"):
-        return FileResponse("admin.html")
-    return {"status": "error", "message": "admin.html not found"}
-
-@app.get("/login")
-@app.get("/login.html")
-@app.get("/signup")
-def read_login():
-    if os.path.exists("app.html"):
-        return FileResponse("app.html")
-    return {"status": "error", "message": "app.html not found"}
-
-@app.get("/admin/login")
-@app.get("/developer/login")
-@app.get("/admin-login.html")
-def read_admin_login():
-    if os.path.exists("admin.html"):
-        return FileResponse("admin.html")
-    return {"status": "error", "message": "admin.html not found"}
-
-@app.get("/app")
-@app.get("/app.html")
-@app.get("/support")
-def read_app():
-    if os.path.exists("app.html"):
-        return FileResponse("app.html")
-    return {"status": "error", "message": "app.html not found"}
+# ==============================================================================
+# TWO-WINDOW DESKTOP HTML ROUTES
+# Window 1: Customer Support Portal (app.html)
+# Window 2: Admin & Agent Command Center (admin.html)
+# ==============================================================================
 
 @app.get("/")
-@app.get("/index.html")
-def read_root():
-    if os.path.exists("index.html"):
-        return FileResponse("index.html")
-    elif os.path.exists("app.html"):
-        return FileResponse("app.html")
-    return {"status": "online", "message": "OmniDesk Customer Support RAG Agent API is live. Visit /health or /docs."}
+@app.get("/app.html")
+@app.get("/app")
+def read_customer_portal():
+    """Serves Window 1: Customer Support Portal."""
+    if os.path.exists("app.html"):
+        return FileResponse("app.html", media_type="text/html")
+    raise HTTPException(status_code=404, detail="app.html not found")
 
-# Mount static asset folders
-if os.path.exists("css"):
-    app.mount("/css", StaticFiles(directory="css"), name="css")
-if os.path.exists("js"):
-    app.mount("/js", StaticFiles(directory="js"), name="js")
+@app.get("/admin")
+@app.get("/admin.html")
+def read_admin_console():
+    """Serves Window 2: Admin & Agent Command Center."""
+    if os.path.exists("admin.html"):
+        return FileResponse("admin.html", media_type="text/html")
+    raise HTTPException(status_code=404, detail="admin.html not found")
+
+# Mount static asset folders (restricted to /css and /js only)
+os.makedirs("css", exist_ok=True)
+app.mount("/css", StaticFiles(directory="css"), name="css")
+os.makedirs("js", exist_ok=True)
+app.mount("/js", StaticFiles(directory="js"), name="js")
 
 if __name__ == "__main__":
     import uvicorn
