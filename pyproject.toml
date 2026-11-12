@@ -9,7 +9,8 @@ exclude = [
     ".agent",
 ]
 
-[tool.pyright]
+[tool.basedpyright]
+typeCheckingMode = "standard"
 exclude = [
     "**/.venv",
     "**/node_modules",
@@ -17,6 +18,14 @@ exclude = [
     "**/.agents",
     "**/.agent",
 ]
+reportUnusedCallResult = false
+reportAny = false
+reportUnknownParameterType = false
+reportUnknownArgumentType = false
+reportUnknownVariableType = false
+reportUnknownMemberType = false
+reportMissingTypeArgument = false
+reportDeprecated = false
 
 [project]
 name = "omnidesk-customer-assistant"

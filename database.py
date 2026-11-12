@@ -16,7 +16,7 @@ import json
 import random
 import hashlib
 import secrets
-from typing import Optional, Any
+from typing import Any
 
 DB_DIR = os.getenv("DATA_DIR", "data")
 DB_PATH = os.path.join(DB_DIR, "omnidesk.db")
@@ -26,7 +26,6 @@ def _get_connection() -> sqlite3.Connection:
     os.makedirs(DB_DIR, exist_ok=True)
     conn = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=60.0)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode = WAL;")  # Write-Ahead Logging for high concurrency
     conn.execute("PRAGMA busy_timeout = 60000;") # 60 seconds busy wait
     conn.execute("PRAGMA synchronous = NORMAL;")
     conn.execute("PRAGMA foreign_keys = ON;")
@@ -35,6 +34,7 @@ def _get_connection() -> sqlite3.Connection:
 def init_db():
     """Initializes the database schema and populates initial demo seed data if empty."""
     conn = _get_connection()
+    conn.execute("PRAGMA journal_mode = WAL;")
     cursor = conn.cursor()
     
     # 1. Tickets Table
@@ -269,7 +269,7 @@ def _seed_initial_data(conn: sqlite3.Connection):
 # ==============================================================================
 # TICKETS CRUD OPERATIONS
 # ==============================================================================
-def get_all_tickets(status: Optional[str] = None, priority: Optional[str] = None, search: Optional[str] = None) -> list[dict]:
+def get_all_tickets(status: str | None = None, priority: str | None = None, search: str | None = None) -> list[dict[str, Any]]:
     """Fetches all tickets with embedded message threads."""
     conn = _get_connection()
     cursor = conn.cursor()
@@ -312,7 +312,7 @@ def get_all_tickets(status: Optional[str] = None, priority: Optional[str] = None
     conn.close()
     return tickets
 
-def get_ticket_by_id(ticket_id: str) -> Optional[dict]:
+def get_ticket_by_id(ticket_id: str) -> dict[str, Any] | None:
     """Fetches a single ticket with its message history."""
     conn = _get_connection()
     cursor = conn.cursor()
@@ -337,7 +337,7 @@ def get_ticket_by_id(ticket_id: str) -> Optional[dict]:
     conn.close()
     return t_dict
 
-def create_ticket(ticket_data: dict) -> dict:
+def create_ticket(ticket_data: dict[str, Any]) -> dict[str, Any]:
     """Inserts a new ticket and initial message into SQLite."""
     conn = _get_connection()
     cursor = conn.cursor()
@@ -385,7 +385,7 @@ def create_ticket(ticket_data: dict) -> dict:
     res = get_ticket_by_id(ticket_data["id"])
     return res if res is not None else ticket_data
 
-def update_ticket(ticket_id: str, updates: dict) -> Optional[dict]:
+def update_ticket(ticket_id: str, updates: dict[str, Any]) -> dict[str, Any] | None:
     """Updates fields on an existing ticket."""
     conn = _get_connection()
     cursor = conn.cursor()
@@ -418,7 +418,7 @@ def delete_ticket(ticket_id: str) -> bool:
     conn.close()
     return deleted
 
-def add_ticket_message(ticket_id: str, sender: str, text: str, is_internal_note: bool = False, timestamp: Optional[str] = None) -> Optional[dict]:
+def add_ticket_message(ticket_id: str, sender: str, text: str, is_internal_note: bool = False, timestamp: str | None = None) -> dict[str, Any] | None:
     """Appends a new message or staff note to a ticket thread."""
     conn = _get_connection()
     cursor = conn.cursor()
@@ -448,7 +448,7 @@ def add_ticket_message(ticket_id: str, sender: str, text: str, is_internal_note:
 # ==============================================================================
 # FEEDBACK & CSAT OPERATIONS
 # ==============================================================================
-def add_feedback(query: str, rating: int, is_positive: bool, comment: str = "", language: str = "English") -> dict:
+def add_feedback(query: str, rating: int, is_positive: bool, comment: str = "", language: str = "English") -> dict[str, Any]:
     """Inserts a CSAT feedback record into SQLite."""
     conn = _get_connection()
     cursor = conn.cursor()
@@ -472,7 +472,7 @@ def add_feedback(query: str, rating: int, is_positive: bool, comment: str = "", 
         "timestamp": ts
     }
 
-def get_all_feedback() -> list[dict]:
+def get_all_feedback() -> list[dict[str, Any]]:
     """Fetches all customer feedback records."""
     conn = _get_connection()
     cursor = conn.cursor()
@@ -493,7 +493,7 @@ def get_all_feedback() -> list[dict]:
     conn.close()
     return results
 
-def get_analytics_metrics() -> dict:
+def get_analytics_metrics() -> dict[str, Any]:
     """Calculates live analytics across persistent tickets and feedback."""
     conn = _get_connection()
     cursor = conn.cursor()
@@ -524,7 +524,7 @@ def get_analytics_metrics() -> dict:
 # ==============================================================================
 # AUDIT & WEBHOOK OPERATIONS
 # ==============================================================================
-def add_audit_log(query: str, status: str, distance: Optional[float] = None, matched: Optional[str] = None, latency_ms: int = 0) -> dict:
+def add_audit_log(query: str, status: str, distance: float | None = None, matched: str | None = None, latency_ms: int = 0) -> dict[str, Any]:
     """Records an audit log entry in SQLite with retry resilience."""
     audit_id = f"audit_{int(time.time() * 1000)}"
     ts = time.strftime("%H:%M:%S")
@@ -545,7 +545,7 @@ def add_audit_log(query: str, status: str, distance: Optional[float] = None, mat
             time.sleep(0.05)
     return {"id": audit_id, "query": query, "status": status, "distance": distance, "matched": matched, "latency_ms": latency_ms, "timestamp": ts}
 
-def get_audit_logs(limit: int = 50) -> list[dict]:
+def get_audit_logs(limit: int = 50) -> list[dict[str, Any]]:
     try:
         conn = _get_connection()
         cursor = conn.cursor()
@@ -556,7 +556,7 @@ def get_audit_logs(limit: int = 50) -> list[dict]:
     except Exception:
         return []
 
-def add_webhook_log(event_type: str, title: str, severity: str, destination: str, payload: dict, status: str = "delivered") -> dict:
+def add_webhook_log(event_type: str, title: str, severity: str, destination: str, payload: dict[str, Any], status: str = "delivered") -> dict[str, Any]:
     wh_id = f"wh_{int(time.time() * 1000)}"
     ts = time.strftime("%H:%M:%S")
     for attempt in range(3):
@@ -576,7 +576,7 @@ def add_webhook_log(event_type: str, title: str, severity: str, destination: str
             time.sleep(0.05)
     return {"id": wh_id, "event_type": event_type, "title": title, "severity": severity, "destination": destination, "payload": payload, "status": status, "timestamp": ts}
 
-def get_webhook_logs(limit: int = 50) -> list[dict]:
+def get_webhook_logs(limit: int = 50) -> list[dict[str, Any]]:
     conn = _get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM webhook_logs ORDER BY rowid DESC LIMIT ?;", (limit,))
@@ -609,7 +609,7 @@ DEFAULT_FEATURE_FLAGS = {
     "auto_escalate_vip": True
 }
 
-def get_feature_flags() -> dict:
+def get_feature_flags() -> dict[str, Any]:
     """Retrieves all UX and system feature flags, merged with defaults."""
     conn = _get_connection()
     cursor = conn.cursor()
@@ -634,7 +634,7 @@ def get_feature_flags() -> dict:
             flags[key] = val
     return flags
 
-def update_feature_flags(updates: dict) -> dict:
+def update_feature_flags(updates: dict[str, Any]) -> dict[str, Any]:
     """Updates one or more feature flags in SQLite."""
     conn = _get_connection()
     cursor = conn.cursor()
@@ -649,7 +649,7 @@ def update_feature_flags(updates: dict) -> dict:
     conn.close()
     return get_feature_flags()
 
-def get_customer_safe_ticket(ticket_id: str) -> Optional[dict]:
+def get_customer_safe_ticket(ticket_id: str) -> dict[str, Any] | None:
     """Fetches a ticket and strips internal confidential staff notes for customer privacy."""
     ticket = get_ticket_by_id(ticket_id)
     if not ticket:
@@ -665,7 +665,7 @@ def get_customer_safe_ticket(ticket_id: str) -> Optional[dict]:
 # USER AUTHENTICATION & SESSION MANAGEMENT
 # ==============================================================================
 
-def hash_password(password: str, salt: Optional[str] = None) -> tuple[str, str]:
+def hash_password(password: str, salt: str | None = None) -> tuple[str, str]:
     """Generates a cryptographically strong PBKDF2-HMAC-SHA256 password hash and salt."""
     if not salt:
         salt = secrets.token_hex(16)
@@ -688,7 +688,7 @@ def create_user(
     password: str,
     role: str = "customer",
     tier: str = "Standard Retail"
-) -> dict:
+) -> dict[str, Any]:
     """Creates a new user with hashed credentials."""
     conn = _get_connection()
     cursor = conn.cursor()
@@ -713,7 +713,7 @@ def create_user(
         "created_at": created_at
     }
 
-def get_user_by_email(email: str) -> Optional[dict]:
+def get_user_by_email(email: str) -> dict[str, Any] | None:
     conn = _get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM users WHERE LOWER(email) = ?;", (email.strip().lower(),))
@@ -723,7 +723,7 @@ def get_user_by_email(email: str) -> Optional[dict]:
         return None
     return dict(row)
 
-def get_user_by_id(user_id: str) -> Optional[dict]:
+def get_user_by_id(user_id: str) -> dict[str, Any] | None:
     conn = _get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM users WHERE id = ?;", (user_id,))
@@ -733,7 +733,7 @@ def get_user_by_id(user_id: str) -> Optional[dict]:
         return None
     return dict(row)
 
-def authenticate_user(email: str, password: str) -> Optional[dict]:
+def authenticate_user(email: str, password: str) -> dict[str, Any] | None:
     """Authenticates email and password, returning sanitized user info on success."""
     user = get_user_by_email(email)
     if not user:
@@ -760,7 +760,7 @@ def create_user_session(user_id: str, role: str = "customer", duration_seconds: 
     conn.close()
     return token
 
-def get_session(token: str) -> Optional[dict]:
+def get_session(token: str) -> dict[str, Any] | None:
     """Validates session token and returns active session + user metadata."""
     if not token:
         return None
@@ -791,7 +791,7 @@ def delete_session(token: str) -> bool:
     conn.close()
     return affected
 
-def record_developer_key_request(email: str, team: str, reason: str) -> dict:
+def record_developer_key_request(email: str, team: str, reason: str) -> dict[str, Any]:
     """Records an access request for Developer Gateway."""
     req_id = f"DEVREQ-{random.randint(100, 999)}"
     now = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -812,7 +812,7 @@ def record_developer_key_request(email: str, team: str, reason: str) -> dict:
         "timestamp": now
     }
 
-def get_developer_key_requests() -> list[dict]:
+def get_developer_key_requests() -> list[dict[str, Any]]:
     conn = _get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM developer_key_requests ORDER BY timestamp DESC;")
