@@ -16,6 +16,7 @@ import json
 import random
 import hashlib
 import secrets
+import re
 from typing import Any
 
 DB_DIR = os.getenv("DATA_DIR", "data")
@@ -157,6 +158,21 @@ def init_db():
     );
     """)
 
+    # 10. Orders Table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS orders (
+        id TEXT PRIMARY KEY,
+        customer_id TEXT NOT NULL,
+        customer_name TEXT NOT NULL,
+        customer_email TEXT NOT NULL,
+        status TEXT NOT NULL,
+        items TEXT NOT NULL,
+        tracking_number TEXT,
+        total TEXT NOT NULL,
+        order_date TEXT NOT NULL
+    );
+    """)
+
     conn.commit()
 
     # Seed initial data if tickets table is empty
@@ -171,7 +187,28 @@ def init_db():
     if u_count == 0:
         _seed_initial_users(conn)
 
+    # Seed initial orders if orders table is empty
+    cursor.execute("SELECT COUNT(*) as count FROM orders;")
+    o_count = cursor.fetchone()["count"]
+    if o_count == 0:
+        _seed_initial_orders(conn)
+
     conn.close()
+
+def _seed_initial_orders(conn: sqlite3.Connection):
+    """Seeds default customer orders."""
+    cursor = conn.cursor()
+    cursor.executemany("""
+    INSERT OR IGNORE INTO orders (id, customer_id, customer_name, customer_email, status, items, tracking_number, total, order_date)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, [
+        ("ORD-1001", "CUST-8492", "Elena Rostova", "elena.r@techcorp.io", "Shipped", "OmniDesk Pro Smart Standing Desk (Oak / White Frame), ErgoArm Dual Monitor Mount", "TRK-982341-DHL", "$749.00", "2026-11-05"),
+        ("ORD-1042", "CUST-8492", "Elena Rostova", "elena.r@techcorp.io", "Delivered", "250x Commercial Power Pods", "TRK-881240-DHL", "$4,950.00", "2026-10-28"),
+        ("ORD-2024", "CUST-6310", "Marcus Vance", "m.vance@vertex.com", "Processing", "OmniDesk Bamboo Top 60x30, Cable Routing Spine", "TRK-Pending", "$620.00", "2026-11-12"),
+        ("ORD-5521", "CUST-4195", "David Kim", "dkim@ventures.com", "Delivered", "Apex Wireless Noise-Cancelling Headphones", "TRK-442190-USPS", "$249.00", "2026-11-01"),
+        ("ORD-8841", "CUST-6310", "Marcus Vance", "m.vance@vertex.com", "Delivered", "Apex Studio Ergonomic Chair", "TRK-331092-FEDEX", "$499.00", "2026-10-15")
+    ])
+    conn.commit()
 
 def _seed_initial_data(conn: sqlite3.Connection):
     """Seeds default enterprise tickets and feedback for immediate demonstration."""
@@ -262,6 +299,18 @@ def _seed_initial_data(conn: sqlite3.Connection):
     """, [
         ("wh_101", "sla_warning", "⏱️ SLA Warning (< 30m) — Ticket #TCK-1021", "high", "Slack #support-urgent", json.dumps({"ticket_id": "TCK-1021", "customer": "Elena Rostova", "tier": "VIP Enterprise", "remaining_minutes": 25}), "delivered", "10:15:00"),
         ("wh_102", "csat_alert", "⚠️ Low CSAT Rating Received (2/5)", "medium", "PagerDuty / Support Leads", json.dumps({"rating": 2, "query": "How to ship heavy electronics?", "language": "English"}), "delivered", "11:20:00")
+    ])
+
+    # Seed Orders
+    cursor.executemany("""
+    INSERT OR IGNORE INTO orders (id, customer_id, customer_name, customer_email, status, items, tracking_number, total, order_date)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, [
+        ("ORD-1001", "CUST-8492", "Elena Rostova", "elena.r@techcorp.io", "Shipped", "OmniDesk Pro Smart Standing Desk (Oak / White Frame), ErgoArm Dual Monitor Mount", "TRK-982341-DHL", "$749.00", "2026-11-05"),
+        ("ORD-1042", "CUST-8492", "Elena Rostova", "elena.r@techcorp.io", "Delivered", "250x Commercial Power Pods", "TRK-881240-DHL", "$4,950.00", "2026-10-28"),
+        ("ORD-2024", "CUST-6310", "Marcus Vance", "m.vance@vertex.com", "Processing", "OmniDesk Bamboo Top 60x30, Cable Routing Spine", "TRK-Pending", "$620.00", "2026-11-12"),
+        ("ORD-5521", "CUST-4195", "David Kim", "dkim@ventures.com", "Delivered", "Apex Wireless Noise-Cancelling Headphones", "TRK-442190-USPS", "$249.00", "2026-11-01"),
+        ("ORD-8841", "CUST-6310", "Marcus Vance", "m.vance@vertex.com", "Delivered", "Apex Studio Ergonomic Chair", "TRK-331092-FEDEX", "$499.00", "2026-10-15")
     ])
 
     conn.commit()
@@ -417,6 +466,57 @@ def delete_ticket(ticket_id: str) -> bool:
     conn.commit()
     conn.close()
     return deleted
+
+# ==============================================================================
+# ORDERS RETRIEVAL
+# ==============================================================================
+def get_order(order_id: str) -> dict[str, Any] | None:
+    """Retrieve an order record by Order ID (e.g. ORD-1001), falling back to realistic mock if not in DB."""
+    if not order_id:
+        return None
+    oid = order_id.upper().strip()
+    try:
+        conn = _get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM orders WHERE id = ?;", (oid,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            res = dict(row)
+            res["order_id"] = res["id"]
+            return res
+    except Exception as e:
+        print(f"[get_order Error] {e}")
+
+    # Deterministic mock fallback for valid ORD-XXXX patterns
+    if re.match(r"^ORD-\d{4}$", oid):
+        suffix = oid.split("-")[-1]
+        return {
+            "id": oid,
+            "order_id": oid,
+            "customer_id": f"CUST-{suffix}",
+            "customer_name": "Valued Customer",
+            "customer_email": "customer@example.com",
+            "status": "Shipped",
+            "items": "OmniDesk Pro Standing Desk, Dual Monitor Arm",
+            "tracking_number": f"TRK-{suffix}92-DHL",
+            "total": "$599.00",
+            "order_date": "2026-11-08"
+        }
+    return None
+
+def get_all_orders() -> list[dict[str, Any]]:
+    """Fetches all customer order records."""
+    try:
+        conn = _get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM orders ORDER BY order_date DESC;")
+        rows = [dict(r) for r in cursor.fetchall()]
+        conn.close()
+        return rows
+    except Exception as e:
+        print(f"[get_all_orders Error] {e}")
+        return []
 
 def add_ticket_message(ticket_id: str, sender: str, text: str, is_internal_note: bool = False, timestamp: str | None = None) -> dict[str, Any] | None:
     """Appends a new message or staff note to a ticket thread."""

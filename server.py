@@ -19,6 +19,11 @@ from rag_engine import (
     stream_rag_pipeline,
     classify_intent_and_sentiment,
     generate_agent_reply_draft,
+    generate_support_response,
+    detect_escalation_intent,
+    GeminiEmbeddingFunction,
+    parse_faq_sections,
+    ingest_policy_text,
     ingest_faq,
     get_all_chunks,
     add_knowledge_chunk,
@@ -100,9 +105,10 @@ def check_rate_limit(request: Request):
 # ==============================================================================
 def verify_admin_key(
     x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
+    x_admin_key: Optional[str] = Header(None, alias="X-Admin-Key"),
     authorization: Optional[str] = Header(None, alias="Authorization")
 ):
-    token = x_api_key
+    token = x_api_key or x_admin_key
     if not token and authorization:
         if authorization.startswith("Bearer "):
             token = authorization[7:].strip()
@@ -244,6 +250,13 @@ class AddPolicyRequest(BaseModel):
     title: str = Field(..., min_length=1, max_length=200, description="Policy clause header")
     content: str = Field(..., min_length=5, max_length=20000, description="Detailed policy text")
     source: Optional[str] = Field("custom_policy.txt", max_length=100)
+
+class RagUploadRequest(BaseModel):
+    text: Optional[str] = Field(None, description="Raw markdown or text policy document")
+    content: Optional[str] = Field(None, description="Alternative field for policy content")
+    filename: Optional[str] = Field("company_faq.txt", description="Document filename or identifier")
+    replace_all: Optional[bool] = Field(True, description="Whether to replace all existing sections")
+    save_to_kb: Optional[bool] = Field(True, description="Whether to persist to knowledge_base/company_faq.txt")
 
 class SettingsUpdateRequest(BaseModel):
     guardrail_threshold: Optional[float] = Field(None, ge=0.1, le=3.0)
@@ -885,6 +898,111 @@ def reset_knowledge_base():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# ==============================================================================
+# INTERNAL RAG POLICY STUDIO & ORDERS RETRIEVAL
+# ==============================================================================
+
+@app.get("/api/admin/rag-upload", dependencies=[Depends(verify_admin_key)])
+@app.get("/api/admin/rag-policy", dependencies=[Depends(verify_admin_key)])
+def get_admin_rag_policy():
+    """Retrieve the raw knowledge base policy content and indexed policy chunks."""
+    kb_path = os.getenv("KNOWLEDGE_BASE_PATH", "knowledge_base/company_faq.txt")
+    content = ""
+    if os.path.exists(kb_path):
+        with open(kb_path, "r", encoding="utf-8") as f:
+            content = f.read()
+    chunks = get_all_chunks()
+    return {
+        "status": "success",
+        "kb_path": kb_path,
+        "content": content,
+        "total_chunks": len(chunks),
+        "chunks": chunks
+    }
+
+@app.post("/api/admin/rag-upload", dependencies=[Depends(verify_admin_key)])
+async def admin_rag_upload(request: Request):
+    r"""
+    RAG Policy Studio document upload and hot-reloading:
+    Accepts JSON payload, raw markdown text, or multipart form upload.
+    Parses on numbered section boundaries (^\d+\.\s+[A-Z]) or markdown headers (#/##),
+    and indexes each section with metadata into ChromaDB.
+    """
+    content_type = request.headers.get("content-type", "")
+    text_content = ""
+    filename = "company_faq.txt"
+    replace_all = True
+    save_to_kb = True
+
+    if "multipart/form-data" in content_type:
+        form = await request.form()
+        file_obj = form.get("file")
+        if file_obj is not None and hasattr(file_obj, "read"):
+            file_bytes = await file_obj.read()  # type: ignore
+            text_content = file_bytes.decode("utf-8", errors="replace")
+            filename = getattr(file_obj, "filename", "company_faq.txt") or "company_faq.txt"
+        elif "text" in form:
+            text_content = str(form["text"])
+        elif "content" in form:
+            text_content = str(form["content"])
+        if "replace_all" in form:
+            replace_all = str(form["replace_all"]).lower() in ("true", "1", "yes")
+        if "save_to_kb" in form:
+            save_to_kb = str(form["save_to_kb"]).lower() in ("true", "1", "yes")
+    else:
+        try:
+            body = await request.json()
+            if isinstance(body, dict):
+                text_content = body.get("text") or body.get("content") or ""
+                filename = body.get("filename") or "company_faq.txt"
+                if "replace_all" in body:
+                    replace_all = bool(body["replace_all"])
+                if "save_to_kb" in body:
+                    save_to_kb = bool(body["save_to_kb"])
+        except Exception:
+            raw_b = await request.body()
+            text_content = raw_b.decode("utf-8", errors="replace")
+
+    clean_text = text_content.strip()
+    if not clean_text:
+        raise HTTPException(status_code=400, detail="Policy text or uploaded file cannot be empty.")
+
+    sections = ingest_policy_text(
+        text=clean_text,
+        source=filename,
+        replace_all=replace_all,
+        save_to_kb=save_to_kb
+    )
+    return {
+        "status": "success",
+        "message": f"Successfully indexed {len(sections)} policy section(s) into ChromaDB.",
+        "total_chunks": collection.count(),
+        "sections": [
+            {
+                "section": s["section"],
+                "title": s["title"],
+                "chunk_index": s["chunk_index"],
+                "tokens": s["tokens"],
+                "source": s["source"]
+            }
+            for s in sections
+        ]
+    }
+
+@app.get("/api/orders/{order_id}")
+def get_order_endpoint(order_id: str):
+    """Fetches details for an order ID (e.g. ORD-1001)."""
+    order = database.get_order(order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail=f"Order {order_id} not found")
+    return {"status": "success", "order": order}
+
+@app.get("/api/orders")
+def get_orders_endpoint():
+    """Lists all seeded customer orders."""
+    orders = database.get_all_orders()
+    return {"status": "success", "total": len(orders), "orders": orders}
 
 # ==============================================================================
 # SETTINGS & ANALYTICS APIS
