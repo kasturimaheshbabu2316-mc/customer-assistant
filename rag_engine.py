@@ -7,7 +7,7 @@ import re
 import io
 import uuid
 import base64
-from typing import Optional
+from typing import Any
 from collections import Counter
 
 import chromadb
@@ -32,7 +32,7 @@ if os.path.exists("doc/.env"):
     load_dotenv("doc/.env")
 
 # Runtime Configuration State
-DEFAULT_CONFIG = {
+DEFAULT_CONFIG: dict[str, Any] = {
     "generation_model": os.getenv("GENERATION_MODEL", "gemini-1.5-flash"),
     "embedding_model": os.getenv("EMBEDDING_MODEL", "text-embedding-004"),
     "guardrail_threshold": float(os.getenv("GUARDRAIL_DISTANCE_THRESHOLD", "1.2")),
@@ -46,7 +46,7 @@ DEFAULT_CONFIG = {
     )
 }
 
-CURRENT_SETTINGS = dict(DEFAULT_CONFIG)
+CURRENT_SETTINGS: dict[str, Any] = dict(DEFAULT_CONFIG)
 
 EMBEDDING_MODEL: str = str(CURRENT_SETTINGS["embedding_model"])
 GENERATION_MODEL: str = str(CURRENT_SETTINGS["generation_model"])
@@ -110,11 +110,11 @@ def _ensure_collection_dimension():
 
 _ensure_collection_dimension()
 
-def get_pipeline_settings() -> dict:
+def get_pipeline_settings() -> dict[str, Any]:
     """Returns runtime pipeline settings."""
     return dict(CURRENT_SETTINGS)
 
-def update_pipeline_settings(new_settings: dict) -> dict:
+def update_pipeline_settings(new_settings: dict[str, Any]) -> dict[str, Any]:
     """Updates runtime pipeline settings dynamically."""
     global EMBEDDING_MODEL, GENERATION_MODEL, GUARDRAIL_THRESHOLD, TOP_K_CHUNKS, TEMPERATURE, _gemini_api_working
     for key, val in new_settings.items():
@@ -126,13 +126,13 @@ def update_pipeline_settings(new_settings: dict) -> dict:
             else:
                 CURRENT_SETTINGS[key] = str(val)
     
-    EMBEDDING_MODEL = CURRENT_SETTINGS["embedding_model"]
-    GENERATION_MODEL = CURRENT_SETTINGS["generation_model"]
-    GUARDRAIL_THRESHOLD = CURRENT_SETTINGS["guardrail_threshold"]
-    TOP_K_CHUNKS = CURRENT_SETTINGS["top_k_chunks"]
-    TEMPERATURE = CURRENT_SETTINGS["temperature"]
+    EMBEDDING_MODEL = str(CURRENT_SETTINGS["embedding_model"])
+    GENERATION_MODEL = str(CURRENT_SETTINGS["generation_model"])
+    GUARDRAIL_THRESHOLD = float(CURRENT_SETTINGS["guardrail_threshold"])
+    TOP_K_CHUNKS = int(CURRENT_SETTINGS["top_k_chunks"])
+    TEMPERATURE = float(CURRENT_SETTINGS["temperature"])
     _gemini_api_working = True
-    return CURRENT_SETTINGS
+    return dict(CURRENT_SETTINGS)
 
 FALLBACK_THEMES = [
     # 0: Return & Refund
@@ -194,7 +194,7 @@ def generate_embedding(text: str) -> list[float]:
         if client:
             try:
                 emb_res = client.models.embed_content(
-                    model=CURRENT_SETTINGS["embedding_model"],
+                    model=str(CURRENT_SETTINGS["embedding_model"]),
                     contents=text
                 )
                 if emb_res and emb_res.embeddings and len(emb_res.embeddings) > 0:
@@ -229,7 +229,7 @@ def chunk_text(text: str, chunk_size: int = 400, overlap: int = 80) -> list[str]
         start += chunk_size - overlap
     return chunks
 
-def ingest_faq(file_path: Optional[str] = None, force_reindex: bool = False):
+def ingest_faq(file_path: str | None = None, force_reindex: bool = False):
     """
     Read text, chunk it into ~400-char pieces with 80-char overlap,
     generate embeddings (768 dimensions), and upsert into ChromaDB with metadata.
@@ -324,7 +324,7 @@ def ingest_faq(file_path: Optional[str] = None, force_reindex: bool = False):
         else:
             raise
 
-def get_all_chunks() -> list[dict]:
+def get_all_chunks() -> list[dict[str, Any]]:
     """Return list of all indexed chunks with IDs, titles, content, and sources."""
     if not collection:
         return []
@@ -353,7 +353,7 @@ def get_all_chunks() -> list[dict]:
         print(f"[get_all_chunks Error] {e}")
         return []
 
-def add_knowledge_chunk(title: str, content: str, source: str = "custom_policy.txt") -> dict:
+def add_knowledge_chunk(title: str, content: str, source: str = "custom_policy.txt") -> dict[str, Any]:
     """Adds a new policy chunk into ChromaDB."""
     cid = f"chunk_{uuid.uuid4().hex[:6]}"
     tokens = max(1, len(content) // 4)
@@ -393,7 +393,7 @@ def delete_knowledge_chunk(chunk_id: str) -> bool:
 
 def reindex_default_kb() -> int:
     """Purges and re-indexes the default FAQ file."""
-    ingest_faq(file_path=CURRENT_SETTINGS["knowledge_base_path"], force_reindex=True)
+    ingest_faq(file_path=str(CURRENT_SETTINGS["knowledge_base_path"]), force_reindex=True)
     return collection.count()
 
 def generate_local_grounded_answer(query: str, matched_docs: list[str]) -> str:
@@ -420,7 +420,7 @@ def generate_local_grounded_answer(query: str, matched_docs: list[str]) -> str:
     
     return "I am sorry, but our verified documentation does not cover that. Please contact support@company.com for human agent assistance."
 
-def classify_intent_and_sentiment(query: str) -> dict:
+def classify_intent_and_sentiment(query: str) -> dict[str, Any]:
     """
     Return {"intent": str, "sentiment": str} categorized into Return & Refund,
     Shipping & Logistics, Warranty & Claims, Billing & Payment, or General Inquiry,
@@ -572,7 +572,7 @@ def translate_grounded_response(answer: str, target_lang: str, query: str = "") 
 
     return answer
 
-def _format_conversation_history(history: Optional[list[dict]]) -> str:
+def _format_conversation_history(history: list[dict[str, Any]] | None) -> str:
     if not history:
         return ""
     valid_turns = []
@@ -586,7 +586,7 @@ def _format_conversation_history(history: Optional[list[dict]]) -> str:
         return ""
     return "<conversation_history>\n" + "\n".join(valid_turns) + "\n</conversation_history>\n\n"
 
-def _build_contextual_query(user_query: str, history: Optional[list[dict]]) -> str:
+def _build_contextual_query(user_query: str, history: list[dict[str, Any]] | None) -> str:
     if not history:
         return user_query
     q_lower = user_query.lower()
@@ -600,7 +600,7 @@ def _build_contextual_query(user_query: str, history: Optional[list[dict]]) -> s
                     return f"{prev_text} | {user_query}"
     return user_query
 
-def run_rag_pipeline(query: str, target_language: str = "Auto Detect", history: Optional[list] = None) -> dict:
+def run_rag_pipeline(query: str, target_language: str = "Auto Detect", history: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     """
     Query ChromaDB vectors with a distance threshold (default 1.2).
     If cosine distance > threshold, mark as deflected (deflected=True) with fallback customer-service guidance.
@@ -618,7 +618,7 @@ def run_rag_pipeline(query: str, target_language: str = "Auto Detect", history: 
     query_emb = generate_embedding(retrieval_query)
 
     # 2. Retrieve top matches from ChromaDB
-    n_results = min(CURRENT_SETTINGS["top_k_chunks"], max(1, collection.count()))
+    n_results = min(int(CURRENT_SETTINGS["top_k_chunks"]), max(1, collection.count()))
     results = collection.query(
         query_embeddings=[query_emb],
         n_results=n_results
@@ -630,7 +630,7 @@ def run_rag_pipeline(query: str, target_language: str = "Auto Detect", history: 
     distances: list[float] = dists_res[0] if (dists_res and len(dists_res) > 0 and dists_res[0] is not None) else []
 
     # Guardrail: Distance check against threshold (default 1.2)
-    is_deflected = not documents or (distances and distances[0] > CURRENT_SETTINGS["guardrail_threshold"])
+    is_deflected = not documents or (distances and distances[0] > float(CURRENT_SETTINGS["guardrail_threshold"]))
     if is_deflected:
         latency = int((time.time() - start_time) * 1000)
         base_deflected = "I do not have sufficient information in our policy database to answer this accurately. Would you like to reach our live support team at support@company.com?"
@@ -642,7 +642,7 @@ def run_rag_pipeline(query: str, target_language: str = "Auto Detect", history: 
             "deflected": True,
             "latency_ms": latency,
             "language": lang,
-            "model": CURRENT_SETTINGS["generation_model"],
+            "model": str(CURRENT_SETTINGS["generation_model"]),
             "intent": classification["intent"],
             "sentiment": classification["sentiment"]
         }
@@ -658,11 +658,11 @@ def run_rag_pipeline(query: str, target_language: str = "Auto Detect", history: 
                 lang_instruction = f" Respond in {lang}." if lang != "English" else ""
                 prompt = f"<context>\n{context}\n</context>\n\n{history_context}<user_query>\n{user_query}\n</user_query>\n{lang_instruction}"
                 response = client.models.generate_content(
-                    model=CURRENT_SETTINGS["generation_model"],
+                    model=str(CURRENT_SETTINGS["generation_model"]),
                     contents=prompt,
                     config=types.GenerateContentConfig(
-                        system_instruction=CURRENT_SETTINGS["system_instruction"] + lang_instruction,
-                        temperature=CURRENT_SETTINGS["temperature"],
+                        system_instruction=str(CURRENT_SETTINGS["system_instruction"]) + lang_instruction,
+                        temperature=float(CURRENT_SETTINGS["temperature"]),
                     )
                 )
                 answer = response.text.strip() if response.text else ""
@@ -683,7 +683,7 @@ def run_rag_pipeline(query: str, target_language: str = "Auto Detect", history: 
         "deflected": False,
         "latency_ms": latency,
         "language": lang,
-        "model": CURRENT_SETTINGS["generation_model"],
+        "model": str(CURRENT_SETTINGS["generation_model"]),
         "intent": classification["intent"],
         "sentiment": classification["sentiment"]
     }
@@ -691,7 +691,7 @@ def run_rag_pipeline(query: str, target_language: str = "Auto Detect", history: 
 # Alias for backwards compatibility with server.py imports
 query_rag_pipeline = run_rag_pipeline
 
-def stream_rag_pipeline(query: str, target_language: str = "Auto Detect", history: Optional[list] = None):
+def stream_rag_pipeline(query: str, target_language: str = "Auto Detect", history: list[dict[str, Any]] | None = None):
     """
     Generator yielding Server-Sent Events (SSE) data: {"token": "..."}\n\n
     Also yields event: sources, event: token, event: done for full protocol compatibility.
@@ -704,7 +704,7 @@ def stream_rag_pipeline(query: str, target_language: str = "Auto Detect", histor
     
     retrieval_query = _build_contextual_query(user_query, history)
     query_emb = generate_embedding(retrieval_query)
-    n_results = min(CURRENT_SETTINGS["top_k_chunks"], max(1, collection.count()))
+    n_results = min(int(CURRENT_SETTINGS["top_k_chunks"]), max(1, collection.count()))
     results = collection.query(
         query_embeddings=[query_emb],
         n_results=n_results
@@ -715,13 +715,13 @@ def stream_rag_pipeline(query: str, target_language: str = "Auto Detect", histor
     documents: list[str] = docs_res[0] if (docs_res and len(docs_res) > 0 and docs_res[0] is not None) else []
     distances: list[float] = dists_res[0] if (dists_res and len(dists_res) > 0 and dists_res[0] is not None) else []
 
-    is_deflected = not documents or (distances and distances[0] > CURRENT_SETTINGS["guardrail_threshold"])
+    is_deflected = not documents or (distances and distances[0] > float(CURRENT_SETTINGS["guardrail_threshold"]))
     
     sources_payload = {
         "sources": [] if is_deflected else documents,
         "distances": [float(d) for d in distances] if distances else [],
         "deflected": is_deflected,
-        "threshold": CURRENT_SETTINGS["guardrail_threshold"],
+        "threshold": float(CURRENT_SETTINGS["guardrail_threshold"]),
         "intent": classification["intent"],
         "sentiment": classification["sentiment"],
         "language": lang
@@ -738,7 +738,7 @@ def stream_rag_pipeline(query: str, target_language: str = "Auto Detect", histor
             yield f"event: token\ndata: {chunk_data}\n\n"
             time.sleep(0.01)
         latency = int((time.time() - start_time) * 1000)
-        yield f"event: done\ndata: {json.dumps({'latency_ms': latency, 'model': CURRENT_SETTINGS['generation_model'], 'deflected': True, 'intent': classification['intent'], 'sentiment': classification['sentiment'], 'language': lang})}\n\n"
+        yield f"event: done\ndata: {json.dumps({'latency_ms': latency, 'model': str(CURRENT_SETTINGS['generation_model']), 'deflected': True, 'intent': classification['intent'], 'sentiment': classification['sentiment'], 'language': lang})}\n\n"
         return
 
     context = "\n---\n".join(documents)
@@ -752,11 +752,11 @@ def stream_rag_pipeline(query: str, target_language: str = "Auto Detect", histor
                 lang_instruction = f" Answer in {lang}." if lang != "English" else ""
                 prompt = f"<context>\n{context}\n</context>\n\n{history_context}<user_query>\n{user_query}\n</user_query>\n{lang_instruction}"
                 stream = client.models.generate_content_stream(
-                    model=CURRENT_SETTINGS["generation_model"],
+                    model=str(CURRENT_SETTINGS["generation_model"]),
                     contents=prompt,
                     config=types.GenerateContentConfig(
-                        system_instruction=CURRENT_SETTINGS["system_instruction"] + lang_instruction,
-                        temperature=CURRENT_SETTINGS["temperature"],
+                        system_instruction=str(CURRENT_SETTINGS["system_instruction"]) + lang_instruction,
+                        temperature=float(CURRENT_SETTINGS["temperature"]),
                     )
                 )
                 for chunk in stream:
@@ -778,7 +778,7 @@ def stream_rag_pipeline(query: str, target_language: str = "Auto Detect", histor
             time.sleep(0.01)
 
     latency = int((time.time() - start_time) * 1000)
-    yield f"event: done\ndata: {json.dumps({'latency_ms': latency, 'model': CURRENT_SETTINGS['generation_model'], 'deflected': False, 'intent': classification['intent'], 'sentiment': classification['sentiment'], 'language': lang})}\n\n"
+    yield f"event: done\ndata: {json.dumps({'latency_ms': latency, 'model': str(CURRENT_SETTINGS['generation_model']), 'deflected': False, 'intent': classification['intent'], 'sentiment': classification['sentiment'], 'language': lang})}\n\n"
 
 def generate_local_copilot_draft(ticket_query: str, customer_name: str, customer_tier: str, documents: list[str]) -> str:
     first_name = customer_name.split()[0] if customer_name else "there"
@@ -796,12 +796,12 @@ def generate_local_copilot_draft(ticket_query: str, customer_name: str, customer
     )
 
 def generate_agent_reply_draft(
-    ticket_id: Optional[str] = None,
-    ticket_query: Optional[str] = None,
-    customer_name: Optional[str] = None,
-    customer_tier: Optional[str] = "Standard Retail",
-    intent: Optional[str] = "General Inquiry"
-) -> dict:
+    ticket_id: str | None = None,
+    ticket_query: str | None = None,
+    customer_name: str | None = None,
+    customer_tier: str | None = "Standard Retail",
+    intent: str | None = "General Inquiry"
+) -> dict[str, Any]:
     """
     Retrieve ticket details, search relevant KB clauses, and synthesize an agent resolution draft.
     Supports invocation with ticket_id or explicit ticket_query and customer fields.
@@ -813,7 +813,7 @@ def generate_agent_reply_draft(
     if ticket_id and not ticket_query:
         try:
             import database
-            t = database.get_ticket_by_id(str(ticket_id).upper())
+            t = database.get_ticket_by_id(ticket_id.upper())
             if t:
                 ticket_query = t.get("query", "")
                 customer_name = customer_name or t.get("customer_name", "Valued Customer")
@@ -822,7 +822,7 @@ def generate_agent_reply_draft(
         except Exception:
             pass
 
-    query_text = ticket_query or str(ticket_id or "General support inquiry")
+    query_text = ticket_query or (ticket_id or "General support inquiry")
     cust_name = customer_name or "Valued Customer"
     cust_tier = customer_tier or "Standard Retail"
     cat_intent = intent or "General Inquiry"
@@ -856,7 +856,7 @@ def generate_agent_reply_draft(
                     "Please generate a complete, ready-to-send agent reply draft:"
                 )
                 res = client.models.generate_content(
-                    model=CURRENT_SETTINGS["generation_model"],
+                    model=str(CURRENT_SETTINGS["generation_model"]),
                     contents=prompt,
                     config=types.GenerateContentConfig(
                         system_instruction=copilot_system_prompt,
@@ -886,7 +886,7 @@ def generate_agent_reply_draft(
 def _tokenize_text(text: str) -> list[str]:
     return [w.lower() for w in re.findall(r'\b[a-zA-Z0-9_-]+\b', text) if len(w) > 1]
 
-def bm25_search(query: str, top_k: int = 3) -> list[dict]:
+def bm25_search(query: str, top_k: int = 3) -> list[dict[str, Any]]:
     """Tokenize indexed chunks and return top BM25 matches using rank_bm25 with fallback."""
     chunks = get_all_chunks()
     if not chunks:
@@ -945,7 +945,7 @@ def bm25_search(query: str, top_k: int = 3) -> list[dict]:
         })
     return ranked
 
-def hybrid_search_rag(query: str, top_k: int = 3, rrf_k: int = 60) -> dict:
+def hybrid_search_rag(query: str, top_k: int = 3, rrf_k: int = 60) -> dict[str, Any]:
     """
     Combine ChromaDB dense vector ranks and BM25 sparse ranks using Reciprocal Rank Fusion (RRF, constant k=60).
     """
@@ -999,12 +999,12 @@ def hybrid_search_rag(query: str, top_k: int = 3, rrf_k: int = 60) -> dict:
     }
 
 def analyze_claim_image(
-    image_bytes: Optional[bytes] = None,
-    description: Optional[str] = None,
-    image_base64: Optional[str] = None,
-    claim_description: Optional[str] = None,
+    image_bytes: bytes | None = None,
+    description: str | None = None,
+    image_base64: str | None = None,
+    claim_description: str | None = None,
     mime_type: str = "image/jpeg"
-) -> dict:
+) -> dict[str, Any]:
     """
     Analyze product damage photos with Gemini Vision, cross-referencing Section 4 warranty exclusions.
     Supports image_bytes and description parameters as well as image_base64/claim_description.
@@ -1068,7 +1068,7 @@ def analyze_claim_image(
                 )
                 image_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
                 res = client.models.generate_content(
-                    model=CURRENT_SETTINGS["generation_model"],
+                    model=str(CURRENT_SETTINGS["generation_model"]),
                     contents=[image_part, vision_prompt],
                     config=types.GenerateContentConfig(
                         system_instruction="Assess customer hardware damage objectively according to warranty rules.",
@@ -1092,7 +1092,7 @@ def analyze_claim_image(
         "latency_ms": latency
     }
 
-def run_synthetic_benchmark(num_queries: int = 8) -> dict:
+def run_synthetic_benchmark(num_queries: int = 8) -> dict[str, Any]:
     """
     Run mock queries and return throughput (QPS), latency percentiles (P50, P90), guardrail precision, and intent accuracy.
     """
@@ -1114,16 +1114,18 @@ def run_synthetic_benchmark(num_queries: int = 8) -> dict:
     
     for item in battery:
         item_start = time.time()
-        classification = classify_intent_and_sentiment(item["q"])
-        lang = item["lang"] if item["lang"] else detect_language(item["q"])
-        query_emb = generate_embedding(item["q"])
-        n_results = min(CURRENT_SETTINGS["top_k_chunks"], max(1, collection.count()))
+        q_str = str(item["q"])
+        classification = classify_intent_and_sentiment(q_str)
+        lang_field = item.get("lang")
+        lang = str(lang_field) if lang_field else detect_language(q_str)
+        query_emb = generate_embedding(q_str)
+        n_results = min(int(CURRENT_SETTINGS["top_k_chunks"]), max(1, collection.count()))
         v_res = collection.query(query_embeddings=[query_emb], n_results=n_results)
         v_docs_res = v_res.get("documents")
         v_dists_res = v_res.get("distances")
         docs: list[str] = v_docs_res[0] if (v_docs_res and len(v_docs_res) > 0 and v_docs_res[0] is not None) else []
         distances: list[float] = v_dists_res[0] if (v_dists_res and len(v_dists_res) > 0 and v_dists_res[0] is not None) else []
-        is_deflected = not docs or (distances and distances[0] > CURRENT_SETTINGS["guardrail_threshold"])
+        is_deflected = not docs or (distances and distances[0] > float(CURRENT_SETTINGS["guardrail_threshold"]))
         lat = max(1, int((time.time() - item_start) * 1000))
         latencies.append(lat)
         
