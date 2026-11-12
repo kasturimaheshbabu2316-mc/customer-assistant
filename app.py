@@ -817,7 +817,7 @@ with tab_tickets:
                     
                     c_send1, c_send2 = st.columns(2)
                     if c_send1.button("📨 Send Reply to Customer", key=f"send_draft_{t.get('id')}", use_container_width=True):
-                        if edit_draft.strip():
+                        if edit_draft and edit_draft.strip():
                             requests.post(
                                 f"{backend_url}/api/tickets/{t.get('id')}/messages",
                                 json={"sender": "Support Agent", "text": edit_draft.strip(), "is_internal_note": False}

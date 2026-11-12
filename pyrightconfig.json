@@ -1,0 +1,11 @@
+{
+  "typeCheckingMode": "standard",
+  "include": ["."],
+  "exclude": [
+    "**/.venv",
+    "**/node_modules",
+    "**/customer-agent-temp",
+    "**/.agents",
+    "**/.agent"
+  ]
+}
