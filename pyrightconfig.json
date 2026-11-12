@@ -3,6 +3,7 @@
   "include": ["."],
   "exclude": [
     "**/.venv",
+    "**/.service",
     "**/node_modules",
     "**/customer-agent-temp",
     "**/.agents",

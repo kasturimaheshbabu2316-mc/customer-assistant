@@ -3,6 +3,7 @@
 [tool.ruff]
 exclude = [
     ".venv",
+    ".service",
     "node_modules",
     "customer-agent-temp",
     ".agents",
@@ -13,6 +14,7 @@ exclude = [
 typeCheckingMode = "standard"
 exclude = [
     "**/.venv",
+    "**/.service",
     "**/node_modules",
     "**/customer-agent-temp",
     "**/.agents",

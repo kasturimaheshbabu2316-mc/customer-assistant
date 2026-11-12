@@ -391,6 +391,16 @@ def create_ticket(ticket_data: dict[str, Any]) -> dict[str, Any]:
     conn = _get_connection()
     cursor = conn.cursor()
     
+    t_id = ticket_data.get("id")
+    if not t_id:
+        t_id = f"TCK-{random.randint(10000, 99999)}"
+        ticket_data["id"] = t_id
+    else:
+        cursor.execute("SELECT id FROM tickets WHERE id = ?;", (t_id,))
+        if cursor.fetchone():
+            t_id = f"TCK-{random.randint(10000, 99999)}"
+            ticket_data["id"] = t_id
+
     cursor.execute("""
     INSERT INTO tickets (id, customer_id, customer_name, customer_email, customer_tier, intent, sentiment, subject, query, priority, status, created_at, created_ts, assigned_agent, transcript_snippet)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

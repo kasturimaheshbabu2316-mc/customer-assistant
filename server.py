@@ -812,7 +812,14 @@ def list_tickets(
 
 @app.post("/api/tickets")
 def create_ticket(req: CreateTicketRequest):
-    ticket_id = f"TCK-{random.randint(1050, 9999)}"
+    ticket_id = None
+    for _ in range(50):
+        cand = f"TCK-{random.randint(1050, 99999)}"
+        if not database.get_ticket_by_id(cand):
+            ticket_id = cand
+            break
+    if not ticket_id:
+        ticket_id = f"TCK-{int(time.time()*1000) % 1000000}"
     cust_id = req.customer_id.strip() if req.customer_id else f"CUST-{random.randint(1000, 9999)}"
     
     query_text = (req.query or req.message or "").strip()
