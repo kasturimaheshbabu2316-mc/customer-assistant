@@ -6,7 +6,6 @@
   <title>Admin &amp; UX Control Center | OmniDesk AI</title>
   <meta name="description" content="Dedicated UX Feature Controls, Knowledge Base Studio, Agent Escalation Desk, and Telemetry Center for OmniDesk AI.">
   <link rel="stylesheet" href="css/style.css?v=2.5">
-  <link rel="stylesheet" href="css/cyberpunk.css?v=2.5">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body class="body-noscroll">
@@ -128,11 +127,6 @@
         </div>
 
         <div class="topbar-actions">
-          <!-- Theme Mode Switcher (Light / Dark Mode) -->
-          <button type="button" class="btn btn-secondary btn-sm theme-mode-toggle-btn" id="theme-mode-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark / Light Mode" aria-label="Toggle Dark / Light Mode">
-            <i class="fa-solid fa-sun" id="theme-mode-icon"></i>
-            <span id="theme-mode-label">Light Mode</span>
-          </button>
           <a href="app.html" target="_blank" class="btn btn-secondary btn-sm" title="Open Customer UI in new tab">
             <i class="fa-solid fa-arrow-up-right-from-square"></i> Preview Customer Portal
           </a>
@@ -282,19 +276,6 @@
           <div class="form-group customization-group">
             <label for="feat-welcome-greeting" class="form-label">Customer Chat Welcome Greeting</label>
             <textarea id="feat-welcome-greeting" class="form-textarea" rows="2" placeholder="Greeting displayed to customers when opening support chat...">Hello! I am your AI Customer Support Assistant, grounded exclusively in verified store policies. Ask me about returns, international shipping rates, warranty repairs, price matching, or order cancellations.</textarea>
-          </div>
-
-            <div class="form-grid-2col">
-            <div class="form-group">
-              <label for="feat-theme-mode" class="form-label">Default Customer Portal Clay Theme</label>
-              <select id="feat-theme-mode" class="form-select" title="Select default customer portal clay theme" aria-label="Select default customer portal clay theme">
-                <option value="clay_porcelain" selected>🫧 Porcelain Cloud (Default Clay)</option>
-                <option value="clay_marshmallow">🍬 Candy Marshmallow</option>
-                <option value="clay_mint">🌱 Mint Sage</option>
-                <option value="clay_peach">🍑 Warm Peach</option>
-                <option value="clay_midnight">🌌 Midnight Velvet Slate</option>
-              </select>
-            </div>
           </div>
         </div>
       </div>
@@ -503,25 +484,6 @@
             </div>
           </div>
 
-          <div class="form-grid-2col settings-row-spaced">
-            <div class="form-group">
-              <label for="setting-clay-theme-palette" class="form-label"><i class="fa-solid fa-palette text-primary"></i> Claymorphism Palette</label>
-              <select id="setting-clay-theme-palette" class="form-select" onchange="window.ClayEngine && window.ClayEngine.applyTheme(this.value, true)" title="Select Clay Theme Style" aria-label="Select Clay Theme Style">
-                <option value="porcelain">Porcelain Cloud (Default Clay)</option>
-                <option value="marshmallow">Candy Marshmallow (Pastel Pink/Lilac)</option>
-                <option value="mint">Mint &amp; Eucalyptus (Fresh Sage)</option>
-                <option value="peach">Warm Peach &amp; Coral (Warm Bisque)</option>
-                <option value="midnight">Midnight Velvet (Dark Clay)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label"><i class="fa-solid fa-wand-magic-sparkles text-cyan"></i> Tactile Clay Studio</label>
-              <p class="customization-helper-text customization-helper-spaced">
-                Use the floating 🫧 <strong>Clay Studio</strong> pill in the bottom-right corner to customize palettes and test synthesized tactile bubble audio effects in real-time.
-              </p>
-            </div>
-          </div>
-
           <div class="form-group settings-row-spaced">
             <label for="setting-system-prompt" class="form-label">Grounded System Instruction Prompt</label>
             <textarea id="setting-system-prompt" class="form-textarea" rows="4" placeholder="System prompt instructions..." title="Grounded system instruction prompt" aria-label="Grounded system instruction prompt"></textarea>
@@ -562,7 +524,6 @@
     </div>
   </div>
 
-  <script src="js/clay-theme.js?v=3.0"></script>
   <script src="js/admin.js?v=3.0"></script>
 </body>
 </html>

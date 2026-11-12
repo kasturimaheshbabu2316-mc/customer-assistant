@@ -120,6 +120,50 @@ function customerLogout() {
   checkCustomerAuth();
 }
 
+function openCustomerAuthModal() {
+  const modal = document.getElementById('customer-auth-modal');
+  if (modal) modal.classList.remove('is-hidden');
+}
+
+function closeCustomerAuthModal() {
+  const modal = document.getElementById('customer-auth-modal');
+  if (modal) modal.classList.add('is-hidden');
+  const errEl = document.getElementById('customer-auth-error');
+  if (errEl) errEl.classList.add('is-hidden');
+}
+
+async function handleCustomerLoginSubmit(e) {
+  e.preventDefault();
+  const emailInput = document.getElementById('customer-email-input');
+  const passInput = document.getElementById('customer-password-input');
+  const errEl = document.getElementById('customer-auth-error');
+  if (!emailInput || !passInput) return;
+
+  const email = emailInput.value.trim();
+  const password = passInput.value;
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Sign in failed');
+    localStorage.setItem('omni_user_token', data.token);
+    localStorage.setItem('omni_user_id', data.user.id);
+    localStorage.setItem('omni_user_name', data.user.name);
+    localStorage.setItem('omni_user_email', data.user.email);
+    localStorage.setItem('omni_user_tier', data.user.tier || 'Standard Retail');
+    checkCustomerAuth();
+    closeCustomerAuthModal();
+  } catch (err) {
+    if (errEl) {
+      errEl.textContent = err.message || 'Authentication error';
+      errEl.classList.remove('is-hidden');
+    }
+  }
+}
+
 // Load dynamic UX features
 async function loadFeaturesFromBackend() {
   try {

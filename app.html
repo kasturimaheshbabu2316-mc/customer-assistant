@@ -6,7 +6,6 @@
   <title>Customer Help &amp; Support Hub | OmniDesk AI</title>
   <meta name="description" content="24/7 Verified Customer Support Portal. Grounded in store policies for returns, warranty, shipping, and order tracking.">
   <link rel="stylesheet" href="css/style.css?v=4.0">
-  <link rel="stylesheet" href="css/cyberpunk.css?v=4.0">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body class="body-noscroll">
@@ -118,16 +117,11 @@
               <option value="Hindi">🇮🇳 हिन्दी</option>
             </select>
           </div>
-          <!-- Theme Mode Switcher (Light / Dark Mode) -->
-          <button type="button" class="btn btn-secondary btn-sm theme-mode-toggle-btn" id="theme-mode-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark / Light Mode" aria-label="Toggle Dark / Light Mode">
-            <i class="fa-solid fa-sun" id="theme-mode-icon"></i>
-            <span id="theme-mode-label">Light Mode</span>
-          </button>
           <!-- Customer Account / Auth Pill -->
           <div id="customer-auth-status" class="customer-auth-wrap">
-            <a href="login.html" id="btn-customer-login-link" class="btn btn-primary btn-sm">
+            <button type="button" id="btn-customer-login-link" class="btn btn-primary btn-sm" onclick="openCustomerAuthModal()">
               <i class="fa-solid fa-user"></i> Sign In
-            </a>
+            </button>
             <div id="user-profile-pill" class="user-profile-pill is-hidden">
               <span class="user-avatar-circle" id="user-avatar-initials">AR</span>
               <div class="user-info-text">
@@ -555,8 +549,36 @@
     </div>
   </div>
 
-  <script src="js/clay-theme.js?v=4.0"></script>
+  <!-- Customer Sign In Modal -->
+  <div class="modal-overlay is-hidden" id="customer-auth-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-user text-primary"></i> Customer Sign In</h3>
+        <button type="button" class="btn-icon" onclick="closeCustomerAuthModal()" aria-label="Close modal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">Sign in to access your priority tickets, order history, and VIP support benefits.</p>
+        <form onsubmit="handleCustomerLoginSubmit(event)">
+          <div class="form-group customization-group">
+            <label for="customer-email-input" class="form-label">Email Address</label>
+            <input type="email" id="customer-email-input" class="form-input" placeholder="e.g. customer@example.com" value="customer@example.com" required>
+          </div>
+          <div class="form-group customization-group">
+            <label for="customer-password-input" class="form-label">Password</label>
+            <input type="password" id="customer-password-input" class="form-input" placeholder="Enter password" value="demo12345" required>
+          </div>
+          <div id="customer-auth-error" class="is-hidden" style="color: var(--danger, #ef4444); font-size: 0.85rem; margin-bottom: 0.75rem;"></div>
+          <div class="modal-footer-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeCustomerAuthModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <script src="js/app.js?v=4.0"></script>
-  <script src="js/kid-assistant.js?v=4.1"></script>
 </body>
 </html>

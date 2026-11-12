@@ -489,7 +489,7 @@ def ask(req: QueryRequest):
     if not req.query.strip():
         raise HTTPException(status_code=400, detail="Query cannot be empty")
     try:
-        res = run_rag_pipeline(req.query.strip(), target_language=req.language, history=req.history)
+        res = run_rag_pipeline(req.query.strip(), target_language=req.language or "Auto Detect", history=req.history)
         
         # Record stats
         QUERY_STATS["total_queries"] += 1
@@ -519,7 +519,7 @@ def ask_stream(req: QueryRequest):
         QUERY_STATS["total_queries"] += 1
         QUERY_STATS["deflected_queries"] += 1
         return StreamingResponse(
-            stream_rag_pipeline(req.query.strip(), target_language=req.language, history=req.history),
+            stream_rag_pipeline(req.query.strip(), target_language=req.language or "Auto Detect", history=req.history),
             media_type="text/event-stream"
         )
     except Exception as e:
@@ -791,8 +791,8 @@ def add_ticket_message_endpoint(ticket_id: str, req: TicketMessageRequest):
         database.update_ticket(ticket_id.upper(), {"status": "In Progress"})
         
     updated_ticket = database.get_ticket_by_id(ticket_id.upper())
-    t_copy = dict(updated_ticket)
-    t_copy["sla_details"] = calculate_sla_details(updated_ticket)
+    t_copy = dict(updated_ticket or t)
+    t_copy["sla_details"] = calculate_sla_details(t_copy)
     return {
         "status": "success",
         "message": "Message appended to ticket thread",
@@ -815,8 +815,8 @@ def update_ticket_endpoint(ticket_id: str, req: UpdateTicketRequest):
         updates["priority"] = req.priority.title()
         
     updated = database.update_ticket(ticket_id.upper(), updates)
-    t_copy = dict(updated)
-    t_copy["sla_details"] = calculate_sla_details(updated)
+    t_copy = dict(updated or t)
+    t_copy["sla_details"] = calculate_sla_details(t_copy)
     return {
         "status": "success",
         "message": f"Ticket {ticket_id} updated",
@@ -954,7 +954,7 @@ class BenchmarkRequest(BaseModel):
     num_queries: Optional[int] = 8
 
 @app.post("/api/webhooks/test")
-def trigger_test_webhook(req: TestWebhookRequest = None):
+def trigger_test_webhook(req: Optional[TestWebhookRequest] = None):
     ev_type = req.event_type if req and req.event_type else "test_ping"
     dest = req.channel if req and req.channel else "Slack #support-alerts"
     msg = req.message if req and req.message else "Simulated webhook delivery from OmniDesk AI Support Hub."
@@ -981,7 +981,7 @@ def get_webhook_logs():
     }
 
 @app.post("/api/benchmark/simulate")
-def run_benchmark_simulation(req: BenchmarkRequest = None):
+def run_benchmark_simulation(req: Optional[BenchmarkRequest] = None):
     num_q = req.num_queries if req and req.num_queries else 8
     bench_data = run_synthetic_benchmark(num_queries=num_q)
     return bench_data
@@ -1022,8 +1022,8 @@ def apply_ticket_macro(ticket_id: str, req: ApplyMacroRequest):
     database.update_ticket(ticket_id.upper(), {"status": "In Progress"})
     
     updated_t = database.get_ticket_by_id(ticket_id.upper())
-    t_copy = dict(updated_t)
-    t_copy["sla_details"] = calculate_sla_details(updated_t)
+    t_copy = dict(updated_t or t)
+    t_copy["sla_details"] = calculate_sla_details(t_copy)
     return {
         "status": "success",
         "message": f"Macro '{selected_macro['title']}' applied to ticket",
@@ -1073,7 +1073,7 @@ class VisionClaimRequest(BaseModel):
 @app.post("/api/search/hybrid", dependencies=[Depends(check_rate_limit)])
 def hybrid_search(req: HybridSearchRequest):
     try:
-        return hybrid_search_rag(query=req.query.strip(), top_k=req.top_k, rrf_k=req.rrf_k)
+        return hybrid_search_rag(query=req.query.strip(), top_k=req.top_k or 3, rrf_k=req.rrf_k or 60)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -1099,21 +1099,17 @@ def read_admin():
 @app.get("/login.html")
 @app.get("/signup")
 def read_login():
-    if os.path.exists("login.html"):
-        return FileResponse("login.html")
-    elif os.path.exists("customer_login_sign_up_claymorphism/code.html"):
-        return FileResponse("customer_login_sign_up_claymorphism/code.html")
-    return {"status": "error", "message": "login.html not found"}
+    if os.path.exists("app.html"):
+        return FileResponse("app.html")
+    return {"status": "error", "message": "app.html not found"}
 
 @app.get("/admin/login")
 @app.get("/developer/login")
 @app.get("/admin-login.html")
 def read_admin_login():
-    if os.path.exists("admin-login.html"):
-        return FileResponse("admin-login.html")
-    elif os.path.exists("developer_admin_gateway_login_sign_up/code.html"):
-        return FileResponse("developer_admin_gateway_login_sign_up/code.html")
-    return {"status": "error", "message": "admin-login.html not found"}
+    if os.path.exists("admin.html"):
+        return FileResponse("admin.html")
+    return {"status": "error", "message": "admin.html not found"}
 
 @app.get("/app")
 @app.get("/app.html")
@@ -1137,13 +1133,6 @@ if os.path.exists("css"):
     app.mount("/css", StaticFiles(directory="css"), name="css")
 if os.path.exists("js"):
     app.mount("/js", StaticFiles(directory="js"), name="js")
-
-# Mount root static files if available
-if os.path.exists("."):
-    try:
-        app.mount("/static", StaticFiles(directory=".", html=True), name="static")
-    except Exception:
-        pass
 
 if __name__ == "__main__":
     import uvicorn
