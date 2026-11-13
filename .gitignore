@@ -47,3 +47,5 @@ Thumbs.db
 customer-agent-temp/
 node_modules/
 hint-report/
+additional/
+@addtional/
