@@ -23,7 +23,7 @@
         <form onsubmit="handleAdminLogin(event)">
           <div class="form-group">
             <label for="admin-passcode-input" class="form-label">Admin Passcode / API Key</label>
-            <input type="password" id="admin-passcode-input" class="form-input" placeholder="admin-secret-key-2026" autocomplete="current-password" required>
+            <input type="password" id="admin-passcode-input" name="password" class="form-input" placeholder="admin-secret-key-2026" autocomplete="current-password" aria-label="Admin Passcode" title="Admin Passcode" required>
           </div>
           <div id="admin-auth-error" style="color:var(--accent-rose); font-size:12px; display:none;"></div>
           <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
@@ -225,10 +225,10 @@
               <label for="rag-file-upload-input" class="btn btn-secondary btn-sm" style="cursor:pointer;">
                 <i class="fa-solid fa-upload"></i> Upload File
               </label>
-              <input type="file" id="rag-file-upload-input" class="is-hidden" accept=".txt,.md" onchange="handleRagFileUpload(event)">
+              <input type="file" id="rag-file-upload-input" class="is-hidden" accept=".txt,.md" onchange="handleRagFileUpload(event)" aria-label="Upload policy file" title="Upload policy file">
             </div>
 
-            <textarea id="rag-policy-editor" class="rag-policy-textarea" placeholder="Paste policy markdown or numbered clauses here (e.g. 1. RETURN POLICY, 2. SHIPPING POLICY)..."></textarea>
+            <textarea id="rag-policy-editor" class="rag-policy-textarea" placeholder="Paste policy markdown or numbered clauses here (e.g. 1. RETURN POLICY, 2. SHIPPING POLICY)..." aria-label="Policy markdown editor" title="Policy markdown editor"></textarea>
 
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <span style="color:var(--text-dim); font-size:12px;">Parses sections automatically on `^\d+\.\s+[A-Z]` boundaries</span>
@@ -279,12 +279,12 @@
             <h3 style="font-family:var(--font-display); font-size:16px; font-weight:700;">RAG Pipeline &amp; Guardrail Configuration</h3>
             <div class="form-group" style="margin-top:10px;">
               <label class="form-label">Distance Guardrail Threshold (Cosine Distance)</label>
-              <input type="number" id="setting-distance" class="form-input" value="1.2" step="0.1" min="0.5" max="2.0">
+              <input type="number" id="setting-distance" class="form-input" value="1.2" step="0.1" min="0.5" max="2.0" aria-label="Distance Guardrail Threshold" title="Distance Guardrail Threshold">
               <span style="color:var(--text-dim); font-size:11.5px;">Values below threshold are considered grounded. Above triggers auto-escalation.</span>
             </div>
             <div class="form-group" style="margin-top:10px;">
               <label class="form-label">Top-K Retrieved Chunks</label>
-              <input type="number" id="setting-topk" class="form-input" value="2" min="1" max="6">
+              <input type="number" id="setting-topk" class="form-input" value="2" min="1" max="6" aria-label="Top-K Retrieved Chunks" title="Top-K Retrieved Chunks">
             </div>
             <div style="display:flex; justify-content:flex-end; margin-top:12px;">
               <button type="button" class="btn btn-primary btn-sm" onclick="showToast('Settings saved successfully')">Save Settings</button>
@@ -362,17 +362,17 @@
     <div class="drawer-reply-footer">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); cursor:pointer;">
-          <input type="checkbox" id="drawer-is-internal-note">
+          <input type="checkbox" id="drawer-is-internal-note" aria-label="Private Internal Staff Note" title="Private Internal Staff Note">
           <span>Private Internal Staff Note</span>
         </label>
-        <select id="drawer-status-select" class="form-select" style="padding:4px 8px; font-size:12px;">
+        <select id="drawer-status-select" class="form-select" style="padding:4px 8px; font-size:12px;" aria-label="Select Ticket Status" title="Ticket Status">
           <option value="Open">Status: Open</option>
           <option value="In Progress" selected>Status: In Progress</option>
           <option value="Resolved">Status: Resolved</option>
         </select>
       </div>
 
-      <textarea id="drawer-reply-text" class="form-textarea" rows="3" placeholder="Type message to customer or confidential note..."></textarea>
+      <textarea id="drawer-reply-text" class="form-textarea" rows="3" placeholder="Type message to customer or confidential note..." aria-label="Type message to customer or confidential note" title="Message or note"></textarea>
 
       <div style="display:flex; justify-content:flex-end; gap:8px;">
         <button type="button" class="btn btn-secondary btn-sm" onclick="closeTakeoverDrawer()">Cancel</button>

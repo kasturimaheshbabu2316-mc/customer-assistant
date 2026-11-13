@@ -151,11 +151,11 @@
                 <label for="chat-file-input" class="btn-icon" title="Attach damage photo or receipt" style="cursor: pointer;">
                   <i class="fa-solid fa-camera"></i>
                 </label>
-                <input type="file" id="chat-file-input" class="is-hidden" accept="image/jpeg,image/png,image/webp" onchange="handleImageAttachment(event)">
+                <input type="file" id="chat-file-input" class="is-hidden" accept="image/jpeg,image/png,image/webp" onchange="handleImageAttachment(event)" aria-label="Attach damage photo or receipt" title="Attach damage photo or receipt">
 
-                <textarea id="chat-text-input" class="composer-textarea" rows="1" placeholder="Ask about store policies, enter order number (e.g. ORD-1001), or describe an issue..." onkeydown="handleTextareaKeydown(event)" oninput="autoResizeTextarea(this)"></textarea>
+                <textarea id="chat-text-input" class="composer-textarea" rows="1" placeholder="Ask about store policies, enter order number (e.g. ORD-1001), or describe an issue..." onkeydown="handleTextareaKeydown(event)" oninput="autoResizeTextarea(this)" aria-label="Ask about store policies or describe an issue" title="Type your support question"></textarea>
 
-                <button type="submit" class="btn btn-primary btn-sm" id="btn-send-message" title="Send message">
+                <button type="submit" class="btn btn-primary btn-sm" id="btn-send-message" title="Send message" aria-label="Send message">
                   <i class="fa-solid fa-paper-plane"></i>
                 </button>
               </div>
@@ -223,7 +223,7 @@
           <!-- Search Input -->
           <div class="order-search-bar">
             <i class="fa-solid fa-magnifying-glass" style="color: var(--text-dim); align-self: center;"></i>
-            <input type="text" id="order-search-input" placeholder="Enter Order ID (e.g. ORD-1001) or email address..." onkeydown="if(event.key==='Enter') lookupOrder()">
+            <input type="text" id="order-search-input" placeholder="Enter Order ID (e.g. ORD-1001) or email address..." onkeydown="if(event.key==='Enter') lookupOrder()" aria-label="Enter Order ID or email" title="Enter Order ID or email">
             <button type="button" class="btn btn-primary btn-sm" onclick="lookupOrder()">Track Order</button>
           </div>
 
@@ -277,7 +277,7 @@
           <!-- Lookup Ticket Form -->
           <div class="order-search-bar">
             <i class="fa-solid fa-ticket" style="color: var(--text-dim); align-self: center;"></i>
-            <input type="text" id="cust-ticket-input" placeholder="Enter Ticket ID (e.g. TCK-1042) or your Email address..." onkeydown="if(event.key==='Enter') lookupCustomerTicket()">
+            <input type="text" id="cust-ticket-input" placeholder="Enter Ticket ID (e.g. TCK-1042) or your Email address..." onkeydown="if(event.key==='Enter') lookupCustomerTicket()" aria-label="Enter Ticket ID or Email" title="Enter Ticket ID or Email">
             <button type="button" class="btn btn-primary btn-sm" onclick="lookupCustomerTicket()">Find Ticket</button>
           </div>
 
@@ -305,7 +305,7 @@
 
               <!-- Customer Reply Box -->
               <form id="cust-reply-form" onsubmit="sendCustomerTicketReply(event)" style="display:flex; flex-direction:column; gap:8px;">
-                <textarea id="cust-reply-text" class="form-textarea" rows="2" placeholder="Send follow-up message to the support agent..." required></textarea>
+                <textarea id="cust-reply-text" class="form-textarea" rows="2" placeholder="Send follow-up message to the support agent..." aria-label="Send follow-up message to support agent" title="Follow-up message" required></textarea>
                 <div style="display:flex; justify-content: flex-end;">
                   <button type="submit" class="btn btn-primary btn-sm" id="btn-cust-reply">
                     <i class="fa-solid fa-paper-plane"></i> Send Reply
@@ -329,7 +329,7 @@
 
           <!-- Drag and Drop Zone -->
           <div class="drop-zone-card" id="claim-drop-zone" onclick="document.getElementById('claim-file-input').click()">
-            <input type="file" id="claim-file-input" class="is-hidden" accept="image/jpeg,image/png,image/webp" onchange="handleClaimFileSelect(event)">
+            <input type="file" id="claim-file-input" class="is-hidden" accept="image/jpeg,image/png,image/webp" onchange="handleClaimFileSelect(event)" aria-label="Upload defect photo" title="Upload defect photo">
             <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
             <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">Click or Drag Defect Photo Here</h3>
             <p style="color: var(--text-dim); font-size: 12.5px;">Supports JPEG, PNG, WebP up to 5MB</p>
@@ -348,7 +348,7 @@
           <!-- Claim Description -->
           <div class="form-group">
             <label for="claim-desc-input" class="form-label">Explain Damage or Defect *</label>
-            <textarea id="claim-desc-input" class="form-textarea" rows="3" placeholder="e.g. Tabletop cracked during unboxing, glass shattered on right corner..." required></textarea>
+            <textarea id="claim-desc-input" class="form-textarea" rows="3" placeholder="e.g. Tabletop cracked during unboxing, glass shattered on right corner..." aria-label="Explain damage or defect" title="Explain damage or defect" required></textarea>
           </div>
 
           <!-- Run Inspection Button -->
@@ -396,15 +396,15 @@
         <form onsubmit="handleEscalationModalSubmit(event)">
           <div class="form-group">
             <label for="esc-name" class="form-label">Customer Name</label>
-            <input type="text" id="esc-name" class="form-input" placeholder="Your Name" value="Elena Rostova" required>
+            <input type="text" id="esc-name" class="form-input" placeholder="Your Name" value="Elena Rostova" autocomplete="name" aria-label="Customer Name" title="Customer Name" required>
           </div>
           <div class="form-group">
             <label for="esc-email" class="form-label">Email Address</label>
-            <input type="email" id="esc-email" class="form-input" placeholder="elena@enterprise.org" value="elena@enterprise.org" required>
+            <input type="email" id="esc-email" class="form-input" placeholder="elena@enterprise.org" value="elena@enterprise.org" autocomplete="email" aria-label="Email Address" title="Email Address" required>
           </div>
           <div class="form-group">
             <label for="esc-priority" class="form-label">Priority</label>
-            <select id="esc-priority" class="form-select">
+            <select id="esc-priority" class="form-select" aria-label="Select priority level" title="Priority Level">
               <option value="Urgent">Urgent (SLA: 60 mins)</option>
               <option value="High">High (SLA: 4 hours)</option>
               <option value="Medium" selected>Medium (SLA: 24 hours)</option>
@@ -412,7 +412,7 @@
           </div>
           <div class="form-group">
             <label for="esc-query" class="form-label">Message / Inquiry</label>
-            <textarea id="esc-query" class="form-textarea" rows="3" placeholder="Explain your request for the agent..." required>I need urgent assistance with an international delivery tracking update.</textarea>
+            <textarea id="esc-query" class="form-textarea" rows="3" placeholder="Explain your request for the agent..." aria-label="Inquiry details" title="Inquiry details" required>I need urgent assistance with an international delivery tracking update.</textarea>
           </div>
           <div style="display:flex; justify-content: flex-end; gap:8px; margin-top:8px;">
             <button type="button" class="btn btn-secondary" onclick="closeHumanEscalationModal()">Cancel</button>
