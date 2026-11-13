@@ -602,6 +602,7 @@ def request_developer_key(req: DevKeyRequest):
 # ==============================================================================
 
 @app.get("/health")
+@app.get("/api/health")
 def health():
     count = 0
     try:
@@ -614,6 +615,8 @@ def health():
     return {
         "status": "healthy",
         "service": "OmniDesk RAG Backend",
+        "database": "connected",
+        "chroma_connected": bool(collection is not None),
         "vector_count": count,
         "has_gemini_api_key": has_api_key,
         "gemini_mode": "live_api" if has_api_key else "local_grounded_fallback",

@@ -711,7 +711,7 @@ def classify_intent_and_sentiment(query: str) -> dict[str, Any]:
         intent = "Account & Security"
 
     sentiment = "Standard"
-    if any(k in q for k in ["urgent", "asap", "immediately", "broken", "wrong", "terrible", "worst", "angry", "disappointed", "complaint", "unacceptable", "dispute", "lawyer", "fraud"]):
+    if any(k in q for k in ["urgent", "asap", "immediately", "broken", "wrong", "terrible", "worst", "angry", "disappointed", "complaint", "unacceptable", "dispute", "lawyer", "fraud", "furious", "horrible", "outraged"]):
         sentiment = "High Urgency"
     elif any(k in q for k in ["vip", "enterprise", "bulk", "corporate", "commercial", "wholesale", "volume", "procurement", "sla"]):
         sentiment = "VIP / Commercial"

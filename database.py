@@ -192,6 +192,14 @@ def init_db():
     o_count = cursor.fetchone()["count"]
     if o_count == 0:
         _seed_initial_orders(conn)
+    else:
+        # Idempotent migration: ensure ORD-1002 has updated status and tracking number
+        cursor.execute("""
+        UPDATE orders
+        SET status = 'Shipped', tracking_number = '1Z999AA10123456784'
+        WHERE id = 'ORD-1002';
+        """)
+        conn.commit()
 
     conn.close()
 
@@ -203,7 +211,7 @@ def _seed_initial_orders(conn: sqlite3.Connection):
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, [
         ("ORD-1001", "CUST-8492", "Elena Rostova", "elena.r@techcorp.io", "Shipped", "OmniDesk Pro Smart Standing Desk (Oak / White Frame), ErgoArm Dual Monitor Mount", "TRK-982341-DHL", "$749.00", "2026-11-05"),
-        ("ORD-1002", "CUST-8492", "Elena Rostova", "elena.r@techcorp.io", "Delivered", "ErgoDesk Cable Management Tray & Heavy-Duty Power Bar", "TRK-882310-DHL", "$89.00", "2026-11-09"),
+        ("ORD-1002", "CUST-8492", "Elena Rostova", "elena.r@techcorp.io", "Shipped", "ErgoDesk Cable Management Tray & Heavy-Duty Power Bar", "1Z999AA10123456784", "$89.00", "2026-11-09"),
         ("ORD-1003", "CUST-6310", "Marcus Vance", "m.vance@vertex.com", "In Transit", "Apex Executive Ergonomic Mesh Chair (Slate Grey)", "TRK-771923-DHL", "$449.00", "2026-11-10"),
         ("ORD-1004", "CUST-4195", "David Kim", "dkim@ventures.com", "Out for Delivery", "Dual Articulating Gas Spring Monitor Arm", "TRK-661209-DHL", "$129.00", "2026-11-11"),
         ("ORD-1005", "CUST-8492", "Elena Rostova", "elena.r@techcorp.io", "Processing", "OmniDesk Under-Desk Pull-Out Drawer (Matte Black)", "TRK-Pending", "$65.00", "2026-11-13"),
@@ -311,7 +319,7 @@ def _seed_initial_data(conn: sqlite3.Connection):
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, [
         ("ORD-1001", "CUST-8492", "Elena Rostova", "elena.r@techcorp.io", "Shipped", "OmniDesk Pro Smart Standing Desk (Oak / White Frame), ErgoArm Dual Monitor Mount", "TRK-982341-DHL", "$749.00", "2026-11-05"),
-        ("ORD-1002", "CUST-8492", "Elena Rostova", "elena.r@techcorp.io", "Delivered", "ErgoDesk Cable Management Tray & Heavy-Duty Power Bar", "TRK-882310-DHL", "$89.00", "2026-11-09"),
+        ("ORD-1002", "CUST-8492", "Elena Rostova", "elena.r@techcorp.io", "Shipped", "ErgoDesk Cable Management Tray & Heavy-Duty Power Bar", "1Z999AA10123456784", "$89.00", "2026-11-09"),
         ("ORD-1003", "CUST-6310", "Marcus Vance", "m.vance@vertex.com", "In Transit", "Apex Executive Ergonomic Mesh Chair (Slate Grey)", "TRK-771923-DHL", "$449.00", "2026-11-10"),
         ("ORD-1004", "CUST-4195", "David Kim", "dkim@ventures.com", "Out for Delivery", "Dual Articulating Gas Spring Monitor Arm", "TRK-661209-DHL", "$129.00", "2026-11-11"),
         ("ORD-1005", "CUST-8492", "Elena Rostova", "elena.r@techcorp.io", "Processing", "OmniDesk Under-Desk Pull-Out Drawer (Matte Black)", "TRK-Pending", "$65.00", "2026-11-13"),
