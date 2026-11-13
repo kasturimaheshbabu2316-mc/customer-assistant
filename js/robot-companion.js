@@ -933,4 +933,5 @@
   window.toggleSparkyMascot = function () {
     if (window.Sparky) window.Sparky.toggle();
   };
+  window.toggleSparky = window.toggleSparkyMascot;
 })();

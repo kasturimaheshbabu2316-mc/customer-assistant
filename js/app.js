@@ -793,3 +793,10 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
+// Sparky Mascot Toggle Bridge
+function toggleSparky() {
+  if (typeof window.toggleSparkyMascot === 'function') {
+    window.toggleSparkyMascot();
+  }
+}
