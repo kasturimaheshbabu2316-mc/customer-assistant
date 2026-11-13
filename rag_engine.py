@@ -151,7 +151,19 @@ SECTION_KEYWORDS = [
     # 4: 5. PAYMENT METHODS, BILLING & PRICE MATCHING
     {'payment', 'payments', 'billing', 'bill', 'visa', 'mastercard', 'amex', 'discover', 'paypal', 'apple pay', 'google pay', 'klarna', 'affirm', 'installment', 'installments', 'apr', 'price match', '14-day', 'currency', 'pago', 'zahlung', '支払い', 'paiement'},
     # 5: 6. CUSTOMER SUPPORT ESCALATION & HOURS
-    {'support', 'customer support', 'escalation', 'escalate', 'hours', '24/7', '365', 'live agent', 'agent', 'human', 'representative', 'monday', 'friday', 'saturday', 'sunday', 'phone', '555-apex', '1-800', 'contact', 'soporte', 'kundendienst', 'サポート'}
+    {'support', 'customer support', 'escalation', 'escalate', 'hours', '24/7', '365', 'live agent', 'agent', 'human', 'representative', 'monday', 'friday', 'saturday', 'sunday', 'phone', '555-apex', '1-800', 'contact', 'soporte', 'kundendienst', 'サポート'},
+    # 6: 7. DAMAGED, LOST OR STOLEN PACKAGES
+    {'damage', 'damaged', 'lost', 'stolen', 'transit', 'porch piracy', 'piracy', 'missing', 'affidavit', 'police report', 'carrier', 'replacement', 'stolen package', 'package damage'},
+    # 7: 8. LOYALTY TIERS, VIP MEMBERSHIP & STUDENT DISCOUNTS
+    {'loyalty', 'vip', 'membership', 'gold vip', 'student', 'educator', 'first responder', 'discount', 'discounts', 'student10', 'hero10', '10%', '60-day', 'edu', 'spend'},
+    # 8: 9. SOFTWARE SUBSCRIPTIONS, LICENSING & DIGITAL REFUNDS
+    {'software', 'subscription', 'subscriptions', 'licensing', 'license', 'cloud pro', 'digital', 'saas', 'auto-renew', 'renewal', 'seat', 'transfer', 'annual', '14 calendar days'},
+    # 9: 10. ACCOUNT SECURITY, PRIVACY & DATA DELETION
+    {'security', 'privacy', 'data deletion', 'mfa', 'totp', 'passkey', 'passkeys', 'freeze account', 'suspicious', 'fraud', 'gdpr', 'ccpa', 'erasure', 'tax invoice'},
+    # 10: 11. TRADE-IN, REFURBISHED HARDWARE & BATTERY RECYCLING
+    {'trade-in', 'trade in', 'refurbished', 'hardware', 'battery', 'recycling', 'e-waste', 'voucher', 'credit', '21 days', 'diagnostic', 'green-reward', '$15'},
+    # 11: 12. B2B BULK ORDERS, NET-30 INVOICING & ENTERPRISE SLA
+    {'b2b', 'bulk', 'volume discount', 'net-30', 'invoicing', 'invoice', 'purchase order', 'tax-exempt', 'enterprise sla', 'uptime', 'reseller', 'commercial', 'corporate', 'po'}
 ]
 
 def generate_tfidf_faq_embedding(text: str, dim: int = 768) -> list[float]:
@@ -161,14 +173,18 @@ def generate_tfidf_faq_embedding(text: str, dim: int = 768) -> list[float]:
     """
     vec = [0.0] * dim
     t_lower = text.lower()
+    num_sections = max(1, len(SECTION_KEYWORDS))
+    block_size = max(20, min(100, (dim - 168) // num_sections))
     for sec_idx, kw_set in enumerate(SECTION_KEYWORDS):
-        block_start = sec_idx * 100
+        block_start = sec_idx * block_size
+        if block_start + block_size > (dim - 168):
+            break
         sec_weight = 0.0
         for kw in kw_set:
             if kw in t_lower:
                 sec_weight += 2.0
         if sec_weight > 0:
-            for i in range(100):
+            for i in range(block_size):
                 angle = (i + 1) * (sec_idx + 1)
                 vec[block_start + i] = sec_weight * (0.5 + 0.5 * math.sin(angle))
                 
@@ -448,6 +464,7 @@ def ingest_faq(file_path: str | None = None, force_reindex: bool = False):
             )
         else:
             raise
+    return sections
 
 def ingest_policy_text(
     text: str,

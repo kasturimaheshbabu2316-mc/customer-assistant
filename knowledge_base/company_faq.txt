@@ -39,3 +39,34 @@
 - Live Agent Hours: Monday through Friday from 8:00 AM to 8:00 PM EST; Saturday and Sunday from 10:00 AM to 6:00 PM EST.
 - Escalation Email: support@company.com (Average response time: under 2 hours during business hours).
 - Phone Support: +1 (800) 555-APEX available for Priority and Enterprise tier members.
+
+7. DAMAGED, LOST OR STOLEN PACKAGES
+- Transit Damage Reporting: If your order arrives with visible shipping box or product damage, report the issue within 7 calendar days of delivery via the Visual Claim Inspector or support@company.com with photos of the damaged item and shipping label.
+- Lost in Transit: Domestic packages with no tracking movement for 7 consecutive business days (or 14 business days for international DHL Express shipments) are declared lost in transit and qualify for an immediate free replacement or 100% refund.
+- Stolen / Porch Piracy Claims: If carrier tracking marks a package as "Delivered" but you have not received it, wait 24 hours for premature carrier scans. After 24 hours, file a Missing Package Affidavit within 10 calendar days of the delivery scan. Orders over $500 require a local police report number for instant replacement dispatch.
+
+8. LOYALTY TIERS, VIP MEMBERSHIP & STUDENT DISCOUNTS
+- Standard Retail Tier: Free membership on account creation; includes 30-day returns and standard support queue access.
+- Gold VIP Tier ($2,500+ annual spend or $99/year): Includes free Expedited 2-Day Domestic Shipping on all orders, extended 60-day return window, zero restocking fees on open-box electronics, and priority ticket routing (1-hour SLA target).
+- Student, Educator & First Responder Discount: Verified students (with a valid .edu email), teachers, healthcare workers, and military personnel receive an extra 10% discount on hardware purchases using promo code STUDENT10 or HERO10 at checkout. Cannot be combined with flash-sale bundles.
+
+9. SOFTWARE SUBSCRIPTIONS, LICENSING & DIGITAL REFUNDS
+- Cloud & SaaS Subscriptions: Monthly and annual OmniDesk Cloud Pro subscriptions auto-renew at the end of each billing cycle unless cancelled at least 24 hours before the renewal date in Account Settings -> Billing.
+- Digital & License Key Refund Window: Annual software plans cancelled within 14 calendar days of initial purchase or renewal qualify for a full refund. Monthly plans can be cancelled anytime to stop future billing; prorated mid-month refunds are not issued.
+- License Seat Transfers: Enterprise administrators can reassign active seat licenses between team members unlimited times at no additional cost via the Admin Portal.
+
+10. ACCOUNT SECURITY, PRIVACY & DATA DELETION
+- Multi-Factor Authentication (MFA): Customers can enable TOTP authenticator apps or passkeys under Account -> Security. Password reset links expire after 15 minutes for security.
+- Suspicious Charge Lockout: If you notice unauthorized account activity or unrecognized charges, click "Freeze Account" in the portal or email security@company.com for an immediate 15-minute fraud investigation lock.
+- GDPR & CCPA Data Deletion Requests: Customers have the right to export all personal data (JSON/CSV) or request permanent account erasure. Verified deletion requests are completed within 30 calendar days, excluding legally required tax invoice records.
+
+11. TRADE-IN, REFURBISHED HARDWARE & BATTERY RECYCLING
+- Hardware Trade-In Program: Customers can trade in eligible laptops, tablets, and audio gear for instant store credit. Once you accept a trade-in valuation online, you have 21 calendar days to ship the device using our free prepaid label.
+- Certified Refurbished Products: All Apex Certified Refurbished devices undergo a 42-point hardware diagnostic, receive a brand-new battery and outer shell, and carry the same 1-Year Limited Manufacturer Warranty and 30-day return policy as brand-new items.
+- Lithium-Ion Battery Recycling: Send any end-of-life electronics to our recycling center using a free e-waste label from your dashboard and receive a $15 green-reward voucher toward your next order over $100.
+
+12. B2B BULK ORDERS, NET-30 INVOICING & ENTERPRISE SLA
+- Volume Discounts: Commercial orders of 10 to 49 units receive an automatic 8% volume discount; 50+ units receive a 15% discount and dedicated account manager assignment.
+- Net-30 Corporate Invoicing: Approved business, university, and government procurement accounts can check out via Purchase Order (PO) on Net-30 payment terms. Late balances beyond 30 days incur a 1.5% monthly finance charge.
+- Tax-Exempt Purchasing: Upload a valid state Reseller Permit or 501(c)(3) Tax-Exempt Certificate in the Billing Portal for automatic sales tax removal within 4 business hours.
+- Enterprise SLA Guarantee: VIP Enterprise accounts receive a 99.9% platform uptime guarantee, 30-minute Urgent Ticket response SLA, and dedicated Slack/Webhook escalation channels.

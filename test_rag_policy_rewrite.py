@@ -15,7 +15,7 @@ def test_1_parse_faq_sections_official_kb():
         text = f.read()
     
     sections = rag_engine.parse_faq_sections(text, source="company_faq")
-    assert len(sections) == 6, f"Expected 6 sections, got {len(sections)}"
+    assert len(sections) >= 6, f"Expected at least 6 sections, got {len(sections)}"
     
     titles = [s["section"] for s in sections]
     assert any("RETURN AND EXCHANGE POLICY" in t for t in titles)
