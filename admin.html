@@ -41,7 +41,7 @@
 
   <div class="app-layout">
     <!-- LEFT SIDEBAR -->
-    <aside class="app-sidebar" id="app-sidebar">
+    <aside class="app-sidebar" id="app-sidebar" aria-label="Admin Navigation Sidebar">
       <a href="index.html" class="sidebar-brand">
         <div class="brand-icon-box brand-icon-admin">
           <i class="fa-solid fa-sliders"></i>
@@ -102,9 +102,9 @@
     </aside>
 
     <!-- MAIN ADMIN WORKSPACE AREA -->
-    <main class="app-main">
+    <main class="app-main" aria-label="Admin Console Main Content">
       <!-- TOPBAR -->
-      <header class="app-topbar">
+      <header class="app-topbar" aria-label="Admin Topbar">
         <div class="topbar-title-wrap">
           <h1 class="topbar-view-title" id="admin-current-view-title">Live Tickets &amp; Agent Takeover Console</h1>
           <span class="topbar-badge" style="background: rgba(6,182,212,0.12); color: var(--accent-cyan); border-color: rgba(6,182,212,0.3);">
@@ -172,13 +172,13 @@
           <table class="admin-data-table">
             <thead>
               <tr>
-                <th style="width: 110px;">Ticket ID</th>
-                <th style="width: 170px;">Customer</th>
-                <th>Subject &amp; Inquiry</th>
-                <th style="width: 100px;">Priority</th>
-                <th style="width: 120px;">Status</th>
-                <th style="width: 150px;">SLA Countdown</th>
-                <th style="width: 120px; text-align:right;">Action</th>
+                <th scope="col" style="width: 110px;">Ticket ID</th>
+                <th scope="col" style="width: 170px;">Customer</th>
+                <th scope="col">Subject &amp; Inquiry</th>
+                <th scope="col" style="width: 100px;">Priority</th>
+                <th scope="col" style="width: 120px;">Status</th>
+                <th scope="col" style="width: 150px;">SLA Countdown</th>
+                <th scope="col" style="width: 120px; text-align:right;">Action</th>
               </tr>
             </thead>
             <tbody id="admin-tickets-table-body">
@@ -252,11 +252,11 @@
               <table class="admin-data-table">
                 <thead>
                   <tr>
-                    <th>Timestamp</th>
-                    <th>Customer Query</th>
-                    <th>Status</th>
-                    <th>Distance</th>
-                    <th>Matched Section</th>
+                    <th scope="col">Timestamp</th>
+                    <th scope="col">Customer Query</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Distance</th>
+                    <th scope="col">Matched Section</th>
                   </tr>
                 </thead>
                 <tbody id="audit-log-table-body">
@@ -298,7 +298,7 @@
   <!-- =========================================================================
        AGENT TAKEOVER DRAWER (Slide-Over Panel)
        ========================================================================= -->
-  <aside class="takeover-drawer-overlay" id="agent-takeover-drawer">
+  <aside class="takeover-drawer-overlay" id="agent-takeover-drawer" aria-label="Agent Takeover Drawer">
     <div class="drawer-header">
       <div style="display:flex; align-items:center; gap:10px;">
         <span class="order-id-title" id="drawer-ticket-id">TCK-1042</span>

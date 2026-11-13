@@ -367,7 +367,7 @@
                   <label for="slider-tickets">Monthly Support Inquiries</label>
                   <span class="slider-val-badge" id="val-tickets">8,000 / mo</span>
                 </div>
-                <input type="range" id="slider-tickets" class="custom-range" min="1000" max="50000" step="500" value="8000" oninput="updateRoiCalc()" aria-label="Monthly Support Inquiries" title="Monthly Support Inquiries">
+                <input type="range" id="slider-tickets" class="custom-range" min="1000" max="50000" step="500" value="8000" oninput="updateRoiCalc()" title="Monthly Support Inquiries">
               </div>
 
               <!-- Slider 2: Current Cost per Ticket -->
@@ -376,7 +376,7 @@
                   <label for="slider-cost">Current Cost Per Live Ticket ($)</label>
                   <span class="slider-val-badge" id="val-cost">$7.50</span>
                 </div>
-                <input type="range" id="slider-cost" class="custom-range" min="2" max="25" step="0.5" value="7.5" oninput="updateRoiCalc()" aria-label="Current Cost Per Live Ticket" title="Current Cost Per Live Ticket">
+                <input type="range" id="slider-cost" class="custom-range" min="2" max="25" step="0.5" value="7.5" oninput="updateRoiCalc()" title="Current Cost Per Live Ticket">
               </div>
 
               <!-- Slider 3: Expected Deflection Rate -->
@@ -385,7 +385,7 @@
                   <label for="slider-deflection">Target Autonomous Deflection Rate</label>
                   <span class="slider-val-badge" id="val-deflection">85%</span>
                 </div>
-                <input type="range" id="slider-deflection" class="custom-range" min="50" max="95" step="1" value="85" oninput="updateRoiCalc()" aria-label="Target Autonomous Deflection Rate" title="Target Autonomous Deflection Rate">
+                <input type="range" id="slider-deflection" class="custom-range" min="50" max="95" step="1" value="85" oninput="updateRoiCalc()" title="Target Autonomous Deflection Rate">
               </div>
             </div>
 
@@ -660,15 +660,15 @@
       <form id="lead-capture-form" onsubmit="handleLeadSubmit(event)">
         <div class="form-group">
           <label class="form-label" for="lead-name">Full Name</label>
-          <input type="text" id="lead-name" class="form-control" placeholder="e.g. Sarah Jenkins" autocomplete="name" aria-label="Full Name" title="Full Name" required>
+          <input type="text" id="lead-name" class="form-control" placeholder="e.g. Sarah Jenkins" autocomplete="name" title="Full Name" required>
         </div>
         <div class="form-group">
           <label class="form-label" for="lead-email">Work Email</label>
-          <input type="email" id="lead-email" class="form-control" placeholder="sarah@company.com" autocomplete="email" aria-label="Work Email" title="Work Email" required>
+          <input type="email" id="lead-email" class="form-control" placeholder="sarah@company.com" autocomplete="email" title="Work Email" required>
         </div>
         <div class="form-group">
           <label class="form-label" for="lead-company">Store / Company Name</label>
-          <input type="text" id="lead-company" class="form-control" placeholder="Apex Retail Global" autocomplete="organization" aria-label="Store or Company Name" title="Store or Company Name" required>
+          <input type="text" id="lead-company" class="form-control" placeholder="Apex Retail Global" autocomplete="organization" title="Store or Company Name" required>
         </div>
         <button type="submit" class="btn btn-primary btn-w-full-mt">
           <i class="fa-solid fa-paper-plane"></i> Request Sandbox Access
