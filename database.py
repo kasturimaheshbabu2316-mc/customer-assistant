@@ -203,6 +203,10 @@ def _seed_initial_orders(conn: sqlite3.Connection):
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, [
         ("ORD-1001", "CUST-8492", "Elena Rostova", "elena.r@techcorp.io", "Shipped", "OmniDesk Pro Smart Standing Desk (Oak / White Frame), ErgoArm Dual Monitor Mount", "TRK-982341-DHL", "$749.00", "2026-11-05"),
+        ("ORD-1002", "CUST-8492", "Elena Rostova", "elena.r@techcorp.io", "Delivered", "ErgoDesk Cable Management Tray & Heavy-Duty Power Bar", "TRK-882310-DHL", "$89.00", "2026-11-09"),
+        ("ORD-1003", "CUST-6310", "Marcus Vance", "m.vance@vertex.com", "In Transit", "Apex Executive Ergonomic Mesh Chair (Slate Grey)", "TRK-771923-DHL", "$449.00", "2026-11-10"),
+        ("ORD-1004", "CUST-4195", "David Kim", "dkim@ventures.com", "Out for Delivery", "Dual Articulating Gas Spring Monitor Arm", "TRK-661209-DHL", "$129.00", "2026-11-11"),
+        ("ORD-1005", "CUST-8492", "Elena Rostova", "elena.r@techcorp.io", "Processing", "OmniDesk Under-Desk Pull-Out Drawer (Matte Black)", "TRK-Pending", "$65.00", "2026-11-13"),
         ("ORD-1042", "CUST-8492", "Elena Rostova", "elena.r@techcorp.io", "Delivered", "250x Commercial Power Pods", "TRK-881240-DHL", "$4,950.00", "2026-10-28"),
         ("ORD-2024", "CUST-6310", "Marcus Vance", "m.vance@vertex.com", "Processing", "OmniDesk Bamboo Top 60x30, Cable Routing Spine", "TRK-Pending", "$620.00", "2026-11-12"),
         ("ORD-5521", "CUST-4195", "David Kim", "dkim@ventures.com", "Delivered", "Apex Wireless Noise-Cancelling Headphones", "TRK-442190-USPS", "$249.00", "2026-11-01"),
@@ -307,6 +311,10 @@ def _seed_initial_data(conn: sqlite3.Connection):
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, [
         ("ORD-1001", "CUST-8492", "Elena Rostova", "elena.r@techcorp.io", "Shipped", "OmniDesk Pro Smart Standing Desk (Oak / White Frame), ErgoArm Dual Monitor Mount", "TRK-982341-DHL", "$749.00", "2026-11-05"),
+        ("ORD-1002", "CUST-8492", "Elena Rostova", "elena.r@techcorp.io", "Delivered", "ErgoDesk Cable Management Tray & Heavy-Duty Power Bar", "TRK-882310-DHL", "$89.00", "2026-11-09"),
+        ("ORD-1003", "CUST-6310", "Marcus Vance", "m.vance@vertex.com", "In Transit", "Apex Executive Ergonomic Mesh Chair (Slate Grey)", "TRK-771923-DHL", "$449.00", "2026-11-10"),
+        ("ORD-1004", "CUST-4195", "David Kim", "dkim@ventures.com", "Out for Delivery", "Dual Articulating Gas Spring Monitor Arm", "TRK-661209-DHL", "$129.00", "2026-11-11"),
+        ("ORD-1005", "CUST-8492", "Elena Rostova", "elena.r@techcorp.io", "Processing", "OmniDesk Under-Desk Pull-Out Drawer (Matte Black)", "TRK-Pending", "$65.00", "2026-11-13"),
         ("ORD-1042", "CUST-8492", "Elena Rostova", "elena.r@techcorp.io", "Delivered", "250x Commercial Power Pods", "TRK-881240-DHL", "$4,950.00", "2026-10-28"),
         ("ORD-2024", "CUST-6310", "Marcus Vance", "m.vance@vertex.com", "Processing", "OmniDesk Bamboo Top 60x30, Cable Routing Spine", "TRK-Pending", "$620.00", "2026-11-12"),
         ("ORD-5521", "CUST-4195", "David Kim", "dkim@ventures.com", "Delivered", "Apex Wireless Noise-Cancelling Headphones", "TRK-442190-USPS", "$249.00", "2026-11-01"),
