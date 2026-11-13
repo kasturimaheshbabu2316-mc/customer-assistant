@@ -6,6 +6,7 @@
   <title>OmniDesk AI — Customer Support Portal (Window 1)</title>
   <meta name="description" content="24/7 Verified Customer Support Portal. Grounded in store policies for returns, warranty, shipping, and order tracking.">
   <link rel="stylesheet" href="css/style.css?v=5.0">
+  <link rel="stylesheet" href="css/sparky.css?v=5.0">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
@@ -84,6 +85,9 @@
             <span class="pulse-dot pulse-dot-cyan"></span>
             <span id="sync-ticket-label">Live Sync: TCK-1042</span>
           </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-toggle-sparky" onclick="window.toggleSparkyMascot &amp;&amp; window.toggleSparkyMascot()" title="Toggle Sparky Robot Assistant">
+            <i class="fa-solid fa-robot text-cyan"></i> Sparky Copilot
+          </button>
           <button type="button" class="btn btn-secondary btn-sm" onclick="exportChatTranscript()" title="Download conversation as JSON">
             <i class="fa-solid fa-download"></i> Save Chat
           </button>
@@ -424,5 +428,6 @@
   </div>
 
   <script src="js/app.js?v=5.0"></script>
+  <script src="js/robot-companion.js?v=5.0"></script>
 </body>
 </html>
