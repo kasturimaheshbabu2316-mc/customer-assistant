@@ -295,8 +295,11 @@ class FeedbackRequest(BaseModel):
     query: Optional[str] = ""
     rating: Optional[int] = Field(None, ge=1, le=5)
     score: Optional[int] = Field(None, ge=1, le=5)
+    stars: Optional[int] = Field(None, ge=1, le=5)
     is_positive: Optional[bool] = None
     comment: Optional[str] = ""
+    feedback: Optional[str] = ""
+    ticket_id: Optional[str] = None
     language: Optional[str] = "English"
 
     @model_validator(mode="before")
@@ -305,10 +308,14 @@ class FeedbackRequest(BaseModel):
         if isinstance(data, dict):
             r = data.get("rating") if data.get("rating") is not None else data.get("score")
             if r is None:
+                r = data.get("stars")
+            if r is None:
                 r = 5
             data["rating"] = int(r)
             if data.get("is_positive") is None:
                 data["is_positive"] = (int(r) >= 4)
+            c = data.get("comment") if data.get("comment") is not None else data.get("feedback")
+            data["comment"] = str(c or "")
         return data
 
 class ApplyMacroRequest(BaseModel):
@@ -1114,12 +1121,12 @@ def update_ticket_endpoint(ticket_id: str, req: UpdateTicketRequest):
     if req.priority:
         updates["priority"] = req.priority.title()
         
-    updated = database.update_ticket(ticket_id.upper(), updates)
+    updated = database.update_ticket(actual_tid, updates)
     t_copy = dict(updated or t)
     t_copy["sla_details"] = calculate_sla_details(t_copy)
     return {
         "status": "success",
-        "message": f"Ticket {ticket_id} updated",
+        "message": f"Ticket {actual_tid} updated",
         "ticket": t_copy
     }
 
