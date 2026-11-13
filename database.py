@@ -969,7 +969,7 @@ def _seed_initial_users(conn: sqlite3.Connection):
     """, ("CUST-DEMO", "Alex Rivera", "customer@example.com", cust_pw_hash, cust_salt, "customer", "Gold VIP", now_str))
 
     # 2. Demo Administrator / Developer
-    admin_pw_hash, admin_salt = hash_password("admin-secret-key-2026")
+    admin_pw_hash, admin_salt = hash_password("Mahesh123.")
     cursor.execute("""
     INSERT INTO users (id, name, email, password_hash, salt, role, tier, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?);

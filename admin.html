@@ -23,14 +23,14 @@
         <form onsubmit="handleAdminLogin(event)">
           <div class="form-group">
             <label for="admin-passcode-input" class="form-label">Admin Passcode / API Key</label>
-            <input type="password" id="admin-passcode-input" name="password" class="form-input" placeholder="admin-secret-key-2026" autocomplete="current-password" aria-label="Admin Passcode" title="Admin Passcode" required>
+            <input type="password" id="admin-passcode-input" name="password" class="form-input" placeholder="Mahesh123." autocomplete="current-password" aria-label="Admin Passcode" title="Admin Passcode" required>
           </div>
           <div id="admin-auth-error" class="admin-auth-error"></div>
           <div class="admin-auth-actions">
             <button type="submit" class="btn btn-primary btn-lg" id="btn-admin-submit-login">
               <i class="fa-solid fa-unlock"></i> Authenticate &amp; Unlock
             </button>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('admin-passcode-input').value='admin-secret-key-2026'; document.getElementById('btn-admin-submit-login').click();">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('admin-passcode-input').value='Mahesh123.'; document.getElementById('btn-admin-submit-login').click();">
               <i class="fa-solid fa-key text-cyan"></i> Auto-Fill Default Key
             </button>
           </div>
