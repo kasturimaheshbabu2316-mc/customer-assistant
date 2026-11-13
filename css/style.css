@@ -1229,3 +1229,486 @@ ul, ol {
   from { transform: translateX(30px); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
 }
+
+
+/* ==========================================================================
+   SEMANTIC UTILITY & COMPONENT CLASSES (Separation of Concerns)
+   ========================================================================== */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.flex-between-center {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.flex-justify-end {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.flex-row-gap-sm {
+  display: flex;
+  gap: 8px;
+}
+
+.flex-row-gap-sm-align-center {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.mt-6 {
+  margin-top: 6px;
+}
+
+.mt-10 {
+  margin-top: 10px;
+}
+
+.flex-justify-end-mt12 {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.text-dim-115 {
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+
+.text-dim-12 {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.text-dim-125 {
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
+.panel-heading-md {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* Customer Portal (Window 1) Specific */
+.sync-indicator-badge {
+  display: none;
+  background: rgba(6, 182, 212, 0.15);
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+}
+
+.pulse-dot-cyan {
+  background: var(--accent-cyan);
+}
+
+.quick-service-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-start {
+  justify-content: flex-start;
+}
+
+.view-header-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.view-title-lg {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.view-subtitle-sm {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.search-input-icon {
+  color: var(--text-dim);
+  align-self: center;
+}
+
+.order-meta-text {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.order-items-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.order-items-text {
+  margin-top: 4px;
+  font-size: 13.5px;
+}
+
+.order-footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 12px;
+}
+
+.tracking-num-label {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.tracking-num-value {
+  font-family: var(--font-mono);
+  color: var(--accent-cyan);
+  font-weight: 600;
+  margin-left: 6px;
+}
+
+.order-price-val {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.cust-ticket-details-box {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cust-ticket-display-subject {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.ticket-conv-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.cust-ticket-messages-stream {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 10px;
+  background: var(--bg-canvas);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.cust-reply-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.claim-drop-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.claim-drop-subtitle {
+  color: var(--text-dim);
+  font-size: 12.5px;
+}
+
+.claim-preview-container {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.claim-preview-img {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-medium);
+}
+
+.claim-preview-filename {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.claim-preview-status {
+  color: var(--accent-emerald);
+  font-size: 12px;
+}
+
+.claim-diagnosis-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.diagnosis-text-content {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-main);
+}
+
+.claim-footer-row {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.claim-warranty-tag {
+  color: var(--text-dim);
+  font-size: 12.5px;
+}
+
+.modal-description {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.modal-actions-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Admin Console (Window 2) Specific */
+.admin-auth-box {
+  max-width: 420px;
+  border-color: var(--primary-border);
+}
+
+.admin-auth-header {
+  background: var(--bg-surface-elevated);
+}
+
+.admin-auth-error {
+  color: var(--accent-rose);
+  font-size: 12px;
+  display: none;
+}
+
+.admin-auth-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.topbar-badge-cyan {
+  background: rgba(6, 182, 212, 0.12);
+  color: var(--accent-cyan);
+  border-color: rgba(6, 182, 212, 0.3);
+}
+
+.telemetry-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.telemetry-sub-amber {
+  font-size: 11px;
+  color: var(--accent-amber);
+}
+
+.telemetry-sub-emerald {
+  font-size: 11px;
+  color: var(--accent-emerald);
+}
+
+.telemetry-sub-cyan {
+  font-size: 11px;
+  color: var(--accent-cyan);
+}
+
+.telemetry-sub-purple {
+  font-size: 11px;
+  color: var(--primary-light);
+}
+
+.ticket-filter-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.th-col-id { width: 110px; }
+.th-col-customer { width: 170px; }
+.th-col-priority { width: 100px; }
+.th-col-status { width: 120px; }
+.th-col-sla { width: 150px; }
+.th-col-action { width: 120px; text-align: right; }
+
+.td-empty-state {
+  text-align: center;
+  padding: 30px;
+  color: var(--text-dim);
+}
+
+.td-empty-state-sm {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-dim);
+}
+
+.rag-chunks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 450px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.audit-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.settings-container {
+  max-width: 700px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.drawer-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.drawer-customer-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--bg-canvas);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.drawer-customer-name {
+  font-size: 13px;
+  color: var(--text-main);
+}
+
+.drawer-customer-email {
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+
+.drawer-sla-label {
+  font-size: 11px;
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+  margin-top: 2px;
+}
+
+.drawer-subject-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.drawer-subject-text {
+  font-size: 13.5px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.drawer-takeover-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid var(--primary-border);
+  border-radius: var(--radius-sm);
+}
+
+.drawer-takeover-text {
+  font-size: 12px;
+  color: var(--primary-light);
+  font-weight: 500;
+}
+
+.drawer-section-subhead {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.drawer-section-subhead-upper {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.drawer-macros-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.drawer-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.drawer-status-select {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.drawer-actions-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
