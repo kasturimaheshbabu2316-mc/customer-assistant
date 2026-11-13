@@ -1,8 +1,8 @@
-import os
-import streamlit as st
-import requests
 import json
-import time
+import os
+
+import requests
+import streamlit as st
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -682,7 +682,7 @@ with tab_kb:
             c_cols = st.columns([2, 1, 1])
             c_cols[0].caption(f"Source: `{chunk.get('source', 'company_faq.txt')}` • {chunk.get('tokens', 60)} tokens")
             
-            if c_cols[2].button(f"🗑️ Delete", key=f"del_{chunk.get('id')}"):
+            if c_cols[2].button("🗑️ Delete", key=f"del_{chunk.get('id')}"):
                 if is_online:
                     del_r = requests.delete(f"{backend_url}/api/kb/chunks/{chunk.get('id')}", headers=get_headers(admin_key))
                     if del_r.status_code == 200:

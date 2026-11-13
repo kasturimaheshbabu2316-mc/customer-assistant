@@ -3,7 +3,9 @@ Main entry point for OmniDesk AI Backend.
 Supports Railway, Render, Docker, and direct Uvicorn deployments.
 """
 import os
+
 import uvicorn
+
 from server import app
 
 # Export app instance for ASGI servers (uvicorn main:app)

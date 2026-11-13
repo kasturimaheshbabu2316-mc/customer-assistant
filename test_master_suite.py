@@ -13,11 +13,13 @@ Consolidates all system components into a single executive scorecard:
 import os
 import sys
 import time
-import json
-from typing import Optional, Any, Iterable, cast
+from collections.abc import Iterable
+from typing import Any, cast
+
 import pytest
 import requests as _raw_requests
 from fastapi.testclient import TestClient
+
 from server import app
 
 BASE_URL = os.environ.get("OMNIDESK_BACKEND_URL", "http://127.0.0.1:8000")
@@ -42,8 +44,7 @@ class ResponseWrapper:
         if hasattr(res_any, "iter_lines") and callable(res_any.iter_lines):
             try:
                 raw_lines: Any = res_any.iter_lines()
-                for l in cast(Iterable[Any], raw_lines):
-                    yield l
+                yield from cast(Iterable[Any], raw_lines)
                 return
             except Exception:
                 pass
@@ -214,7 +215,7 @@ def test_phase4_intent_and_crm():
     assert json_res.status_code == 200
     log("Phase 4", "CRM Export & Intent", "CSV and JSON CRM data streams verified", "PASS")
 
-def test_phase5_copilot_and_sla(ticket_id: Optional[str] = None):
+def test_phase5_copilot_and_sla(ticket_id: str | None = None):
     """Phase 5: AI Copilot & Conversation Threading."""
     if not ticket_id:
         t_res = requests.post(
@@ -245,7 +246,7 @@ def test_phase5_copilot_and_sla(ticket_id: Optional[str] = None):
     assert note_res.status_code == 200
     log("Phase 5", "Copilot & Threading", f"Grounded draft generated & confidential note posted to {ticket_id}", "PASS")
 
-def test_phase6_multilang_and_macros(ticket_id: Optional[str] = None):
+def test_phase6_multilang_and_macros(ticket_id: str | None = None):
     """Phase 6: Multi-Language & Macro Rules."""
     if not ticket_id:
         t_res = requests.post(

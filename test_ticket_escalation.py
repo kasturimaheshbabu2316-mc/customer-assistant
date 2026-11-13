@@ -1,9 +1,11 @@
 import os
+
 from fastapi.testclient import TestClient
 
 os.environ["ADMIN_API_KEY"] = "admin-secret-escalation-key"
 
 from server import app
+
 
 def run_ticket_tests():
     print("==================================================")

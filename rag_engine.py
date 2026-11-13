@@ -1,18 +1,18 @@
-import os
-import time
-import json
-import random
-import math
-import re
-import io
-import uuid
 import base64
-from typing import Any
+import io
+import json
+import math
+import os
+import random
+import re
+import time
+import uuid
 from collections import Counter
+from typing import Any
 
 import chromadb
-from PIL import Image
 from dotenv import load_dotenv
+from PIL import Image
 
 try:
     from rank_bm25 import BM25Okapi  # type: ignore
@@ -462,7 +462,6 @@ def ingest_policy_text(
     If replace_all is True, removes existing chunks before re-indexing.
     If save_to_kb is True, writes the updated content to knowledge_base/company_faq.txt.
     """
-    global collection
     clean_text = text.strip()
     if not clean_text:
         return []
@@ -611,9 +610,7 @@ def detect_escalation_intent(query: str, sentiment: str = "") -> bool:
     ]
     if any(t in q for t in triggers):
         return True
-    if sentiment.lower() in ("high urgency", "urgent", "frustrated"):
-        return True
-    return False
+    return sentiment.lower() in ("high urgency", "urgent", "frustrated")
 
 def generate_local_grounded_answer(
     query: str,
@@ -1081,9 +1078,7 @@ def run_rag_pipeline(query: str, target_language: str = "Auto Detect", history: 
     res = generate_support_response(user_query=query, chat_history=history)
     
     final_answer = res.get("answer", "")
-    if lang != "English" and not res.get("deflected"):
-        final_answer = translate_grounded_response(final_answer, lang, query)
-    elif lang != "English" and res.get("deflected"):
+    if lang != "English" and not res.get("deflected") or lang != "English" and res.get("deflected"):
         final_answer = translate_grounded_response(final_answer, lang, query)
         
     return {

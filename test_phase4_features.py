@@ -1,12 +1,11 @@
-import os
-import json
 import csv
 import io
+
 from fastapi.testclient import TestClient
 
-import server
-from server import app
 from rag_engine import classify_intent_and_sentiment
+from server import app
+
 
 def run_phase4_tests():
     print("==================================================")

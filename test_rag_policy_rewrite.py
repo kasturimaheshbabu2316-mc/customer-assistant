@@ -1,11 +1,9 @@
 import os
-import sys
-import json
-import pytest
+
 from fastapi.testclient import TestClient
-from server import app
+
 import rag_engine
-import database
+from server import app
 
 client = TestClient(app)
 ADMIN_KEY = os.getenv("ADMIN_API_KEY", "admin-secret-key-2026")

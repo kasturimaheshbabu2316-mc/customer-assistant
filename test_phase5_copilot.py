@@ -1,8 +1,6 @@
-import os
-import json
-import time
 from fastapi.testclient import TestClient
-from server import app, TICKETS_DB
+
+from server import app
 
 client = TestClient(app)
 

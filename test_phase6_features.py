@@ -7,13 +7,14 @@ Validates:
 4. Multi-Language SSE Token Streaming
 """
 
+import json
 import os
 import sys
-import json
-import time
 import typing
+
 import requests as _raw_requests
 from fastapi.testclient import TestClient
+
 from server import app
 
 # Test against running server or fallback to in-process TestClient
@@ -37,8 +38,7 @@ class ResponseWrapper:
         if hasattr(res_any, "iter_lines") and callable(res_any.iter_lines):
             try:
                 raw_lines: typing.Any = res_any.iter_lines()
-                for l in typing.cast(typing.Iterable[typing.Any], raw_lines):
-                    yield l
+                yield from typing.cast(typing.Iterable[typing.Any], raw_lines)
                 return
             except Exception:
                 pass

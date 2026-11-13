@@ -10,6 +10,25 @@ exclude = [
     ".agent",
 ]
 
+[tool.ruff.lint]
+ignore = [
+    "E501",
+    "E402",
+    "W291",
+    "W292",
+    "W293",
+    "F401",
+    "F541",
+    "I001",
+    "SIM102",
+    "SIM117",
+    "BLE001",
+    "S110",
+    "B904",
+    "UP007",
+    "UP035",
+]
+
 [tool.basedpyright]
 typeCheckingMode = "standard"
 exclude = [

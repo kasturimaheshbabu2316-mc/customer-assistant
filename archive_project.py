@@ -9,10 +9,9 @@ This script packages the complete OmniDesk AI codebase into:
    containing directory trees and complete source code for documentation and LLM analysis.
 """
 
-import os
-import sys
-import zipfile
 import datetime
+import os
+import zipfile
 from pathlib import Path
 
 # Base root of the project
@@ -80,10 +79,7 @@ def should_include_file(file_path: Path) -> bool:
         return False
         
     # Check extension
-    if file_path.suffix.lower() in EXCLUDE_EXTENSIONS:
-        return False
-        
-    return True
+    return file_path.suffix.lower() not in EXCLUDE_EXTENSIONS
 
 
 def collect_project_files():
@@ -122,7 +118,7 @@ def generate_markdown_bundle(files, md_path: Path):
     text_files = [f for f in files if f.suffix.lower() not in EXCLUDE_TEXT_BUNDLE_EXTENSIONS]
     
     lines = []
-    lines.append(f"# OmniDesk AI — Complete Project Codebase Archive")
+    lines.append("# OmniDesk AI — Complete Project Codebase Archive")
     lines.append(f"> Generated on: `{timestamp}` | Total Files: `{len(text_files)}` (Binary files excluded from text dump)\n")
     lines.append("## Table of Contents")
     for file_path in text_files:

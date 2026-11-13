@@ -7,11 +7,11 @@ Validates:
 
 import os
 import sys
-import time
-import base64
 import typing
+
 import requests as _raw_requests
 from fastapi.testclient import TestClient
+
 from server import app
 
 BASE_URL = os.environ.get("OMNIDESK_BACKEND_URL", "http://127.0.0.1:8000")
@@ -33,8 +33,7 @@ class ResponseWrapper:
         if hasattr(res_any, "iter_lines") and callable(res_any.iter_lines):
             try:
                 raw_lines: typing.Any = res_any.iter_lines()
-                for l in typing.cast(typing.Iterable[typing.Any], raw_lines):
-                    yield l
+                yield from typing.cast(typing.Iterable[typing.Any], raw_lines)
                 return
             except Exception:
                 pass

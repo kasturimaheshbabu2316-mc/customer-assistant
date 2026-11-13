@@ -1,0 +1,7 @@
+rules:
+  color-contrast: warn
+  heading-order: false
+exclude:
+  - 'node_modules/**'
+  - '.venv/**'
+  - '.service/**'

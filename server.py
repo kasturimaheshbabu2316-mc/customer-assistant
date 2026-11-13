@@ -1,48 +1,44 @@
-from fastapi import FastAPI, HTTPException, Request, Header, Depends, Query
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, JSONResponse, Response, FileResponse
-from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field, model_validator
-from typing import Optional, Any
-import os
-import time
-import random
-import json
 import csv
 import io
+import json
+import os
+import random
+import time
 from contextlib import asynccontextmanager
+from typing import Any
+
 from dotenv import load_dotenv
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, Response, StreamingResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field, model_validator
 
 load_dotenv()
 
 import database
 from rag_engine import (
-    run_rag_pipeline,
-    query_rag_pipeline,
-    stream_rag_pipeline,
+    DEFAULT_KB_PATH,
+    add_knowledge_chunk,
+    analyze_claim_image,
     classify_intent_and_sentiment,
+    collection,
+    delete_knowledge_chunk,
+    detect_language,
     generate_agent_reply_draft,
     generate_support_response,
-    detect_escalation_intent,
-    detect_language,
-    translate_grounded_response,
-    GeminiEmbeddingFunction,
-    parse_faq_sections,
-    ingest_policy_text,
-    ingest_faq,
     get_all_chunks,
-    add_knowledge_chunk,
-    delete_knowledge_chunk,
-    reindex_default_kb,
+    get_gemini_api_key,
     get_pipeline_settings,
-    update_pipeline_settings,
-    run_synthetic_benchmark,
-    bm25_search,
     hybrid_search_rag,
-    analyze_claim_image,
-    collection,
-    DEFAULT_KB_PATH,
-    get_gemini_api_key
+    ingest_faq,
+    ingest_policy_text,
+    reindex_default_kb,
+    run_rag_pipeline,
+    run_synthetic_benchmark,
+    stream_rag_pipeline,
+    translate_grounded_response,
+    update_pipeline_settings,
 )
 
 SERVER_START_TIME = time.time()
@@ -123,9 +119,9 @@ def get_configured_admin_password() -> str:
     return "admin-secret-key-2026"
 
 def verify_admin_key(
-    x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
-    x_admin_key: Optional[str] = Header(None, alias="X-Admin-Key"),
-    authorization: Optional[str] = Header(None, alias="Authorization")
+    x_api_key: str | None = Header(None, alias="X-API-Key"),
+    x_admin_key: str | None = Header(None, alias="X-Admin-Key"),
+    authorization: str | None = Header(None, alias="Authorization")
 ):
     token = x_api_key or x_admin_key
     if not token and authorization:
@@ -249,25 +245,25 @@ app.add_middleware(
 
 class QueryRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=2000, description="Customer question text")
-    language: Optional[str] = Field("Auto Detect", max_length=50)
-    history: Optional[list[dict[str, Any]]] = Field(default=[], description="Recent conversation history turns [{'role': 'user'|'assistant', 'content': '...'}]")
+    language: str | None = Field("Auto Detect", max_length=50)
+    history: list[dict[str, Any]] | None = Field(default=[], description="Recent conversation history turns [{'role': 'user'|'assistant', 'content': '...'}]")
 
 class QueryResponse(BaseModel):
     answer: str
     sources: list[str]
-    distances: Optional[list[float]] = []
-    deflected: Optional[bool] = False
-    latency_ms: Optional[int] = 0
-    language: Optional[str] = "English"
-    model: Optional[str] = "gemini-1.5-flash"
+    distances: list[float] | None = []
+    deflected: bool | None = False
+    latency_ms: int | None = 0
+    language: str | None = "English"
+    model: str | None = "gemini-1.5-flash"
 
 class ChatRequest(BaseModel):
-    query: Optional[str] = Field(None, max_length=2000, description="Customer question text")
-    message: Optional[str] = Field(None, max_length=2000, description="Customer question alias")
-    email: Optional[str] = Field(None, max_length=120, description="Customer email")
-    customer_email: Optional[str] = Field(None, max_length=120, description="Customer email alias")
-    history: Optional[list[dict[str, Any]]] = Field(default=[], description="Recent conversation history turns")
-    language: Optional[str] = Field("Auto Detect", max_length=50)
+    query: str | None = Field(None, max_length=2000, description="Customer question text")
+    message: str | None = Field(None, max_length=2000, description="Customer question alias")
+    email: str | None = Field(None, max_length=120, description="Customer email")
+    customer_email: str | None = Field(None, max_length=120, description="Customer email alias")
+    history: list[dict[str, Any]] | None = Field(default=[], description="Recent conversation history turns")
+    language: str | None = Field("Auto Detect", max_length=50)
 
     @model_validator(mode="before")
     @classmethod
@@ -292,15 +288,15 @@ class ChatRequest(BaseModel):
         return data
 
 class FeedbackRequest(BaseModel):
-    query: Optional[str] = ""
-    rating: Optional[int] = Field(None, ge=1, le=5)
-    score: Optional[int] = Field(None, ge=1, le=5)
-    stars: Optional[int] = Field(None, ge=1, le=5)
-    is_positive: Optional[bool] = None
-    comment: Optional[str] = ""
-    feedback: Optional[str] = ""
-    ticket_id: Optional[str] = None
-    language: Optional[str] = "English"
+    query: str | None = ""
+    rating: int | None = Field(None, ge=1, le=5)
+    score: int | None = Field(None, ge=1, le=5)
+    stars: int | None = Field(None, ge=1, le=5)
+    is_positive: bool | None = None
+    comment: str | None = ""
+    feedback: str | None = ""
+    ticket_id: str | None = None
+    language: str | None = "English"
 
     @model_validator(mode="before")
     @classmethod
@@ -320,53 +316,53 @@ class FeedbackRequest(BaseModel):
 
 class ApplyMacroRequest(BaseModel):
     macro_id: str = Field(..., min_length=1)
-    sender: Optional[str] = "Support Specialist"
+    sender: str | None = "Support Specialist"
 
 class AddPolicyRequest(BaseModel):
     title: str = Field(..., min_length=1, max_length=200, description="Policy clause header")
     content: str = Field(..., min_length=5, max_length=20000, description="Detailed policy text")
-    source: Optional[str] = Field("custom_policy.txt", max_length=100)
+    source: str | None = Field("custom_policy.txt", max_length=100)
 
 class RagUploadRequest(BaseModel):
-    text: Optional[str] = Field(None, description="Raw markdown or text policy document")
-    content: Optional[str] = Field(None, description="Alternative field for policy content")
-    filename: Optional[str] = Field("company_faq.txt", description="Document filename or identifier")
-    replace_all: Optional[bool] = Field(True, description="Whether to replace all existing sections")
-    save_to_kb: Optional[bool] = Field(True, description="Whether to persist to knowledge_base/company_faq.txt")
+    text: str | None = Field(None, description="Raw markdown or text policy document")
+    content: str | None = Field(None, description="Alternative field for policy content")
+    filename: str | None = Field("company_faq.txt", description="Document filename or identifier")
+    replace_all: bool | None = Field(True, description="Whether to replace all existing sections")
+    save_to_kb: bool | None = Field(True, description="Whether to persist to knowledge_base/company_faq.txt")
 
 class SettingsUpdateRequest(BaseModel):
-    guardrail_threshold: Optional[float] = Field(None, ge=0.1, le=3.0)
-    top_k_chunks: Optional[int] = Field(None, ge=1, le=20)
-    generation_model: Optional[str] = None
-    embedding_model: Optional[str] = None
-    temperature: Optional[float] = Field(None, ge=0.0, le=1.0)
-    system_instruction: Optional[str] = None
+    guardrail_threshold: float | None = Field(None, ge=0.1, le=3.0)
+    top_k_chunks: int | None = Field(None, ge=1, le=20)
+    generation_model: str | None = None
+    embedding_model: str | None = None
+    temperature: float | None = Field(None, ge=0.0, le=1.0)
+    system_instruction: str | None = None
 
 class FeaturesUpdateRequest(BaseModel):
-    enable_streaming: Optional[bool] = None
-    enable_vision_upload: Optional[bool] = None
-    enable_multi_language: Optional[bool] = None
-    enable_faq_chips: Optional[bool] = None
-    enable_csat_popup: Optional[bool] = None
-    enable_ticket_lookup: Optional[bool] = None
-    enable_announcement_banner: Optional[bool] = None
-    announcement_banner_text: Optional[str] = Field(None, max_length=500)
-    welcome_greeting: Optional[str] = Field(None, max_length=1000)
-    theme_mode: Optional[str] = Field(None, max_length=50)
-    auto_escalate_vip: Optional[bool] = None
+    enable_streaming: bool | None = None
+    enable_vision_upload: bool | None = None
+    enable_multi_language: bool | None = None
+    enable_faq_chips: bool | None = None
+    enable_csat_popup: bool | None = None
+    enable_ticket_lookup: bool | None = None
+    enable_announcement_banner: bool | None = None
+    announcement_banner_text: str | None = Field(None, max_length=500)
+    welcome_greeting: str | None = Field(None, max_length=1000)
+    theme_mode: str | None = Field(None, max_length=50)
+    auto_escalate_vip: bool | None = None
 
 class CreateTicketRequest(BaseModel):
-    customer_id: Optional[str] = Field(None, max_length=50)
+    customer_id: str | None = Field(None, max_length=50)
     customer_name: str = Field(..., min_length=1, max_length=100)
     customer_email: str = Field(..., min_length=3, max_length=120)
-    customer_tier: Optional[str] = Field("Standard Retail", max_length=50)
-    subject: Optional[str] = Field(None, max_length=200)
-    query: Optional[str] = Field(None, max_length=3000)
-    message: Optional[str] = Field(None, max_length=3000)
-    priority: Optional[str] = Field("Medium", description="Urgent, High, Medium, or Low")
-    intent: Optional[str] = None
-    sentiment: Optional[str] = None
-    transcript_snippet: Optional[str] = Field("", max_length=1000)
+    customer_tier: str | None = Field("Standard Retail", max_length=50)
+    subject: str | None = Field(None, max_length=200)
+    query: str | None = Field(None, max_length=3000)
+    message: str | None = Field(None, max_length=3000)
+    priority: str | None = Field("Medium", description="Urgent, High, Medium, or Low")
+    intent: str | None = None
+    sentiment: str | None = None
+    transcript_snippet: str | None = Field("", max_length=1000)
 
     @model_validator(mode="before")
     @classmethod
@@ -387,14 +383,14 @@ class CreateTicketRequest(BaseModel):
 class TicketMessageRequest(BaseModel):
     sender: str = Field("Support Agent", min_length=1, max_length=100)
     text: str = Field(..., min_length=1, max_length=5000)
-    is_internal_note: Optional[bool] = False
+    is_internal_note: bool | None = False
 
 class TicketReplyRequest(BaseModel):
-    message: Optional[str] = Field(None, max_length=5000, description="Reply message text")
-    text: Optional[str] = Field(None, max_length=5000, description="Message text alias")
-    sender: Optional[str] = Field("Support Agent", max_length=100, description="Sender name")
-    is_internal_note: Optional[bool] = Field(False, description="Whether this is a staff-only internal note")
-    status: Optional[str] = Field(None, description="Optional new ticket status, e.g. In Progress, Resolved")
+    message: str | None = Field(None, max_length=5000, description="Reply message text")
+    text: str | None = Field(None, max_length=5000, description="Message text alias")
+    sender: str | None = Field("Support Agent", max_length=100, description="Sender name")
+    is_internal_note: bool | None = Field(False, description="Whether this is a staff-only internal note")
+    status: str | None = Field(None, description="Optional new ticket status, e.g. In Progress, Resolved")
 
     @model_validator(mode="before")
     @classmethod
@@ -411,16 +407,16 @@ class TicketReplyRequest(BaseModel):
         return data
 
 class UpdateTicketRequest(BaseModel):
-    status: Optional[str] = Field(None, description="Open, In Progress, or Resolved")
-    assigned_agent: Optional[str] = None
-    priority: Optional[str] = None
+    status: str | None = Field(None, description="Open, In Progress, or Resolved")
+    assigned_agent: str | None = None
+    priority: str | None = None
 
 class AdminLoginRequest(BaseModel):
-    password: Optional[str] = Field(None, max_length=256, description="Admin password or API key")
-    secret_key: Optional[str] = Field(None, max_length=256, description="Admin secret key alias")
-    admin_password: Optional[str] = Field(None, max_length=256, description="Admin password alias")
-    key: Optional[str] = Field(None, max_length=256, description="Admin key alias")
-    email: Optional[str] = Field(None, max_length=120, description="Admin email")
+    password: str | None = Field(None, max_length=256, description="Admin password or API key")
+    secret_key: str | None = Field(None, max_length=256, description="Admin secret key alias")
+    admin_password: str | None = Field(None, max_length=256, description="Admin password alias")
+    key: str | None = Field(None, max_length=256, description="Admin key alias")
+    email: str | None = Field(None, max_length=120, description="Admin email")
 
 class UserRegisterRequest(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
@@ -434,7 +430,7 @@ class UserLoginRequest(BaseModel):
 class DevLoginRequest(BaseModel):
     email: str = Field(..., min_length=3, max_length=120)
     secret_key: str = Field(..., min_length=1, max_length=200)
-    mfa_token: Optional[str] = Field(None, max_length=20)
+    mfa_token: str | None = Field(None, max_length=20)
 
 class DevKeyRequest(BaseModel):
     email: str = Field(..., min_length=5, max_length=120)
@@ -485,8 +481,8 @@ def login_customer(req: UserLoginRequest):
 
 @app.get("/api/auth/me")
 def get_current_user(
-    x_session_token: Optional[str] = Header(None, alias="X-Session-Token"),
-    authorization: Optional[str] = Header(None, alias="Authorization")
+    x_session_token: str | None = Header(None, alias="X-Session-Token"),
+    authorization: str | None = Header(None, alias="Authorization")
 ):
     token = x_session_token
     if not token and authorization:
@@ -515,8 +511,8 @@ def get_current_user(
 
 @app.post("/api/auth/logout")
 def logout_user(
-    x_session_token: Optional[str] = Header(None, alias="X-Session-Token"),
-    authorization: Optional[str] = Header(None, alias="Authorization")
+    x_session_token: str | None = Header(None, alias="X-Session-Token"),
+    authorization: str | None = Header(None, alias="Authorization")
 ):
     token = x_session_token
     if not token and authorization:
@@ -795,10 +791,10 @@ def calculate_sla_details(ticket: dict) -> dict:
 
 @app.get("/api/tickets")
 def list_tickets(
-    status: Optional[str] = Query(None, description="Filter by status: Open, In Progress, Resolved"),
-    priority: Optional[str] = Query(None, description="Filter by priority: Urgent, High, Medium, Low"),
-    email: Optional[str] = Query(None, description="Filter by customer email"),
-    customer_email: Optional[str] = Query(None, description="Alias for customer email filter")
+    status: str | None = Query(None, description="Filter by status: Open, In Progress, Resolved"),
+    priority: str | None = Query(None, description="Filter by priority: Urgent, High, Medium, Low"),
+    email: str | None = Query(None, description="Filter by customer email"),
+    customer_email: str | None = Query(None, description="Alias for customer email filter")
 ):
     target_email = email or customer_email
     tickets = database.get_all_tickets(status=status, priority=priority)
@@ -961,7 +957,7 @@ def get_ticket_stats():
     }
 
 @app.get("/api/tickets/{ticket_id}")
-def get_ticket(ticket_id: str, public: Optional[bool] = Query(False, description="Strip private internal notes if true")):
+def get_ticket(ticket_id: str, public: bool | None = Query(False, description="Strip private internal notes if true")):
     if public:
         ticket = database.get_customer_safe_ticket(ticket_id.upper())
     else:
@@ -1311,8 +1307,8 @@ def get_order_endpoint(order_id: str):
 
 @app.get("/api/orders")
 def get_orders_endpoint(
-    email: Optional[str] = Query(None, description="Filter orders by customer email"),
-    customer_email: Optional[str] = Query(None, description="Alias for email filter")
+    email: str | None = Query(None, description="Filter orders by customer email"),
+    customer_email: str | None = Query(None, description="Alias for email filter")
 ):
     """Lists customer orders, optionally filtered by customer email."""
     target_email = email or customer_email
@@ -1386,15 +1382,15 @@ def submit_feedback(req: FeedbackRequest):
     }
 
 class TestWebhookRequest(BaseModel):
-    event_type: Optional[str] = "test_ping"
-    channel: Optional[str] = "Slack #support-alerts"
-    message: Optional[str] = "Simulated webhook delivery from OmniDesk AI Support Hub."
+    event_type: str | None = "test_ping"
+    channel: str | None = "Slack #support-alerts"
+    message: str | None = "Simulated webhook delivery from OmniDesk AI Support Hub."
 
 class BenchmarkRequest(BaseModel):
-    num_queries: Optional[int] = 8
+    num_queries: int | None = 8
 
 @app.post("/api/webhooks/test")
-def trigger_test_webhook(req: Optional[TestWebhookRequest] = None):
+def trigger_test_webhook(req: TestWebhookRequest | None = None):
     ev_type = req.event_type if req and req.event_type else "test_ping"
     dest = req.channel if req and req.channel else "Slack #support-alerts"
     msg = req.message if req and req.message else "Simulated webhook delivery from OmniDesk AI Support Hub."
@@ -1421,7 +1417,7 @@ def get_webhook_logs():
     }
 
 @app.post("/api/benchmark/simulate")
-def run_benchmark_simulation(req: Optional[BenchmarkRequest] = None):
+def run_benchmark_simulation(req: BenchmarkRequest | None = None):
     num_q = req.num_queries if req and req.num_queries else 8
     bench_data = run_synthetic_benchmark(num_queries=num_q)
     return bench_data
@@ -1515,15 +1511,15 @@ def get_analytics():
 
 class HybridSearchRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=2000, description="Search query string")
-    top_k: Optional[int] = Field(3, ge=1, le=20)
-    rrf_k: Optional[int] = Field(60, ge=1, le=200)
+    top_k: int | None = Field(3, ge=1, le=20)
+    rrf_k: int | None = Field(60, ge=1, le=200)
 
 class AnalyzeImageRequest(BaseModel):
-    image_base64: Optional[str] = Field("", max_length=7000000, description="Base64 image string (max ~5MB)")
-    image: Optional[str] = Field(None, max_length=7000000, description="Alias for image_base64")
-    claim_description: Optional[str] = Field(None, max_length=2000, description="Customer claim explanation")
-    description: Optional[str] = Field(None, max_length=2000, description="Alias for claim_description")
-    mime_type: Optional[str] = Field("image/jpeg", max_length=50)
+    image_base64: str | None = Field("", max_length=7000000, description="Base64 image string (max ~5MB)")
+    image: str | None = Field(None, max_length=7000000, description="Alias for image_base64")
+    claim_description: str | None = Field(None, max_length=2000, description="Customer claim explanation")
+    description: str | None = Field(None, max_length=2000, description="Alias for claim_description")
+    mime_type: str | None = Field("image/jpeg", max_length=50)
 
     @model_validator(mode="before")
     @classmethod

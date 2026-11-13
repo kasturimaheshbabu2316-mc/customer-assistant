@@ -1,21 +1,18 @@
 import os
-import sys
-import json
+
 from fastapi.testclient import TestClient
 
-from server import app
 from rag_engine import (
-    ingest_faq,
-    get_all_chunks,
+    DEFAULT_KB_PATH,
     add_knowledge_chunk,
     delete_knowledge_chunk,
+    get_all_chunks,
+    ingest_faq,
     run_rag_pipeline,
     stream_rag_pipeline,
-    get_pipeline_settings,
-    update_pipeline_settings,
-    collection,
-    DEFAULT_KB_PATH
 )
+from server import app
+
 
 def run_all_tests():
     print("==================================================")
@@ -32,7 +29,7 @@ def run_all_tests():
     # 2. Test Direct RAG Pipeline Non-Streaming
     print("\n[Test 2] Testing Grounded RAG Query ('What is the return policy?')...")
     res = run_rag_pipeline("What is your 30-day return policy for electronics?")
-    assert "answer" in res and res["answer"], "Answer was empty"
+    assert res.get("answer"), "Answer was empty"
     assert "sources" in res, "Sources field missing"
     assert res.get("deflected") is False, "Query was unexpectedly deflected"
     print(f" PASS: Answer received: {res['answer'][:80]}... (latency: {res['latency_ms']}ms)")
@@ -94,13 +91,13 @@ def run_all_tests():
     ask_res = client.post("/ask", json={"query": "What is the warranty coverage?"})
     assert ask_res.status_code == 200, f"/ask failed: {ask_res.status_code}"
     assert "answer" in ask_res.json(), "Answer missing in /ask"
-    print(f" /ask: Answer received successfully")
+    print(" /ask: Answer received successfully")
 
     # /ask/stream
     stream_res = client.post("/ask/stream", json={"query": "What is the order cancellation window?"})
     assert stream_res.status_code == 200, f"/ask/stream failed: {stream_res.status_code}"
     assert "event: sources" in stream_res.text, "SSE text missing sources"
-    print(f" /ask/stream: SSE stream validated")
+    print(" /ask/stream: SSE stream validated")
 
     # /api/kb/chunks
     kb_list = client.get("/api/kb/chunks")
