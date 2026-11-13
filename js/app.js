@@ -1,259 +1,69 @@
 /* ==========================================================================
-   OMNIDESK AI - CUSTOMER SUPPORT PORTAL CONTROLLER (app.js)
-   Dedicated to Customer Experience, Grounded AI Chat, Policy Directory,
-   Ticket Tracking, and Claim Submission.
+   OMNIDESK AI — CUSTOMER SUPPORT PORTAL CONTROLLER (app.js)
+   Synchronized Desktop-First Two-Window UI (Window 1)
+   Features: RAG Chat + Collapsible Sources, Order Tracking,
+   My Support Tickets, Visual Claim Inspection, and Live Agent Sync.
    ========================================================================== */
 
 const CustomerState = {
   currentView: 'chat',
-  backendUrl: localStorage.getItem('omni_backend_url') || (window.location.origin.startsWith('http') && !window.location.port.match(/^(5500|3000|5173)$/) ? window.location.origin : 'http://localhost:8000'),
-  isBackendOnline: false,
-  isStreaming: false,
-  attachedImageBase64: '',
-  attachedImageMime: '',
-  selectedLanguage: localStorage.getItem('omni_language') || 'Auto Detect',
-  activeTicketId: null,
-  features: {
-    enable_streaming: true,
-    enable_vision_upload: true,
-    enable_multi_language: true,
-    enable_faq_chips: true,
-    enable_csat_popup: true,
-    enable_ticket_lookup: true,
-    enable_announcement_banner: false,
-    announcement_banner_text: "Special Notice: Free expedited delivery on all verified warranty replacements this week.",
-    welcome_greeting: "Hello! I am your AI Customer Support Assistant, grounded exclusively in verified store policies. Ask me about returns, international shipping rates, warranty repairs, price matching, or order cancellations.",
-    theme_mode: "clay_porcelain"
-  },
-  messages: [],
-  policies: [
-    {
-      id: 'sec_1',
-      category: 'Return',
-      title: '30-Day Return & Refund Policy',
-      content: 'Customers may return eligible products within 30 calendar days of delivery for a full refund to their original payment method. Items must be in original condition with all packaging intact. Open-box electronics are subject to a 15% restocking fee. Return shipping is 100% free within the USA & Canada.'
-    },
-    {
-      id: 'sec_2',
-      category: 'Shipping',
-      title: 'Domestic & International Shipping (DHL Express)',
-      content: 'Domestic Standard Shipping (3-5 business days) is free on orders over $50, flat $4.99 under $50. Expedited 2-Day is $14.99, and Overnight delivery is $29.99 for orders placed before 1 PM EST. International shipping is available to 85+ countries via DHL Express under Delivered Duty Paid (DDP) terms — all customs, VAT, and duties are prepaid at checkout.'
-    },
-    {
-      id: 'sec_3',
-      category: 'Cancellation',
-      title: '60-Minute Order Cancellation Window',
-      content: 'Orders may be cancelled or modified within 60 minutes of placement directly from your account dashboard or via our support assistant. After 60 minutes, orders enter automated warehouse picking and routing, after which they must be processed as a standard return.'
-    },
-    {
-      id: 'sec_4',
-      category: 'Warranty',
-      title: '1-Year Limited Manufacturer Warranty',
-      content: 'All hardware purchases include a 1-Year Limited Manufacturer Warranty covering hardware defects and manufacturing workmanship. Cosmetic wear, water damage, and accidental drops are excluded. To file a claim, submit your serial number and 1-2 photos of the defect.'
-    },
-    {
-      id: 'sec_5',
-      category: 'Payment',
-      title: 'Payment Methods & 14-Day Price Match Guarantee',
-      content: 'We accept Visa, MasterCard, American Express, PayPal, Apple Pay, Google Pay, and Klarna/Affirm. If an identical item is advertised for less at an authorized retailer within 14 calendar days of your purchase, contact us to receive an immediate price-match credit to your payment method.'
-    },
-    {
-      id: 'sec_6',
-      category: 'General',
-      title: 'Live Support Hours & Priority Escalations',
-      content: 'AI Support Hub operates 24/7/365. Human Support Agent desk hours are Monday through Friday 8:00 AM - 8:00 PM EST, and Saturday-Sunday 10:00 AM - 6:00 PM EST. Priority escalations are reviewed within 2 hours.'
-    }
-  ]
+  backendUrl: window.location.origin.startsWith('http') && !window.location.port.match(/^(5500|3000|5173)$/)
+    ? window.location.origin
+    : 'http://127.0.0.1:8000',
+  activeTicketId: localStorage.getItem('omni_active_ticket_id') || null,
+  activeTicketData: null,
+  lastKnownMessageCount: 0,
+  claimImageBase64: '',
+  claimImageMime: 'image/jpeg',
+  claimDiagnosis: null,
+  pollTimer: null
 };
 
-// Initialize Customer Portal
-document.addEventListener('DOMContentLoaded', async () => {
-  checkCustomerAuth();
-  await loadFeaturesFromBackend();
-  await checkBackendHealth();
-  renderCustomerPolicies();
-  initCustomerWelcomeGreeting();
-  handleUrlParameters();
+// ==========================================================================
+// INITIALIZATION
+// ==========================================================================
+document.addEventListener('DOMContentLoaded', () => {
+  checkBackendHealth();
+  setupDragAndDrop();
+
+  // Restore active ticket sync if one exists
+  if (CustomerState.activeTicketId) {
+    updateSyncIndicator(CustomerState.activeTicketId);
+    startLiveTicketPolling(CustomerState.activeTicketId);
+  }
+
+  // Pre-load default order display
+  lookupOrder('ORD-1001', false);
 });
 
-// Customer Authentication State Management
-function checkCustomerAuth() {
-  const token = localStorage.getItem('omni_user_token');
-  const name = localStorage.getItem('omni_user_name');
-  const email = localStorage.getItem('omni_user_email');
-  const tier = localStorage.getItem('omni_user_tier') || 'Standard Retail';
-
-  const loginLink = document.getElementById('btn-customer-login-link');
-  const profilePill = document.getElementById('user-profile-pill');
-  const nameDisplay = document.getElementById('user-name-display');
-  const tierBadge = document.getElementById('user-tier-badge');
-  const avatarInitials = document.getElementById('user-avatar-initials');
-
-  if (token && name) {
-    if (loginLink) loginLink.classList.add('is-hidden');
-    if (profilePill) profilePill.classList.remove('is-hidden');
-    if (nameDisplay) nameDisplay.textContent = name;
-    if (tierBadge) tierBadge.textContent = tier;
-    if (avatarInitials) {
-      const parts = name.trim().split(' ');
-      avatarInitials.textContent = parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0][0].toUpperCase();
-    }
-  } else {
-    if (loginLink) loginLink.classList.remove('is-hidden');
-    if (profilePill) profilePill.classList.add('is-hidden');
-  }
-}
-
-function customerLogout() {
-  const token = localStorage.getItem('omni_user_token');
-  if (token) {
-    fetch('/api/auth/logout', {
-      method: 'POST',
-      headers: { 'X-Session-Token': token }
-    }).catch(() => {});
-  }
-  localStorage.removeItem('omni_user_token');
-  localStorage.removeItem('omni_user_id');
-  localStorage.removeItem('omni_user_name');
-  localStorage.removeItem('omni_user_email');
-  localStorage.removeItem('omni_user_tier');
-  checkCustomerAuth();
-}
-
-function openCustomerAuthModal() {
-  const modal = document.getElementById('customer-auth-modal');
-  if (modal) modal.classList.remove('is-hidden');
-}
-
-function closeCustomerAuthModal() {
-  const modal = document.getElementById('customer-auth-modal');
-  if (modal) modal.classList.add('is-hidden');
-  const errEl = document.getElementById('customer-auth-error');
-  if (errEl) errEl.classList.add('is-hidden');
-}
-
-async function handleCustomerLoginSubmit(e) {
-  e.preventDefault();
-  const emailInput = document.getElementById('customer-email-input');
-  const passInput = document.getElementById('customer-password-input');
-  const errEl = document.getElementById('customer-auth-error');
-  if (!emailInput || !passInput) return;
-
-  const email = emailInput.value.trim();
-  const password = passInput.value;
+// Check Server Health
+async function checkBackendHealth() {
+  const dot = document.getElementById('sidebar-status-dot');
+  const text = document.getElementById('sidebar-status-text');
   try {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || 'Sign in failed');
-    localStorage.setItem('omni_user_token', data.token);
-    localStorage.setItem('omni_user_id', data.user.id);
-    localStorage.setItem('omni_user_name', data.user.name);
-    localStorage.setItem('omni_user_email', data.user.email);
-    localStorage.setItem('omni_user_tier', data.user.tier || 'Standard Retail');
-    checkCustomerAuth();
-    closeCustomerAuthModal();
-  } catch (err) {
-    if (errEl) {
-      errEl.textContent = err.message || 'Authentication error';
-      errEl.classList.remove('is-hidden');
-    }
-  }
-}
-
-// Load dynamic UX features
-async function loadFeaturesFromBackend() {
-  try {
-    const res = await fetch(`${CustomerState.backendUrl}/api/features`);
+    const res = await fetch(`${CustomerState.backendUrl}/health`);
     if (res.ok) {
-      const data = await res.json();
-      CustomerState.features = { ...CustomerState.features, ...data };
-      applyFeaturesToUI();
+      if (dot) dot.className = 'pulse-dot';
+      if (text) text.textContent = 'Support Live (24/7)';
+    } else {
+      throw new Error('Non-200');
     }
   } catch (e) {
-    console.warn('Backend features loaded with defaults:', e);
-    applyFeaturesToUI();
+    if (dot) dot.className = 'pulse-dot pulse-offline';
+    if (text) text.textContent = 'Offline (Reconnecting)';
   }
 }
 
-function applyFeaturesToUI() {
-  const feat = CustomerState.features;
-
-  // Announcement Banner
-  const banner = document.getElementById('customer-announcement-banner');
-  const bannerMsg = document.getElementById('announcement-banner-message');
-  if (banner && bannerMsg) {
-    if (feat.enable_announcement_banner && feat.announcement_banner_text) {
-      bannerMsg.textContent = feat.announcement_banner_text;
-      banner.classList.remove('is-hidden');
-    } else {
-      banner.classList.add('is-hidden');
-    }
-  }
-
-  // Vision Upload Button in Chat
-  const visionWrapper = document.getElementById('composer-vision-btn-wrapper');
-  if (visionWrapper) {
-    if (feat.enable_vision_upload) {
-      visionWrapper.classList.remove('is-hidden');
-    } else {
-      visionWrapper.classList.add('is-hidden');
-    }
-  }
-
-  // Multi-Language Dropdown in Topbar
-  const langWrapper = document.getElementById('topbar-lang-wrapper');
-  if (langWrapper) {
-    if (feat.enable_multi_language) {
-      langWrapper.classList.remove('is-hidden');
-    } else {
-      langWrapper.classList.add('is-hidden');
-    }
-  }
-
-  // FAQ Chips
-  const faqChips = document.getElementById('chat-faq-chips-container');
-  if (faqChips) {
-    if (feat.enable_faq_chips) {
-      faqChips.classList.remove('is-hidden');
-    } else {
-      faqChips.classList.add('is-hidden');
-    }
-  }
-
-  // Theme
-  const themeKey = (feat.theme_mode || 'clay_porcelain').replace('clay_', '');
-  if (window.ClayTheme && typeof window.ClayTheme.setTheme === 'function') {
-    window.ClayTheme.setTheme(themeKey);
-  } else {
-    document.documentElement.setAttribute('data-clay-palette', themeKey);
-    document.documentElement.classList.add('clay-mode');
-  }
-}
-
-function initCustomerWelcomeGreeting() {
-  const greetingEl = document.getElementById('assistant-welcome-msg');
-  if (greetingEl && CustomerState.features.welcome_greeting) {
-    greetingEl.textContent = CustomerState.features.welcome_greeting;
-  }
-}
-
-function dismissAnnouncementBanner() {
-  const banner = document.getElementById('customer-announcement-banner');
-  if (banner) banner.classList.add('is-hidden');
-}
-
-// Navigation between customer views
+// ==========================================================================
+// NAVIGATION CONTROLLER
+// ==========================================================================
 function switchCustomerView(viewName) {
   CustomerState.currentView = viewName;
   const viewMap = {
-    'chat': { id: 'view-chat', btn: 'btn-nav-chat', title: '24/7 AI Customer Support' },
-    'kb': { id: 'view-kb', btn: 'btn-nav-kb', title: 'Customer Help Center & Store Policies' },
-    'tickets': { id: 'view-tickets', btn: 'btn-nav-tickets', title: 'Track Your Support Request' },
-    'claim': { id: 'view-claim', btn: 'btn-nav-claim', title: 'Submit a Support Claim or Request' }
+    'chat': { id: 'view-chat', btn: 'btn-nav-chat', title: 'AI Policy Assistant' },
+    'orders': { id: 'view-orders', btn: 'btn-nav-orders', title: 'Customer Order Tracking' },
+    'tickets': { id: 'view-tickets', btn: 'btn-nav-tickets', title: 'My Support Tickets' },
+    'claim': { id: 'view-claim', btn: 'btn-nav-claim', title: 'Visual Claim Inspection' }
   };
 
   Object.values(viewMap).forEach(v => {
@@ -272,162 +82,14 @@ function switchCustomerView(viewName) {
   if (activeBtn) activeBtn.classList.add('active');
   if (titleEl) titleEl.textContent = active.title;
 
-  if (window.innerWidth <= 768) {
-    const sidebar = document.getElementById('app-sidebar');
-    if (sidebar) sidebar.classList.remove('mobile-open');
+  if (viewName === 'tickets' && CustomerState.activeTicketId) {
+    loadTicketDetails(CustomerState.activeTicketId);
   }
 }
 
-function toggleAppSidebar() {
-  const sidebar = document.getElementById('app-sidebar');
-  if (sidebar) sidebar.classList.toggle('mobile-open');
-}
-
-// Handle deep-links via URL query parameters (?prompt=..., ?ticket=..., ?view=...)
-function handleUrlParameters() {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const prompt = params.get('prompt') || params.get('q');
-    const view = params.get('view');
-    const ticketId = params.get('ticket') || params.get('id');
-
-    if (view) {
-      switchCustomerView(view);
-    }
-
-    if (ticketId) {
-      switchCustomerView('tickets');
-      const ticketInput = document.getElementById('lookup-ticket-id-input');
-      if (ticketInput) {
-        ticketInput.value = ticketId;
-        const btn = document.getElementById('btn-lookup-ticket');
-        if (btn) btn.click();
-      }
-    } else if (prompt) {
-      setTimeout(() => {
-        sendQuickPrompt(prompt);
-      }, 350);
-    }
-  } catch (e) {
-    console.warn('URL parameter handling skipped:', e);
-  }
-}
-
-// Check backend connectivity
-async function checkBackendHealth() {
-  const dot = document.getElementById('sidebar-status-dot');
-  const txt = document.getElementById('sidebar-status-text');
-  try {
-    const res = await fetch(`${CustomerState.backendUrl}/health`);
-    if (res.ok) {
-      CustomerState.isBackendOnline = true;
-      if (dot) dot.style.backgroundColor = 'var(--accent-emerald)';
-      if (txt) txt.textContent = 'Support Live (24/7)';
-    } else {
-      throw new Error('Non-200 status');
-    }
-  } catch (e) {
-    CustomerState.isBackendOnline = false;
-    if (dot) dot.style.backgroundColor = 'var(--accent-emerald)';
-    if (txt) txt.textContent = 'Support Live (Local Grounded)';
-  }
-}
-
-// Language Change
-function handleLanguageChange(lang) {
-  CustomerState.selectedLanguage = lang;
-  localStorage.setItem('omni_language', lang);
-}
-
-// Render Knowledge Base Policies for Customer
-function renderCustomerPolicies(filterKeyword = '', category = 'All') {
-  const grid = document.getElementById('customer-policies-grid');
-  if (!grid) return;
-
-  const kw = filterKeyword.toLowerCase().trim();
-  const filtered = CustomerState.policies.filter(p => {
-    const matchCat = (category === 'All' || p.category.toLowerCase().includes(category.toLowerCase()));
-    const matchKw = (!kw || p.title.toLowerCase().includes(kw) || p.content.toLowerCase().includes(kw));
-    return matchCat && matchKw;
-  });
-
-  if (filtered.length === 0) {
-    grid.innerHTML = `
-      <div class="empty-placeholder-card">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <p>No policies matching "${filterKeyword}". Try searching for returns, warranty, or shipping.</p>
-      </div>
-    `;
-    return;
-  }
-
-  grid.innerHTML = filtered.map(p => `
-    <div class="customer-policy-card">
-      <div class="policy-card-header">
-        <span class="badge badge-glow-primary badge-font-sm">${p.category} Policy</span>
-        <button type="button" class="btn-text-link btn-font-sm" onclick="sendQuickPrompt('Tell me about: ${p.title.replace(/'/g, "\\'")}')">
-          <i class="fa-solid fa-comments"></i> Ask AI
-        </button>
-      </div>
-      <h3 class="policy-card-title">${p.title}</h3>
-      <p class="policy-card-body">${p.content}</p>
-    </div>
-  `).join('');
-}
-
-function filterCustomerPolicies() {
-  const input = document.getElementById('policy-search-input');
-  const kw = input ? input.value : '';
-  const activeChip = document.querySelector('.policy-categories-filter .category-chip-btn.active');
-  const cat = activeChip ? activeChip.textContent.split(' ')[0] : 'All';
-  renderCustomerPolicies(kw, cat);
-}
-
-function filterPolicyCategory(category, btnEl) {
-  document.querySelectorAll('.policy-categories-filter .category-chip-btn').forEach(b => b.classList.remove('active'));
-  if (btnEl) btnEl.classList.add('active');
-  const input = document.getElementById('policy-search-input');
-  const kw = input ? input.value : '';
-  renderCustomerPolicies(kw, category);
-}
-
-// Multi-Modal Image Attachments for Chat
-function handleImageAttachment(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    CustomerState.attachedImageBase64 = e.target.result.split(',')[1];
-    CustomerState.attachedImageMime = file.type;
-
-    const bar = document.getElementById('attached-image-preview-bar');
-    const imgTag = document.getElementById('attached-img-tag');
-    const nameTag = document.getElementById('attached-img-name');
-
-    if (imgTag) imgTag.src = e.target.result;
-    if (nameTag) nameTag.textContent = file.name;
-    if (bar) {
-      bar.classList.remove('is-hidden');
-      bar.style.display = 'flex';
-    }
-  };
-  reader.readAsDataURL(file);
-}
-
-function removeAttachedImage() {
-  CustomerState.attachedImageBase64 = '';
-  CustomerState.attachedImageMime = '';
-  const bar = document.getElementById('attached-image-preview-bar');
-  const input = document.getElementById('chat-file-input');
-  if (bar) {
-    bar.classList.add('is-hidden');
-    bar.style.display = 'none';
-  }
-  if (input) input.value = '';
-}
-
-// Chat Flow
+// ==========================================================================
+// 1. AI CHAT WORKSPACE & GROUNDED RESPONSES
+// ==========================================================================
 function sendQuickPrompt(promptText) {
   switchCustomerView('chat');
   const input = document.getElementById('chat-text-input');
@@ -437,406 +99,6 @@ function sendQuickPrompt(promptText) {
   }
 }
 
-async function handleChatSubmit(event) {
-  if (event) event.preventDefault();
-  const input = document.getElementById('chat-text-input');
-  const query = input.value.trim();
-  if (!query || CustomerState.isStreaming) return;
-
-  input.value = '';
-  autoResizeTextarea(input);
-
-  const hasImage = Boolean(CustomerState.attachedImageBase64);
-  const imgData = CustomerState.attachedImageBase64;
-  const imgMime = CustomerState.attachedImageMime;
-  removeAttachedImage();
-
-  appendChatMessage('user', query, [], null, hasImage ? `data:${imgMime};base64,${imgData}` : null);
-  CustomerState.messages.push({ role: 'user', content: query });
-
-  if (hasImage) {
-    await processVisionClaimQuery(query, imgData, imgMime);
-  } else if (CustomerState.features.enable_streaming) {
-    await processStreamingQuery(query);
-  } else {
-    await processSyncQuery(query);
-  }
-}
-
-async function processVisionClaimQuery(query, imgBase64, mimeType) {
-  const botMsgId = appendChatMessage('assistant', renderThinkingIndicator('Analyzing image and verifying warranty coverage...'));
-  try {
-    const res = await fetch(`${CustomerState.backendUrl}/api/vision/analyze-claim`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        image_base64: imgBase64,
-        claim_description: query,
-        mime_type: mimeType
-      })
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      const verdictHtml = `
-        <div class="verdict-banner-row">
-          <span class="badge ${data.covered ? 'badge-glow-emerald' : 'badge-glow-primary'}">
-            <i class="fa-solid fa-${data.covered ? 'circle-check' : 'triangle-exclamation'}"></i> ${data.claim_verdict || 'Claim Inspection'}
-          </span>
-        </div>
-        <p>${data.recommendation}</p>
-        <div class="verdict-footer-meta">
-          <i class="fa-solid fa-microchip"></i> Inspected via Gemini Vision Multi-Modal Pipeline
-        </div>
-      `;
-      updateChatMessage(botMsgId, verdictHtml);
-      showCitationSources([{ title: 'Section 4: Warranty & Repair Coverage', distance: 0.12 }]);
-    } else {
-      throw new Error('Vision analysis error');
-    }
-  } catch (e) {
-    updateChatMessage(botMsgId, "We received your photo. Our warranty desk will review this under our 1-Year Limited Manufacturer Warranty policy.");
-  }
-}
-
-async function processStreamingQuery(query) {
-  const botMsgId = appendChatMessage('assistant', renderThinkingIndicator('Searching store policies...'));
-  let accumulatedText = '';
-  let sources = [];
-  const historyTurns = CustomerState.messages.slice(0, -1).slice(-6);
-
-  try {
-    const response = await fetch(`${CustomerState.backendUrl}/ask/stream`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: query, language: CustomerState.selectedLanguage, history: historyTurns })
-    });
-
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder('utf-8');
-    let buffer = '';
-    CustomerState.isStreaming = true;
-
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop();
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (line.startsWith('event: sources')) {
-          const dataLine = lines[++i]?.trim();
-          if (dataLine?.startsWith('data:')) {
-            try {
-              const parsed = JSON.parse(dataLine.replace('data:', '').trim());
-              sources = (parsed.sources || []).map((s, idx) => ({ title: s, distance: parsed.distances?.[idx] || 0.15 }));
-              showCitationSources(sources);
-            } catch (err) {}
-          }
-        } else if (line.startsWith('event: token')) {
-          const dataLine = lines[++i]?.trim();
-          if (dataLine?.startsWith('data:')) {
-            try {
-              const tokenData = JSON.parse(dataLine.replace('data:', '').trim());
-              accumulatedText += tokenData.token || '';
-              updateChatMessage(botMsgId, accumulatedText + '<span class="typing-cursor"></span>');
-            } catch (err) {}
-          }
-        } else if (line.startsWith('event: done')) {
-          CustomerState.isStreaming = false;
-        }
-      }
-    }
-    const finalAnswer = accumulatedText || 'I am sorry, but our documentation does not cover that. Please contact support@company.com.';
-    updateChatMessage(botMsgId, finalAnswer);
-    CustomerState.messages.push({ role: 'assistant', content: finalAnswer });
-  } catch (err) {
-    CustomerState.isStreaming = false;
-    await processSyncQuery(query, botMsgId);
-  }
-}
-
-async function processSyncQuery(query, existingMsgId = null) {
-  const botMsgId = existingMsgId || appendChatMessage('assistant', renderThinkingIndicator('Consulting store policies...'));
-  const historyTurns = CustomerState.messages.slice(0, -1).slice(-6);
-  try {
-    const res = await fetch(`${CustomerState.backendUrl}/ask`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: query, language: CustomerState.selectedLanguage, history: historyTurns })
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      updateChatMessage(botMsgId, data.answer);
-      CustomerState.messages.push({ role: 'assistant', content: data.answer });
-      const sources = (data.sources || []).map((s, idx) => ({ title: s, distance: data.distances?.[idx] || 0.2 }));
-      showCitationSources(sources);
-    } else {
-      throw new Error('Sync error');
-    }
-  } catch (err) {
-    const errText = "I am sorry, but our documentation does not cover that. Please contact support@company.com or click 'Speak to Agent' below.";
-    updateChatMessage(botMsgId, errText);
-    CustomerState.messages.push({ role: 'assistant', content: errText });
-  }
-}
-
-// Animated Thinking Indicator for AI Responses
-function renderThinkingIndicator(statusText = 'Searching store policies...') {
-  return `
-    <div class="response-thinking-indicator">
-      <div class="thinking-dots">
-        <span class="thinking-dot"></span>
-        <span class="thinking-dot"></span>
-        <span class="thinking-dot"></span>
-      </div>
-      <span class="thinking-text">${statusText}</span>
-    </div>
-  `;
-}
-
-// Markdown Parser for Grounded AI Responses
-function formatMarkdownContent(rawText) {
-  if (!rawText) return '';
-  if (typeof rawText !== 'string') return String(rawText);
-
-  // If it's a thinking placeholder or custom HTML snippet, pass it through directly
-  if (rawText.includes('response-thinking-indicator') || rawText.includes('verdict-banner-row')) {
-    return rawText;
-  }
-
-  // Preserve typing cursor if present during live SSE streaming
-  let hasCursor = false;
-  let text = rawText;
-  if (text.includes('<span class="typing-cursor"></span>')) {
-    hasCursor = true;
-    text = text.replace('<span class="typing-cursor"></span>', '');
-  }
-
-  // 1. Sanitize HTML entities
-  let html = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-
-  // 2. Headers
-  html = html.replace(/^### (.*$)/gim, '<h4>$1</h4>');
-  html = html.replace(/^## (.*$)/gim, '<h3>$1</h3>');
-
-  // 3. Bold & Italic
-  html = html.replace(/\*\*\*(.*?)\*\*\*/gim, '<strong><em>$1</em></strong>');
-  html = html.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>');
-  html = html.replace(/\*(.*?)\*/gim, '<em>$1</em>');
-  html = html.replace(/__(.*?)__/gim, '<strong>$1</strong>');
-  html = html.replace(/_([^_]+)_/gim, '<em>$1</em>');
-
-  // 4. Inline code
-  html = html.replace(/`([^`]+)`/gim, '<code class="inline-code">$1</code>');
-
-  // 5. Unordered and Ordered Lists
-  const lines = html.split('\n');
-  let inUl = false;
-  let inOl = false;
-  const processedLines = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const ulMatch = line.match(/^\s*[\*\-]\s+(.*)$/);
-    const olMatch = line.match(/^\s*(\d+)\.\s+(.*)$/);
-
-    if (ulMatch) {
-      if (!inUl) {
-        if (inOl) { processedLines.push('</ol>'); inOl = false; }
-        processedLines.push('<ul>');
-        inUl = true;
-      }
-      processedLines.push(`<li>${ulMatch[1]}</li>`);
-    } else if (olMatch) {
-      if (!inOl) {
-        if (inUl) { processedLines.push('</ul>'); inUl = false; }
-        processedLines.push('<ol>');
-        inOl = true;
-      }
-      processedLines.push(`<li>${olMatch[2]}</li>`);
-    } else {
-      if (inUl) { processedLines.push('</ul>'); inUl = false; }
-      if (inOl) { processedLines.push('</ol>'); inOl = false; }
-      processedLines.push(line);
-    }
-  }
-  if (inUl) processedLines.push('</ul>');
-  if (inOl) processedLines.push('</ol>');
-
-  html = processedLines.join('\n');
-
-  // 6. Paragraphs and breaks
-  html = html.replace(/\n\n+/g, '</p><p>');
-  html = html.replace(/\n/g, '<br>');
-  html = `<p>${html}</p>`;
-
-  // Clean redundant wrappers
-  html = html
-    .replace(/<p><\/p>/g, '')
-    .replace(/<p><h([34])>/g, '<h$1>')
-    .replace(/<\/h([34])><\/p>/g, '</h$1>')
-    .replace(/<p><([uo]l)>/g, '<$1>')
-    .replace(/<\/([uo]l)><\/p>/g, '</$1>')
-    .replace(/<br><([uo]l)>/g, '<$1>')
-    .replace(/<\/([uo]l)><br>/g, '</$1>')
-    .replace(/<br><h([34])>/g, '<h$1>')
-    .replace(/<\/h([34])><br>/g, '</h$1>');
-
-  if (hasCursor) {
-    html += '<span class="typing-cursor"></span>';
-  }
-  return html;
-}
-
-function appendChatMessage(role, content, sources = [], latency = null, imageSrc = null) {
-  const feed = document.getElementById('chat-feed');
-  const msgId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-
-  const isThinking = typeof content === 'string' && content.includes('response-thinking-indicator');
-  const row = document.createElement('div');
-  row.className = `chat-msg-row ${role}-msg ${isThinking ? 'is-loading' : ''}`;
-  row.id = msgId;
-
-  const avatar = role === 'assistant' ?
-    `<div class="avatar-badge avatar-assistant"><i class="fa-solid fa-robot"></i></div>` :
-    `<div class="avatar-badge avatar-user"><i class="fa-solid fa-user"></i></div>`;
-
-  const imgHtml = imageSrc ? `<div class="msg-attached-image"><img src="${imageSrc}" alt="Attached photo" class="msg-img-preview"></div>` : '';
-  const formattedContent = role === 'assistant' ? formatMarkdownContent(content) : content;
-
-  row.innerHTML = `
-    ${avatar}
-    <div class="msg-content-wrapper">
-      ${imgHtml}
-      <div class="msg-bubble-content">${formattedContent}</div>
-      ${role === 'assistant' ? `
-      <div class="msg-actions-bar" ${isThinking ? 'style="display: none;"' : ''}>
-        <button type="button" class="msg-btn-action" onclick="copyMessageText(this)"><i class="fa-solid fa-copy"></i> Copy</button>
-        <button type="button" class="msg-btn-action" onclick="speakMessageText(this)"><i class="fa-solid fa-volume-high"></i> Read</button>
-        <button type="button" class="msg-btn-action" onclick="openCsatModal()"><i class="fa-solid fa-star"></i> Rate</button>
-      </div>
-      ` : ''}
-    </div>
-  `;
-
-  feed.appendChild(row);
-  feed.scrollTop = feed.scrollHeight;
-  return msgId;
-}
-
-function updateChatMessage(msgId, content) {
-  const row = document.getElementById(msgId);
-  if (!row) return;
-  const bubble = row.querySelector('.msg-bubble-content');
-  if (bubble) bubble.innerHTML = formatMarkdownContent(content);
-
-  const isThinking = typeof content === 'string' && content.includes('response-thinking-indicator');
-  const actionsBar = row.querySelector('.msg-actions-bar');
-  if (isThinking) {
-    row.classList.add('is-loading');
-    if (actionsBar) actionsBar.style.display = 'none';
-  } else {
-    row.classList.remove('is-loading');
-    if (actionsBar) {
-      actionsBar.style.display = 'flex';
-      actionsBar.style.opacity = '1';
-    }
-  }
-
-  const feed = document.getElementById('chat-feed');
-  if (feed) feed.scrollTop = feed.scrollHeight;
-}
-
-function showCitationSources(sources) {
-  const list = document.getElementById('active-sources-list');
-  if (!list) return;
-
-  if (!sources || sources.length === 0) {
-    list.innerHTML = `
-      <div class="source-placeholder">
-        <i class="fa-solid fa-circle-exclamation text-amber"></i>
-        <span>No direct policy clause matched. Escalation suggested.</span>
-      </div>
-    `;
-    return;
-  }
-
-  list.innerHTML = sources.map(s => `
-    <div class="source-card">
-      <div class="source-card-header">
-        <i class="fa-solid fa-file-circle-check text-primary"></i>
-        <span class="source-title">${s.title}</span>
-      </div>
-      <div class="source-meta-row">
-        <span class="badge badge-glow-emerald badge-font-sm">100% Grounded</span>
-        <span class="source-distance">Distance: ${Number(s.distance || 0.15).toFixed(3)}</span>
-      </div>
-    </div>
-  `).join('');
-}
-
-function clearChatFeed() {
-  const feed = document.getElementById('chat-feed');
-  if (feed) {
-    feed.innerHTML = `
-      <div class="chat-msg-row assistant-msg">
-        <div class="avatar-badge avatar-assistant"><i class="fa-solid fa-robot"></i></div>
-        <div class="msg-content-wrapper">
-          <div class="msg-bubble-content">${formatMarkdownContent(CustomerState.features.welcome_greeting)}</div>
-        </div>
-      </div>
-    `;
-  }
-}
-
-function exportChatTranscript() {
-  const feed = document.getElementById('chat-feed');
-  const rows = feed.querySelectorAll('.chat-msg-row');
-  const transcript = Array.from(rows).map(r => ({
-    sender: r.classList.contains('user-msg') ? 'Customer' : 'OmniDesk AI',
-    text: r.querySelector('.msg-bubble-content')?.innerText || ''
-  }));
-
-  const blob = new Blob([JSON.stringify(transcript, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `omnidesk_support_chat_${Date.now()}.json`;
-  a.click();
-}
-
-function copyMessageText(btn) {
-  const bubble = btn.closest('.msg-content-wrapper').querySelector('.msg-bubble-content');
-  if (bubble) {
-    navigator.clipboard.writeText(bubble.innerText);
-    const orig = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied';
-    setTimeout(() => btn.innerHTML = orig, 1500);
-  }
-}
-
-function speakMessageText(btn) {
-  const bubble = btn.closest('.msg-content-wrapper').querySelector('.msg-bubble-content');
-  if (bubble && 'speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(bubble.innerText);
-    window.speechSynthesis.speak(u);
-  }
-}
-
-function autoResizeTextarea(textarea) {
-  textarea.style.height = 'auto';
-  textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
-}
-
 function handleTextareaKeydown(event) {
   if (event.key === 'Enter' && !event.shiftKey) {
     event.preventDefault();
@@ -844,190 +106,647 @@ function handleTextareaKeydown(event) {
   }
 }
 
-function toggleVoiceInput() {
-  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-    alert('Voice input is not supported in this browser.');
-    return;
-  }
-  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const rec = new SpeechRec();
-  rec.onresult = (e) => {
-    const transcript = e.results[0][0].transcript;
-    const input = document.getElementById('chat-text-input');
-    if (input) {
-      input.value = transcript;
-      autoResizeTextarea(input);
-    }
-  };
-  rec.start();
+function autoResizeTextarea(textarea) {
+  textarea.style.height = 'auto';
+  textarea.style.height = Math.min(textarea.scrollHeight, 140) + 'px';
 }
 
-// Track My Ticket Flow
-async function handleCustomerTicketLookup(event) {
-  event.preventDefault();
-  const input = document.getElementById('lookup-ticket-id-input');
-  const ticketId = input.value.trim().toUpperCase();
-  if (!ticketId) return;
+async function handleChatSubmit(event) {
+  if (event) event.preventDefault();
+  const input = document.getElementById('chat-text-input');
+  const query = input.value.trim();
+  if (!query) return;
+
+  input.value = '';
+  autoResizeTextarea(input);
+
+  // Append User Bubble
+  appendChatMessage('user', query);
+
+  // Loading Indicator
+  const loadingId = 'loading-' + Date.now();
+  appendChatMessage('assistant', '<i class="fa-solid fa-spinner fa-spin"></i> Checking official store policies in ChromaDB...', loadingId);
 
   try {
-    const res = await fetch(`${CustomerState.backendUrl}/api/tickets/public/${ticketId}`);
-    if (res.ok) {
-      const data = await res.json();
-      const ticket = data.ticket || data;
-      CustomerState.activeTicketId = ticket.id;
-      renderCustomerTicketDetails(ticket);
-    } else {
-      alert(`Ticket "${ticketId}" was not found. Please double-check your Ticket ID.`);
-    }
-  } catch (e) {
-    alert('Could not connect to support server. Please check your connection.');
-  }
-}
-
-function renderCustomerTicketDetails(ticket) {
-  const resBox = document.getElementById('customer-ticket-result-box');
-  if (!resBox) return;
-
-  document.getElementById('cust-ticket-id-display').textContent = ticket.id;
-  document.getElementById('cust-ticket-subject-display').textContent = ticket.subject;
-
-  const statusBadge = document.getElementById('cust-ticket-status-badge');
-  if (statusBadge) {
-    statusBadge.textContent = ticket.status;
-    statusBadge.className = `status-badge ${ticket.status.toLowerCase().replace(' ', '-')}`;
-  }
-
-  const slaBadge = document.getElementById('cust-ticket-sla-badge');
-  if (slaBadge && ticket.sla_details) {
-    slaBadge.textContent = `SLA: ${ticket.sla_details.label}`;
-  }
-
-  // Stepper
-  const stepSubmitted = document.getElementById('step-submitted');
-  const stepReview = document.getElementById('step-review');
-  const stepResolved = document.getElementById('step-resolved');
-
-  stepSubmitted.className = 'stepper-step completed';
-  if (ticket.status === 'Resolved') {
-    stepReview.className = 'stepper-step completed';
-    stepResolved.className = 'stepper-step completed active';
-  } else if (ticket.status === 'In Progress') {
-    stepReview.className = 'stepper-step completed active';
-    stepResolved.className = 'stepper-step';
-  } else {
-    stepReview.className = 'stepper-step active';
-    stepResolved.className = 'stepper-step';
-  }
-
-  // Render messages
-  const feed = document.getElementById('cust-ticket-messages-feed');
-  feed.innerHTML = (ticket.messages || []).map(m => `
-    <div class="ticket-msg-item ${m.sender === ticket.customer_name ? 'customer-reply' : 'agent-reply'}">
-      <div class="msg-meta-bar">
-        <strong>${m.sender}</strong>
-        <span>${m.timestamp}</span>
-      </div>
-      <div class="msg-body">${m.text}</div>
-    </div>
-  `).join('');
-
-  resBox.classList.remove('is-hidden');
-  resBox.scrollIntoView({ behavior: 'smooth' });
-}
-
-async function handleCustomerTicketReply(event) {
-  event.preventDefault();
-  const input = document.getElementById('cust-reply-input');
-  const text = input.value.trim();
-  if (!text || !CustomerState.activeTicketId) return;
-
-  try {
-    const res = await fetch(`${CustomerState.backendUrl}/api/tickets/${CustomerState.activeTicketId}/messages`, {
+    const res = await fetch(`${CustomerState.backendUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        sender: 'Customer',
-        text: text,
-        is_internal_note: false
+        query: query,
+        email: 'elena.r@techcorp.io'
       })
     });
 
-    if (res.ok) {
-      input.value = '';
-      const data = await res.json();
-      renderCustomerTicketDetails(data.ticket);
+    const loadingEl = document.getElementById(loadingId);
+    if (loadingEl) loadingEl.remove();
+
+    if (!res.ok) {
+      throw new Error(`API Error (${res.status})`);
     }
-  } catch (e) {
-    alert('Failed to send reply. Please try again.');
+
+    const data = await res.json();
+    const answer = data.answer || data.response || "No response generated.";
+    const sources = data.sources || [];
+    const sections = data.sections || [];
+    const order = data.order;
+    const ticket = data.ticket;
+
+    // Render Assistant Message with Collapsible Verified Sources
+    renderAssistantChatReply(answer, sources, sections, order);
+
+    // If query auto-escalated to a human ticket
+    if (ticket && ticket.id) {
+      handleAutoEscalationTrigger(ticket);
+    }
+
+  } catch (err) {
+    const loadingEl = document.getElementById(loadingId);
+    if (loadingEl) loadingEl.remove();
+    appendChatMessage('assistant', `⚠️ Could not complete inquiry: ${err.message}. Please verify the server is running.`);
   }
 }
 
-// Submit Claim Flow
-function handleClaimPhotoSelect(event) {
-  const file = event.target.files[0];
-  if (!file) return;
+function appendChatMessage(sender, htmlContent, elementId = null) {
+  const feed = document.getElementById('chat-feed');
+  const row = document.createElement('div');
+  row.className = `chat-msg-row ${sender === 'user' ? 'user-msg' : sender === 'agent' ? 'agent-msg' : 'assistant-msg'}`;
+  if (elementId) row.id = elementId;
 
+  const avatar = document.createElement('div');
+  avatar.className = `avatar-badge ${sender === 'user' ? 'avatar-user' : sender === 'agent' ? 'avatar-agent' : 'avatar-assistant'}`;
+  avatar.innerHTML = sender === 'user'
+    ? '<i class="fa-solid fa-user"></i>'
+    : sender === 'agent'
+      ? '<i class="fa-solid fa-headset"></i>'
+      : '<i class="fa-solid fa-robot"></i>';
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'msg-content-wrapper';
+
+  const label = document.createElement('div');
+  label.className = 'msg-sender-label';
+  label.textContent = sender === 'user' ? 'You' : sender === 'agent' ? 'OmniDesk Staff • Live Agent' : 'OmniDesk AI • Policy Assistant';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble-content';
+  bubble.innerHTML = htmlContent;
+
+  wrapper.appendChild(label);
+  wrapper.appendChild(bubble);
+  row.appendChild(avatar);
+  row.appendChild(wrapper);
+
+  feed.appendChild(row);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function renderAssistantChatReply(answer, sources, sections, order) {
+  const feed = document.getElementById('chat-feed');
+  const row = document.createElement('div');
+  row.className = 'chat-msg-row assistant-msg';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar-badge avatar-assistant';
+  avatar.innerHTML = '<i class="fa-solid fa-robot"></i>';
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'msg-content-wrapper';
+
+  const label = document.createElement('div');
+  label.className = 'msg-sender-label';
+  label.textContent = 'OmniDesk AI • Policy Assistant';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble-content';
+  bubble.innerHTML = escapeHtml(answer).replace(/\n/g, '<br>');
+
+  // Order Context Card if present
+  if (order) {
+    const orderBox = document.createElement('div');
+    orderBox.className = 'chat-order-card';
+    orderBox.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong><i class="fa-solid fa-box text-cyan"></i> Order #${order.id}</strong>
+        <span class="status-badge badge-${(order.status || 'shipped').toLowerCase()}">${order.status}</span>
+      </div>
+      <div><strong>Items:</strong> ${escapeHtml(order.items || '')}</div>
+      <div><strong>Tracking:</strong> <code style="color:var(--accent-cyan);">${order.tracking_number || 'N/A'}</code></div>
+    `;
+    bubble.appendChild(orderBox);
+  }
+
+  // Collapsible Verified Sources Box
+  if (sources && sources.length > 0) {
+    const sourcesBox = document.createElement('div');
+    sourcesBox.className = 'verified-sources-box';
+
+    const sourcesToggle = document.createElement('button');
+    sourcesToggle.type = 'button';
+    sourcesToggle.className = 'verified-sources-toggle';
+    sourcesToggle.innerHTML = `
+      <span><i class="fa-solid fa-shield-check"></i> Verified Policy Sources (${sources.length} matched clauses)</span>
+      <i class="fa-solid fa-chevron-down" id="chevron-${Date.now()}"></i>
+    `;
+
+    const sourcesContent = document.createElement('div');
+    sourcesContent.className = 'sources-details-content is-hidden';
+
+    let chipsHtml = '';
+    (sections.length ? sections : sources).forEach(sec => {
+      chipsHtml += `<span class="source-item-chip"><i class="fa-solid fa-file-lines"></i> ${escapeHtml(sec)}</span>`;
+    });
+    sourcesContent.innerHTML = chipsHtml;
+
+    sourcesToggle.onclick = () => {
+      const isClosed = sourcesContent.classList.contains('is-hidden');
+      sourcesContent.classList.toggle('is-hidden');
+      sourcesToggle.querySelector('i.fa-chevron-down, i.fa-chevron-up').className = isClosed ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down';
+    };
+
+    sourcesBox.appendChild(sourcesToggle);
+    sourcesBox.appendChild(sourcesContent);
+    bubble.appendChild(sourcesBox);
+
+    // Update Right Panel Citations
+    updateRightPaneCitations(sources, sections);
+  }
+
+  wrapper.appendChild(label);
+  wrapper.appendChild(bubble);
+  row.appendChild(avatar);
+  row.appendChild(wrapper);
+
+  feed.appendChild(row);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function updateRightPaneCitations(sources, sections) {
+  const container = document.getElementById('active-sources-list');
+  if (!container) return;
+  container.innerHTML = '';
+  const displayList = sections.length ? sections : sources;
+  displayList.slice(0, 3).forEach((item, idx) => {
+    const card = document.createElement('div');
+    card.className = 'source-item-card';
+    card.innerHTML = `
+      <h4>${escapeHtml(item)}</h4>
+      <p style="color:var(--text-dim); font-size:11.5px;">Indexed in ChromaDB vector space. 100% factual policy clause.</p>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function exportChatTranscript() {
+  const feed = document.getElementById('chat-feed');
+  const text = feed.innerText;
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `omnidesk_chat_transcript_${Date.now()}.txt`;
+  a.click();
+}
+
+function clearChatFeed() {
+  const feed = document.getElementById('chat-feed');
+  feed.innerHTML = `
+    <div class="chat-msg-row assistant-msg">
+      <div class="avatar-badge avatar-assistant"><i class="fa-solid fa-robot"></i></div>
+      <div class="msg-content-wrapper">
+        <div class="msg-sender-label">OmniDesk AI • Policy Assistant</div>
+        <div class="msg-bubble-content">
+          New session started. How can I assist you with your orders, returns, warranty, or delivery today?
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ==========================================================================
+// 2. ORDER TRACKING PANEL
+// ==========================================================================
+function quickLookupOrder(orderId) {
+  document.getElementById('order-search-input').value = orderId;
+  lookupOrder(orderId);
+}
+
+async function lookupOrder(explicitId = null, shouldSwitch = true) {
+  const idInput = document.getElementById('order-search-input');
+  const query = (explicitId || idInput.value).trim();
+  if (!query) return;
+
+  if (shouldSwitch) switchCustomerView('orders');
+
+  const container = document.getElementById('order-result-container');
+  container.innerHTML = `<div style="padding:20px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Fetching order details...</div>`;
+
+  try {
+    const isEmail = query.includes('@');
+    const url = isEmail
+      ? `${CustomerState.backendUrl}/api/orders?email=${encodeURIComponent(query)}`
+      : `${CustomerState.backendUrl}/api/orders/${encodeURIComponent(query)}`;
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Order ${query} not found`);
+
+    const data = await res.json();
+    const orders = isEmail ? data.orders : [data.order];
+
+    if (!orders || orders.length === 0) {
+      container.innerHTML = `<div class="order-result-card" style="color:var(--accent-rose);"><i class="fa-solid fa-triangle-exclamation"></i> No orders found for "${query}".</div>`;
+      return;
+    }
+
+    container.innerHTML = '';
+    orders.forEach(order => {
+      const card = document.createElement('div');
+      card.className = 'order-result-card';
+      const stClass = (order.status || 'processing').toLowerCase();
+      card.innerHTML = `
+        <div class="order-header-row">
+          <div>
+            <div class="order-id-title">${order.id}</div>
+            <span style="color: var(--text-dim); font-size: 12px;">Customer: ${escapeHtml(order.customer_name || 'Valued Customer')} • Date: ${order.order_date || 'Recent'}</span>
+          </div>
+          <span class="status-badge badge-${stClass}">${order.status}</span>
+        </div>
+        <div>
+          <strong style="font-size: 13px; color: var(--text-muted);">Items in Order:</strong>
+          <p style="margin-top: 4px; font-size: 13.5px; color: var(--text-main);">${escapeHtml(order.items || 'Standard Product Package')}</p>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-subtle); padding-top:12px;">
+          <div>
+            <span style="color: var(--text-dim); font-size: 12px;">Tracking Number:</span>
+            <span style="font-family: var(--font-mono); color: var(--accent-cyan); font-weight: 600; margin-left: 6px;">${order.tracking_number || 'TRK-Pending'}</span>
+          </div>
+          <div style="font-size: 16px; font-weight: 700; color: #fff;">${order.total || '$0.00'}</div>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+
+  } catch (err) {
+    container.innerHTML = `<div class="order-result-card" style="color:var(--accent-rose);"><i class="fa-solid fa-triangle-exclamation"></i> ${err.message}. Try ORD-1001, ORD-1042, ORD-2024, ORD-5521, or ORD-8841.</div>`;
+  }
+}
+
+// ==========================================================================
+// 3. MY SUPPORT TICKETS & BIDIRECTIONAL LIVE SYNC
+// ==========================================================================
+function lookupCustomerTicket() {
+  const input = document.getElementById('cust-ticket-input');
+  const val = input.value.trim();
+  if (!val) return;
+  loadTicketDetails(val);
+}
+
+async function loadTicketDetails(ticketId) {
+  const box = document.getElementById('cust-ticket-details-box');
+  try {
+    const res = await fetch(`${CustomerState.backendUrl}/api/tickets/${encodeURIComponent(ticketId)}/State`);
+    if (!res.ok) throw new Error(`Ticket ${ticketId} not found`);
+
+    const data = await res.json();
+    const t = data.ticket || data.state;
+    CustomerState.activeTicketId = t.id;
+    CustomerState.activeTicketData = t;
+    localStorage.setItem('omni_active_ticket_id', t.id);
+
+    // Update UI elements
+    document.getElementById('cust-ticket-display-id').textContent = t.id;
+    document.getElementById('cust-ticket-display-subject').textContent = t.subject || t.query;
+
+    const stPill = document.getElementById('cust-ticket-status-pill');
+    stPill.textContent = t.status;
+    stPill.className = `status-badge badge-${t.status === 'Resolved' ? 'delivered' : t.status === 'In Progress' ? 'shipped' : 'processing'}`;
+
+    const slaPill = document.getElementById('cust-ticket-sla-pill');
+    if (t.sla_details) {
+      slaPill.textContent = t.sla_details.label || 'SLA Active';
+    }
+
+    renderTicketConversationStream(t.messages || []);
+    box.classList.remove('is-hidden');
+
+    // Activate live polling
+    updateSyncIndicator(t.id);
+    startLiveTicketPolling(t.id);
+
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+function renderTicketConversationStream(messages) {
+  const stream = document.getElementById('cust-ticket-messages-stream');
+  if (!stream) return;
+  stream.innerHTML = '';
+  CustomerState.lastKnownMessageCount = messages.length;
+
+  messages.forEach(m => {
+    const isStaff = m.sender !== 'Valued Customer' && m.sender !== 'Customer' && !m.sender.toLowerCase().includes('elena') && !m.sender.toLowerCase().includes('user');
+    const msgDiv = document.createElement('div');
+    msgDiv.style.cssText = `
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      line-height: 1.5;
+      background: ${isStaff ? 'rgba(6, 182, 212, 0.12)' : 'var(--bg-surface)'};
+      border: 1px solid ${isStaff ? 'rgba(6, 182, 212, 0.3)' : 'var(--border-subtle)'};
+    `;
+    msgDiv.innerHTML = `
+      <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:11px; color:var(--text-dim);">
+        <strong style="color:${isStaff ? 'var(--accent-cyan)' : 'var(--text-main)'};">${escapeHtml(m.sender)}</strong>
+        <span>${m.timestamp || ''}</span>
+      </div>
+      <div>${escapeHtml(m.text || '')}</div>
+    `;
+    stream.appendChild(msgDiv);
+  });
+  stream.scrollTop = stream.scrollHeight;
+}
+
+async function sendCustomerTicketReply(event) {
+  event.preventDefault();
+  const input = document.getElementById('cust-reply-text');
+  const text = input.value.trim();
+  if (!text || !CustomerState.activeTicketId) return;
+
+  const btn = document.getElementById('btn-cust-reply');
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${CustomerState.backendUrl}/api/tickets/${CustomerState.activeTicketId}/reply`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sender: 'Elena Rostova',
+        text: text
+      })
+    });
+    if (!res.ok) throw new Error('Failed to send reply');
+
+    input.value = '';
+    await loadTicketDetails(CustomerState.activeTicketId);
+  } catch (e) {
+    alert(e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ==========================================================================
+// LIVE SYNC POLLER (WINDOW 1 <-> WINDOW 2)
+// ==========================================================================
+function updateSyncIndicator(ticketId) {
+  const syncBadge = document.getElementById('active-ticket-sync-indicator');
+  const syncLabel = document.getElementById('sync-ticket-label');
+  if (syncBadge && syncLabel) {
+    syncBadge.style.display = 'inline-flex';
+    syncLabel.textContent = `Live Sync: ${ticketId}`;
+  }
+}
+
+function startLiveTicketPolling(ticketId) {
+  if (CustomerState.pollTimer) clearInterval(CustomerState.pollTimer);
+
+  CustomerState.pollTimer = setInterval(async () => {
+    try {
+      const res = await fetch(`${CustomerState.backendUrl}/api/tickets/${ticketId}/State`);
+      if (!res.ok) return;
+
+      const data = await res.json();
+      const t = data.ticket || data.state;
+      const messages = t.messages || [];
+
+      // Check if new agent message arrived
+      if (messages.length > CustomerState.lastKnownMessageCount) {
+        const newMsgs = messages.slice(CustomerState.lastKnownMessageCount);
+        CustomerState.lastKnownMessageCount = messages.length;
+
+        newMsgs.forEach(m => {
+          if (!m.is_internal_note) {
+            // Live toast & chat injection
+            const isAgent = m.sender !== 'Elena Rostova' && m.sender !== 'Customer';
+            if (isAgent) {
+              appendChatMessage('agent', `<strong>[Agent ${escapeHtml(m.sender)}]</strong>: ${escapeHtml(m.text)}`);
+              showLiveEscalationAlert(ticketId, m.sender, m.text);
+            }
+          }
+        });
+
+        // If currently in tickets view, re-render stream
+        if (CustomerState.currentView === 'tickets') {
+          renderTicketConversationStream(messages);
+        }
+      }
+    } catch (e) {
+      // Quiet background poll error
+    }
+  }, 3000);
+}
+
+function showLiveEscalationAlert(ticketId, sender, text) {
+  const banner = document.getElementById('chat-escalation-banner');
+  const title = document.getElementById('escalation-banner-text');
+  const sub = document.getElementById('escalation-banner-sub');
+  if (banner && title && sub) {
+    banner.classList.remove('is-hidden');
+    title.textContent = `New Response from ${sender} (Ticket #${ticketId}):`;
+    sub.textContent = text.slice(0, 120) + (text.length > 120 ? '...' : '');
+  }
+}
+
+function handleAutoEscalationTrigger(ticket) {
+  CustomerState.activeTicketId = ticket.id;
+  localStorage.setItem('omni_active_ticket_id', ticket.id);
+  updateSyncIndicator(ticket.id);
+  startLiveTicketPolling(ticket.id);
+
+  const banner = document.getElementById('chat-escalation-banner');
+  const title = document.getElementById('escalation-banner-text');
+  const sub = document.getElementById('escalation-banner-sub');
+  if (banner && title && sub) {
+    banner.classList.remove('is-hidden');
+    title.textContent = `Support Ticket #${ticket.id} Created:`;
+    sub.textContent = `Assigned Priority: ${ticket.priority || 'Urgent'}. Live sync connected with Admin Console.`;
+  }
+}
+
+// ==========================================================================
+// 4. VISUAL CLAIM INSPECTION & 1-CLICK TICKET FILING
+// ==========================================================================
+function setupDragAndDrop() {
+  const zone = document.getElementById('claim-drop-zone');
+  if (!zone) return;
+
+  ['dragenter', 'dragover'].forEach(name => {
+    zone.addEventListener(name, (e) => {
+      e.preventDefault();
+      zone.classList.add('drag-over');
+    });
+  });
+
+  ['dragleave', 'drop'].forEach(name => {
+    zone.addEventListener(name, (e) => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+    });
+  });
+
+  zone.addEventListener('drop', (e) => {
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      processClaimFile(files[0]);
+    }
+  });
+}
+
+function handleClaimFileSelect(event) {
+  const files = event.target.files;
+  if (files && files.length > 0) {
+    processClaimFile(files[0]);
+  }
+}
+
+function processClaimFile(file) {
   const reader = new FileReader();
   reader.onload = (e) => {
-    document.getElementById('claim-photo-img').src = e.target.result;
-    document.getElementById('claim-photo-preview').classList.remove('is-hidden');
-    document.getElementById('claim-photo-drop-text').textContent = file.name;
+    const result = e.target.result;
+    CustomerState.claimImageBase64 = result.split(',')[1] || '';
+    CustomerState.claimImageMime = file.type || 'image/jpeg';
+
+    const preview = document.getElementById('claim-preview-container');
+    const img = document.getElementById('claim-preview-img');
+    const name = document.getElementById('claim-preview-filename');
+
+    if (preview && img && name) {
+      img.src = result;
+      name.textContent = file.name;
+      preview.classList.remove('is-hidden');
+    }
   };
   reader.readAsDataURL(file);
 }
 
-async function handleCustomerClaimSubmit(event) {
-  event.preventDefault();
-  const name = document.getElementById('claim-cust-name').value.trim();
-  const email = document.getElementById('claim-cust-email').value.trim();
-  const orderNum = document.getElementById('claim-order-num').value.trim();
-  const category = document.getElementById('claim-category-select').value;
-  const subject = document.getElementById('claim-subject-input').value.trim();
-  const desc = document.getElementById('claim-description-input').value.trim();
+function clearClaimAttachment() {
+  CustomerState.claimImageBase64 = '';
+  document.getElementById('claim-preview-container').classList.add('is-hidden');
+  document.getElementById('claim-file-input').value = '';
+}
 
-  const queryPayload = `${category} Claim for Order #${orderNum || 'N/A'}: ${desc}`;
+function handleImageAttachment(event) {
+  const files = event.target.files;
+  if (files && files.length > 0) {
+    processClaimFile(files[0]);
+    switchCustomerView('claim');
+  }
+}
+
+async function submitVisualClaim() {
+  const desc = document.getElementById('claim-desc-input').value.trim();
+  if (!desc) {
+    alert('Please enter a brief explanation of the damage or defect.');
+    return;
+  }
+
+  const btn = document.getElementById('btn-run-vision');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing with Gemini Vision...';
 
   try {
+    const res = await fetch(`${CustomerState.backendUrl}/api/analyze-image`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        claim_description: desc,
+        image_base64: CustomerState.claimImageBase64,
+        mime_type: CustomerState.claimImageMime
+      })
+    });
+
+    if (!res.ok) throw new Error('Vision analysis failed');
+
+    const data = await res.json();
+    CustomerState.claimDiagnosis = data;
+
+    const diagCard = document.getElementById('claim-diagnosis-card');
+    const severityBadge = document.getElementById('diagnosis-severity-badge');
+    const textContent = document.getElementById('diagnosis-text-content');
+
+    const severity = data.severity || 'Medium';
+    severityBadge.textContent = `${severity} Severity`;
+    severityBadge.className = `priority-badge priority-${severity.toLowerCase() === 'high' || severity.toLowerCase() === 'severe' ? 'urgent' : 'medium'}`;
+
+    textContent.innerHTML = `
+      <p><strong>Recommendation:</strong> ${escapeHtml(data.recommendation || 'Proceed with manufacturer warranty replacement.')}</p>
+      <p style="margin-top:8px;"><strong>Rationale:</strong> ${escapeHtml(data.rationale || data.analysis || 'Physical damage consistent with shipping impact. Covered under Section 4: Damaged or Defective Items.')}</p>
+      <p style="margin-top:8px; font-size:12px; color:var(--text-dim);">Estimated Replacement Lead Time: <strong>2 Business Days via Expedited DHL</strong></p>
+    `;
+
+    diagCard.classList.remove('is-hidden');
+    diagCard.scrollIntoView({ behavior: 'smooth' });
+
+  } catch (e) {
+    alert(`Vision inspection error: ${e.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-brain"></i> Inspect Damage with Gemini Vision';
+  }
+}
+
+async function filePriorityReplacementTicket() {
+  const desc = document.getElementById('claim-desc-input').value.trim();
+  const btn = document.getElementById('btn-file-replacement');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Filing Ticket...';
+
+  try {
+    const diag = CustomerState.claimDiagnosis || {};
+    const queryPayload = `[Visual Claim Inspection] Damage: ${desc}. Diagnosis: ${diag.recommendation || 'Approved replacement'}. Rationale: ${diag.rationale || 'Warranty verified'}`;
+
     const res = await fetch(`${CustomerState.backendUrl}/api/tickets`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        customer_name: name,
-        customer_email: email,
-        customer_tier: 'Standard Retail',
-        subject: subject,
-        query: queryPayload,
-        intent: category,
-        priority: 'High'
+        customer_name: 'Elena Rostova',
+        customer_email: 'elena@enterprise.org',
+        customer_tier: 'VIP Enterprise',
+        priority: 'Urgent',
+        subject: 'Warranty Claim: Hardware Replacement Needed',
+        query: queryPayload
       })
     });
 
-    if (res.ok) {
-      const data = await res.json();
-      const ticket = data.ticket;
-      alert(`Thank you, ${name}! Your claim has been submitted. Your tracking Ticket ID is ${ticket.id}.`);
-      document.getElementById('customer-claim-form').reset();
-      document.getElementById('claim-photo-preview').classList.add('is-hidden');
+    if (!res.ok) throw new Error('Ticket submission failed');
 
-      // Switch to ticket tracking view
-      switchCustomerView('tickets');
-      document.getElementById('lookup-ticket-id-input').value = ticket.id;
-      CustomerState.activeTicketId = ticket.id;
-      renderCustomerTicketDetails(ticket);
-    }
+    const data = await res.json();
+    const t = data.ticket;
+    CustomerState.activeTicketId = t.id;
+    localStorage.setItem('omni_active_ticket_id', t.id);
+
+    // Switch to tickets view immediately
+    switchCustomerView('tickets');
+    document.getElementById('cust-ticket-input').value = t.id;
+    await loadTicketDetails(t.id);
+
+    alert(`Priority Replacement Ticket #${t.id} filed successfully! Live agent queue has been notified.`);
   } catch (e) {
-    alert('Failed to submit claim. Please try again.');
+    alert(e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-box-open"></i> File Priority Replacement Ticket';
   }
 }
 
-// Escalation Modal
+// ==========================================================================
+// HUMAN ESCALATION MODAL
+// ==========================================================================
 function openHumanEscalationModal() {
-  const modal = document.getElementById('escalation-modal');
-  if (modal) modal.classList.remove('is-hidden');
+  document.getElementById('escalation-modal').classList.remove('is-hidden');
 }
+
 function closeHumanEscalationModal() {
-  const modal = document.getElementById('escalation-modal');
-  if (modal) modal.classList.add('is-hidden');
+  document.getElementById('escalation-modal').classList.add('is-hidden');
 }
 
 async function handleEscalationModalSubmit(event) {
@@ -1035,8 +754,7 @@ async function handleEscalationModalSubmit(event) {
   const name = document.getElementById('esc-name').value.trim();
   const email = document.getElementById('esc-email').value.trim();
   const priority = document.getElementById('esc-priority').value;
-
-  const chatSnippet = Array.from(document.querySelectorAll('#chat-feed .chat-msg-row')).map(r => r.innerText).join('\n').slice(0, 800);
+  const query = document.getElementById('esc-query').value.trim();
 
   try {
     const res = await fetch(`${CustomerState.backendUrl}/api/tickets`, {
@@ -1045,67 +763,33 @@ async function handleEscalationModalSubmit(event) {
       body: JSON.stringify({
         customer_name: name,
         customer_email: email,
-        customer_tier: 'Standard Retail',
-        subject: `Live Chat Escalation (${name})`,
-        query: `Customer requested human agent assistance. Chat Context:\n${chatSnippet}`,
-        priority: priority
+        customer_tier: 'VIP Enterprise',
+        priority: priority,
+        subject: `Live Escalation: ${query.slice(0, 40)}...`,
+        query: query
       })
     });
 
-    if (res.ok) {
-      const data = await res.json();
-      closeHumanEscalationModal();
-      appendChatMessage('assistant', `A human support specialist has been assigned to your inquiry (Ticket ID: **${data.ticket.id}**). You will receive an email update at ${email} shortly.`);
-    }
+    if (!res.ok) throw new Error('Failed to create ticket');
+
+    const data = await res.json();
+    const t = data.ticket;
+
+    closeHumanEscalationModal();
+    handleAutoEscalationTrigger(t);
+    appendChatMessage('assistant', `✅ Ticket <strong>#${t.id}</strong> has been escalated to our human support desk with <strong>${priority}</strong> priority. An agent is reviewing your inquiry.`);
+
   } catch (e) {
-    alert('Could not escalate ticket. Please try again.');
+    alert(e.message);
   }
 }
 
-// CSAT Modal
-let currentCsatRating = 5;
-function openCsatModal() {
-  if (CustomerState.features.enable_csat_popup) {
-    const modal = document.getElementById('csat-modal');
-    if (modal) modal.classList.remove('is-hidden');
-  }
+// Utility: Escape HTML
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
-function closeCsatModal() {
-  const modal = document.getElementById('csat-modal');
-  if (modal) modal.classList.add('is-hidden');
-}
-function setCsatRating(num) {
-  currentCsatRating = num;
-  const stars = document.querySelectorAll('#star-rating-container .star-btn');
-  stars.forEach((s, idx) => {
-    if (idx < num) s.classList.add('active');
-    else s.classList.remove('active');
-  });
-}
-
-async function submitCsatFeedback() {
-  const comment = document.getElementById('csat-comment-input').value.trim();
-  try {
-    await fetch(`${CustomerState.backendUrl}/api/feedback`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        rating: currentCsatRating,
-        is_positive: currentCsatRating >= 4,
-        comment: comment,
-        language: CustomerState.selectedLanguage
-      })
-    });
-    closeCsatModal();
-    alert('Thank you for rating our support assistant!');
-  } catch (e) {
-    closeCsatModal();
-  }
-}
-
-function toggleThemeMode() {
-  if (window.ClayEngine) {
-    window.ClayEngine.toggleMode();
-  }
-}
-

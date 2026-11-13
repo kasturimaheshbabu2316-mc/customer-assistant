@@ -1,81 +1,143 @@
 /* ==========================================================================
-   OMNIDESK AI - ADMIN & UX CONTROL CENTER CONTROLLER (admin.js)
-   Dedicated to UX Feature Toggles, Knowledge Base Vector Studio,
-   Agent Escalation Queue, Copilot Replies, and Telemetry.
+   OMNIDESK AI — ADMIN & AGENT COMMAND CENTER CONTROLLER (admin.js)
+   Synchronized Desktop-First Two-Window UI (Window 2)
+   Features: Inline Auth Gate, Top KPI Ribbon, Live Ticket Table,
+   Agent Takeover Drawer with Copilot/Macros, Internal RAG Policy Studio.
    ========================================================================== */
 
 const AdminState = {
-  currentView: 'ux',
-  backendUrl: localStorage.getItem('omni_backend_url') || (window.location.origin.startsWith('http') && !window.location.port.match(/^(5500|3000|5173)$/) ? window.location.origin : 'http://localhost:8000'),
+  currentView: 'tickets',
+  backendUrl: window.location.origin.startsWith('http') && !window.location.port.match(/^(5500|3000|5173)$/)
+    ? window.location.origin
+    : 'http://127.0.0.1:8000',
   apiKey: localStorage.getItem('omni_admin_key') || 'admin-secret-key-2026',
+  token: localStorage.getItem('omni_admin_token') || '',
   isAuthenticated: false,
-  activeTicketFilter: 'all',
+  activeFilter: 'all',
   tickets: [],
-  kbChunks: []
+  selectedTicket: null,
+  pollTimer: null
 };
 
-// Initialize Admin Console
+// ==========================================================================
+// INITIALIZATION
+// ==========================================================================
 document.addEventListener('DOMContentLoaded', async () => {
   checkExistingAuth();
-  await checkBackendHealth();
   if (AdminState.isAuthenticated) {
-    loadAllAdminData();
+    await loadAllAdminData();
+    startAdminAutoRefresh();
   }
 });
 
-// Authentication Gate
+// Authentication Gate Check
 function checkExistingAuth() {
-  const savedKey = localStorage.getItem('omni_admin_key');
   const savedToken = localStorage.getItem('omni_admin_token');
+  const savedKey = localStorage.getItem('omni_admin_key');
   const authGate = document.getElementById('admin-auth-gate');
-  if (savedKey || savedToken) {
-    AdminState.apiKey = savedKey || savedToken;
+
+  if (savedToken || savedKey) {
+    AdminState.token = savedToken || savedKey;
     AdminState.isAuthenticated = true;
     if (authGate) authGate.classList.add('is-hidden');
   } else {
-    // Redirect unauthenticated staff to Developer Gateway
-    window.location.href = 'admin-login.html';
+    // Show inline modal gate — NEVER redirect to admin-login.html
+    AdminState.isAuthenticated = false;
+    if (authGate) authGate.classList.remove('is-hidden');
   }
 }
 
 async function handleAdminLogin(event) {
   event.preventDefault();
-  const inputKey = document.getElementById('admin-key-input').value.trim();
-  if (!inputKey) return;
+  const input = document.getElementById('admin-passcode-input');
+  const errorEl = document.getElementById('admin-auth-error');
+  const passcode = input.value.trim();
+  if (!passcode) return;
 
-  AdminState.apiKey = inputKey;
-  localStorage.setItem('omni_admin_key', inputKey);
-  AdminState.isAuthenticated = true;
-  const authGate = document.getElementById('admin-auth-gate');
-  if (authGate) authGate.classList.add('is-hidden');
-  await loadAllAdminData();
+  try {
+    const res = await fetch(`${AdminState.backendUrl}/api/admin/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: passcode })
+    });
+
+    if (!res.ok) {
+      throw new Error('Invalid administrator passcode. Please try again.');
+    }
+
+    const data = await res.json();
+    const token = data.token || data.access_token || passcode;
+    AdminState.token = token;
+    AdminState.apiKey = token;
+    AdminState.isAuthenticated = true;
+    localStorage.setItem('omni_admin_token', token);
+    localStorage.setItem('omni_admin_key', token);
+
+    const authGate = document.getElementById('admin-auth-gate');
+    if (authGate) authGate.classList.add('is-hidden');
+    if (errorEl) errorEl.style.display = 'none';
+
+    await loadAllAdminData();
+    startAdminAutoRefresh();
+    showToast('Admin Console Authenticated');
+  } catch (err) {
+    if (errorEl) {
+      errorEl.textContent = err.message;
+      errorEl.style.display = 'block';
+    }
+  }
 }
 
 function adminLogout() {
-  localStorage.removeItem('omni_admin_key');
   localStorage.removeItem('omni_admin_token');
-  localStorage.removeItem('omni_admin_email');
+  localStorage.removeItem('omni_admin_key');
   AdminState.isAuthenticated = false;
-  window.location.href = 'admin-login.html';
+  if (AdminState.pollTimer) clearInterval(AdminState.pollTimer);
+
+  const authGate = document.getElementById('admin-auth-gate');
+  if (authGate) authGate.classList.remove('is-hidden');
+  showToast('Admin Console Locked');
 }
 
+function getAuthHeaders() {
+  const h = { 'Content-Type': 'application/json' };
+  if (AdminState.token) {
+    h['Authorization'] = `Bearer ${AdminState.token}`;
+    h['X-API-Key'] = AdminState.token;
+  }
+  return h;
+}
+
+// Master Data Loader
 async function loadAllAdminData() {
-  await loadFeatureSettings();
-  await loadKnowledgeBaseChunks();
-  await loadAdminTickets();
-  await loadAnalyticsData();
-  await loadPipelineSettings();
+  await Promise.all([
+    loadTelemetry(),
+    loadAdminTickets(),
+    loadRagStatus(),
+    loadAuditLogs()
+  ]);
 }
 
-// Navigation
+function startAdminAutoRefresh() {
+  if (AdminState.pollTimer) clearInterval(AdminState.pollTimer);
+  AdminState.pollTimer = setInterval(() => {
+    if (AdminState.isAuthenticated) {
+      loadTelemetry(true);
+      loadAdminTickets(true);
+    }
+  }, 4000);
+}
+
+// ==========================================================================
+// NAVIGATION CONTROLLER
+// ==========================================================================
 function switchAdminView(viewName) {
   AdminState.currentView = viewName;
   const viewMap = {
-    'ux': { id: 'admin-view-ux', btn: 'btn-admin-nav-ux', title: 'UX & Feature Studio' },
-    'kb': { id: 'admin-view-kb', btn: 'btn-admin-nav-kb', title: 'Knowledge Base Studio' },
-    'tickets': { id: 'admin-view-tickets', btn: 'btn-admin-nav-tickets', title: 'Escalation & Agent Desk' },
+    'tickets': { id: 'admin-view-tickets', btn: 'btn-admin-nav-tickets', title: 'Live Tickets & Agent Takeover Console' },
+    'rag': { id: 'admin-view-rag', btn: 'btn-admin-nav-rag', title: 'Internal RAG Policy Manager' },
     'analytics': { id: 'admin-view-analytics', btn: 'btn-admin-nav-analytics', title: 'Deflection & CSAT Telemetry' },
-    'settings': { id: 'admin-view-settings', btn: 'btn-admin-nav-settings', title: 'RAG Pipeline Settings' }
+    'settings': { id: 'admin-view-settings', btn: 'btn-admin-nav-settings', title: 'Pipeline & Guardrail Settings' }
   };
 
   Object.values(viewMap).forEach(v => {
@@ -85,7 +147,7 @@ function switchAdminView(viewName) {
     if (btn) btn.classList.remove('active');
   });
 
-  const active = viewMap[viewName] || viewMap['ux'];
+  const active = viewMap[viewName] || viewMap['tickets'];
   const activeEl = document.getElementById(active.id);
   const activeBtn = document.getElementById(active.btn);
   const titleEl = document.getElementById('admin-current-view-title');
@@ -95,602 +157,486 @@ function switchAdminView(viewName) {
   if (titleEl) titleEl.textContent = active.title;
 
   if (viewName === 'tickets') loadAdminTickets();
-  if (viewName === 'analytics') loadAnalyticsData();
-  if (viewName === 'kb') loadKnowledgeBaseChunks();
-
-  if (window.innerWidth <= 768) {
-    const sidebar = document.getElementById('app-sidebar');
-    if (sidebar) sidebar.classList.remove('mobile-open');
-  }
+  if (viewName === 'rag') loadRagStatus();
+  if (viewName === 'analytics') loadAuditLogs();
 }
 
-function toggleAppSidebar() {
-  const sidebar = document.getElementById('app-sidebar');
-  if (sidebar) sidebar.classList.toggle('mobile-open');
-}
-
-// Health Check
-async function checkBackendHealth() {
-  const dot = document.getElementById('sidebar-status-dot');
-  const txt = document.getElementById('sidebar-status-text');
+// ==========================================================================
+// 1. TOP KPI TELEMETRY RIBBON
+// ==========================================================================
+async function loadTelemetry(silent = false) {
   try {
-    const res = await fetch(`${AdminState.backendUrl}/health`);
-    if (res.ok) {
-      if (dot) dot.style.backgroundColor = 'var(--accent-emerald)';
-      if (txt) txt.textContent = 'Admin Connected';
-    }
-  } catch (e) {
-    if (dot) dot.style.backgroundColor = 'var(--accent-amber)';
-    if (txt) txt.textContent = 'Backend Offline';
-  }
-}
-
-// ==============================================================================
-// 1. UX & FEATURE CONFIGURATION ENGINE
-// ==============================================================================
-async function loadFeatureSettings() {
-  try {
-    const res = await fetch(`${AdminState.backendUrl}/api/features`);
-    if (res.ok) {
-      const f = await res.json();
-      document.getElementById('feat-enable-streaming').checked = Boolean(f.enable_streaming);
-      document.getElementById('feat-enable-vision').checked = Boolean(f.enable_vision_upload);
-      document.getElementById('feat-enable-language').checked = Boolean(f.enable_multi_language);
-      document.getElementById('feat-enable-faq-chips').checked = Boolean(f.enable_faq_chips);
-      document.getElementById('feat-enable-csat').checked = Boolean(f.enable_csat_popup);
-      document.getElementById('feat-enable-ticket-lookup').checked = Boolean(f.enable_ticket_lookup);
-      document.getElementById('feat-enable-announcement').checked = Boolean(f.enable_announcement_banner);
-      document.getElementById('feat-auto-escalate-vip').checked = Boolean(f.auto_escalate_vip);
-
-      if (f.announcement_banner_text) {
-        document.getElementById('feat-announcement-text').value = f.announcement_banner_text;
-      }
-      if (f.welcome_greeting) {
-        document.getElementById('feat-welcome-greeting').value = f.welcome_greeting;
-      }
-      if (f.theme_mode) {
-        document.getElementById('feat-theme-mode').value = f.theme_mode;
-      }
-    }
-  } catch (e) {
-    console.warn('Could not load features from backend:', e);
-  }
-}
-
-async function saveFeatureSettings() {
-  const payload = {
-    enable_streaming: document.getElementById('feat-enable-streaming').checked,
-    enable_vision_upload: document.getElementById('feat-enable-vision').checked,
-    enable_multi_language: document.getElementById('feat-enable-language').checked,
-    enable_faq_chips: document.getElementById('feat-enable-faq-chips').checked,
-    enable_csat_popup: document.getElementById('feat-enable-csat').checked,
-    enable_ticket_lookup: document.getElementById('feat-enable-ticket-lookup').checked,
-    enable_announcement_banner: document.getElementById('feat-enable-announcement').checked,
-    auto_escalate_vip: document.getElementById('feat-auto-escalate-vip').checked,
-    announcement_banner_text: document.getElementById('feat-announcement-text').value.trim(),
-    welcome_greeting: document.getElementById('feat-welcome-greeting').value.trim(),
-    theme_mode: document.getElementById('feat-theme-mode').value
-  };
-
-  try {
-    const res = await fetch(`${AdminState.backendUrl}/api/features`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': AdminState.apiKey
-      },
-      body: JSON.stringify(payload)
+    const res = await fetch(`${AdminState.backendUrl}/api/metrics`, {
+      headers: getAuthHeaders()
     });
+    if (!res.ok) return;
 
-    if (res.ok) {
-      if (window.ClayTheme && typeof window.ClayTheme.setTheme === 'function') {
-        window.ClayTheme.setTheme(payload.theme_mode.replace('clay_', ''));
-      }
-      alert('🎉 UX & Feature configuration updated successfully! Claymorphism palette applied.');
-    } else {
-      const err = await res.json();
-      alert(`Error updating features: ${err.detail || 'Unauthorized'}`);
+    const data = await res.json();
+    const metrics = data.metrics || {};
+
+    const elTotal = document.getElementById('kpi-total-tickets');
+    const elOpen = document.getElementById('kpi-open-tickets');
+    const elRate = document.getElementById('kpi-deflection-rate');
+    const elCsat = document.getElementById('kpi-avg-csat');
+    const elSections = document.getElementById('kpi-indexed-sections');
+
+    if (elTotal) elTotal.textContent = metrics.total_tickets || data.total_queries || '150+';
+    if (elOpen) elOpen.textContent = metrics.open_tickets || '4';
+    if (elRate) elRate.textContent = `${data.deflection_rate || 88.4}%`;
+    if (elCsat) elCsat.textContent = `${data.avg_csat || 4.9} / 5.0`;
+
+    // Fetch chunk count
+    const ragRes = await fetch(`${AdminState.backendUrl}/api/rag/status`);
+    if (ragRes.ok) {
+      const ragData = await ragRes.json();
+      if (elSections) elSections.textContent = `${ragData.total_chunks || 6} Chunks`;
     }
+
   } catch (e) {
-    alert('Failed to save feature configuration. Please check backend connection.');
+    if (!silent) console.warn('Telemetry load failed:', e);
   }
 }
 
-// ==============================================================================
-// 2. KNOWLEDGE BASE STUDIO (ChromaDB Vector Management)
-// ==============================================================================
-async function loadKnowledgeBaseChunks() {
+// ==========================================================================
+// 2. LIVE TICKET & TAKEOVER CONSOLE
+// ==========================================================================
+async function loadAdminTickets(silent = false) {
   try {
-    const res = await fetch(`${AdminState.backendUrl}/api/kb/chunks`);
-    if (res.ok) {
-      const data = await res.json();
-      AdminState.kbChunks = data.chunks || [];
-      document.getElementById('kb-total-chunks-count').textContent = data.total || AdminState.kbChunks.length;
-      renderKbChunksGrid();
-    }
-  } catch (e) {
-    console.warn('Could not load KB chunks:', e);
-  }
-}
-
-function renderKbChunksGrid() {
-  const grid = document.getElementById('kb-chunks-grid');
-  if (!grid) return;
-
-  grid.innerHTML = AdminState.kbChunks.map(c => `
-    <div class="kb-chunk-card">
-      <div class="chunk-card-header">
-        <span class="badge badge-glow-primary badge-font-sm">${c.id}</span>
-        <button type="button" class="btn-icon btn-sm kb-card-delete-btn" onclick="deletePolicyChunk('${c.id}')" title="Delete chunk from ChromaDB" aria-label="Delete chunk from ChromaDB">
-          <i class="fa-solid fa-trash-can"></i>
-        </button>
-      </div>
-      <h4 class="chunk-card-title">${c.title}</h4>
-      <p class="chunk-card-content">${c.content}</p>
-      <div class="chunk-card-meta">
-        <span><i class="fa-solid fa-file-lines"></i> ${c.source || 'company_faq.txt'}</span>
-        <span><i class="fa-solid fa-layer-group"></i> ${c.tokens || 60} tokens</span>
-      </div>
-    </div>
-  `).join('');
-}
-
-function openAddPolicyModal() {
-  const modal = document.getElementById('add-policy-modal');
-  if (modal) {
-    modal.classList.remove('is-hidden');
-    modal.classList.add('open');
-  }
-}
-function closeAddPolicyModal() {
-  const modal = document.getElementById('add-policy-modal');
-  if (modal) {
-    modal.classList.add('is-hidden');
-    modal.classList.remove('open');
-  }
-}
-
-async function handleAddPolicySubmit(event) {
-  event.preventDefault();
-  const title = document.getElementById('new-policy-title').value.trim();
-  const content = document.getElementById('new-policy-content').value.trim();
-
-  try {
-    const res = await fetch(`${AdminState.backendUrl}/api/kb/add`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': AdminState.apiKey
-      },
-      body: JSON.stringify({ title: title, content: content, source: 'custom_policy.txt' })
+    const res = await fetch(`${AdminState.backendUrl}/api/tickets`, {
+      headers: getAuthHeaders()
     });
+    if (!res.ok) return;
 
-    if (res.ok) {
-      closeAddPolicyModal();
-      document.getElementById('new-policy-title').value = '';
-      document.getElementById('new-policy-content').value = '';
-      alert(`Clause "${title}" successfully vectorized and indexed into ChromaDB!`);
-      await loadKnowledgeBaseChunks();
-    } else {
-      alert('Failed to vectorize policy. Check Admin API key.');
+    const data = await res.json();
+    AdminState.tickets = data.tickets || [];
+
+    // Update sidebar badge
+    const badge = document.getElementById('admin-sidebar-ticket-count');
+    const openCount = AdminState.tickets.filter(t => t.status === 'Open').length;
+    if (badge) {
+      badge.textContent = openCount;
+      badge.style.display = openCount > 0 ? 'inline-block' : 'none';
     }
+
+    renderTicketsTable();
   } catch (e) {
-    alert('Error connecting to backend.');
+    if (!silent) console.warn('Tickets load failed:', e);
   }
 }
 
-async function deletePolicyChunk(chunkId) {
-  if (!confirm(`Are you sure you want to remove chunk ${chunkId} from the vector store?`)) return;
+function filterAdminTickets(filter, btn) {
+  AdminState.activeFilter = filter;
+  document.querySelectorAll('#admin-view-tickets .chip-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderTicketsTable();
+}
 
-  try {
-    const res = await fetch(`${AdminState.backendUrl}/api/kb/chunks/${chunkId}`, {
-      method: 'DELETE',
-      headers: { 'X-API-Key': AdminState.apiKey }
-    });
+function renderTicketsTable() {
+  const tbody = document.getElementById('admin-tickets-table-body');
+  const label = document.getElementById('tickets-count-label');
+  if (!tbody) return;
 
-    if (res.ok) {
-      await loadKnowledgeBaseChunks();
-    } else {
-      alert('Delete failed. Please check Admin API key.');
-    }
-  } catch (e) {
-    alert('Backend connection error.');
+  let list = AdminState.tickets;
+  if (AdminState.activeFilter === 'Urgent') {
+    list = list.filter(t => t.priority === 'Urgent' || t.priority === 'High');
+  } else if (AdminState.activeFilter !== 'all') {
+    list = list.filter(t => t.status === AdminState.activeFilter);
   }
-}
 
-async function resetDefaultKnowledgeBase() {
-  if (!confirm('Re-index knowledge base from default documentation files?')) return;
-  try {
-    const res = await fetch(`${AdminState.backendUrl}/api/kb/reset`, {
-      method: 'POST',
-      headers: { 'X-API-Key': AdminState.apiKey }
-    });
-    if (res.ok) {
-      alert('Knowledge base re-indexed successfully into ChromaDB!');
-      await loadKnowledgeBaseChunks();
-    }
-  } catch (e) {
-    alert('Re-index failed.');
-  }
-}
+  if (label) label.textContent = `Showing ${list.length} of ${AdminState.tickets.length} tickets`;
 
-function exportKnowledgeBaseJson() {
-  window.open(`${AdminState.backendUrl}/api/kb/export`, '_blank');
-}
-
-// ==============================================================================
-// 3. ESCALATION & AGENT DESK
-// ==============================================================================
-async function loadAdminTickets() {
-  try {
-    const res = await fetch(`${AdminState.backendUrl}/api/tickets`);
-    if (res.ok) {
-      const data = await res.json();
-      AdminState.tickets = data.tickets || [];
-      const badge = document.getElementById('admin-ticket-badge');
-      const openCount = AdminState.tickets.filter(t => t.status === 'Open').length;
-      if (badge) badge.textContent = openCount;
-      renderAdminTicketsList();
-    }
-  } catch (e) {
-    console.warn('Could not load tickets:', e);
-  }
-}
-
-function filterAdminTickets(status, btnEl) {
-  AdminState.activeTicketFilter = status;
-  document.querySelectorAll('.tickets-filter-bar .filter-chip').forEach(b => b.classList.remove('active'));
-  if (btnEl) btnEl.classList.add('active');
-  renderAdminTicketsList();
-}
-
-function renderAdminTicketsList() {
-  const container = document.getElementById('admin-tickets-container');
-  if (!container) return;
-
-  const filtered = AdminState.tickets.filter(t => {
-    if (AdminState.activeTicketFilter === 'all') return true;
-    return t.status === AdminState.activeTicketFilter;
-  });
-
-  if (filtered.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state-card">
-        <i class="fa-solid fa-ticket empty-state-icon"></i>
-        <p>No tickets found in category "${AdminState.activeTicketFilter}".</p>
-      </div>
+  if (list.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align:center; padding:30px; color:var(--text-dim);">
+          No tickets found matching "${AdminState.activeFilter}".
+        </td>
+      </tr>
     `;
     return;
   }
 
-  container.innerHTML = filtered.map(t => {
-    const isVip = t.customer_tier && t.customer_tier.includes('VIP');
-    const sla = t.sla_details || { label: 'SLA Active', badge_status: 'normal' };
-    const messages = t.messages || [];
-
-    return `
-      <div class="ticket-card ${isVip ? 'vip-ticket-glow' : ''}" id="card-${t.id}">
-        <div class="ticket-top-row">
-          <div class="ticket-id-tag">
-            <strong>${t.id}</strong>
-            <span class="customer-tag">${t.customer_name} (${t.customer_tier || 'Standard Retail'})</span>
-          </div>
-          <div class="ticket-status-pill-wrap">
-            <span class="badge ${sla.badge_status === 'breached' ? 'badge-glow-rose' : 'badge-glow-amber'}">
-              <i class="fa-solid fa-stopwatch"></i> ${sla.label}
-            </span>
-            <span class="status-badge ${t.status.toLowerCase().replace(' ', '-')}">${t.status}</span>
-          </div>
-        </div>
-
-        <h4 class="ticket-subject-title">${t.subject}</h4>
-        <p class="ticket-query-text">${t.query}</p>
-
-        <!-- Message Thread -->
-        <div class="ticket-thread-box">
-          ${messages.map(m => `
-            <div class="thread-msg-item ${m.is_internal_note ? 'internal-staff-note' : (m.sender === t.customer_name ? 'customer-msg' : 'agent-msg')}">
-              <div class="thread-msg-meta">
-                <span>${m.is_internal_note ? '🔒 Staff Note (' + m.sender + ')' : m.sender}</span>
-                <span>${m.timestamp}</span>
-              </div>
-              <div class="thread-msg-text">${m.text}</div>
-            </div>
-          `).join('')}
-        </div>
-
-        <!-- Copilot & Agent Actions Area -->
-        <div class="agent-actions-panel">
-          <div class="copilot-btn-group">
-            <button type="button" class="btn btn-secondary btn-sm" onclick="suggestCopilotReply('${t.id}')">
-              <i class="fa-solid fa-wand-magic-sparkles text-primary"></i> Suggest AI Copilot Draft
-            </button>
-            <div class="macro-dropdown-wrap">
-              <select onchange="applyMacro('${t.id}', this.value); this.value='';" class="form-select btn-sm macro-select-control" title="Apply 1-click response macro" aria-label="Apply 1-click response macro">
-                <option value="">⚡ Apply 1-Click Macro...</option>
-                <option value="macro_return_rma">📦 30-Day Return RMA</option>
-                <option value="macro_warranty_claim">🛡️ 1-Year Warranty Intake</option>
-                <option value="macro_price_match">💳 Price Match Credit</option>
-                <option value="macro_intl_ddp">✈️ International DHL Details</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Suggested Draft Box -->
-          <div id="copilot-draft-${t.id}" class="copilot-draft-box is-hidden">
-            <div class="copilot-draft-header">
-              <span><i class="fa-solid fa-robot text-cyan"></i> AI Copilot Grounded Suggestion:</span>
-              <button type="button" class="btn-text-link" onclick="insertDraftIntoReply('${t.id}')">Insert into Reply</button>
-            </div>
-            <p id="copilot-draft-text-${t.id}" class="copilot-draft-content"></p>
-          </div>
-
-          <!-- Owner & Staff Reply Composer -->
-          <div class="agent-reply-composer">
-            <div class="agent-reply-header">
-              <span class="agent-reply-title">
-                <i class="fa-solid fa-user-shield text-primary"></i> Owner &amp; Support Response Desk
-              </span>
-              <span class="agent-reply-hint">
-                <i class="fa-solid fa-globe text-cyan"></i> Sent directly to Customer's Live Ticket Thread
-              </span>
-            </div>
-            <textarea id="agent-reply-text-${t.id}" class="form-textarea owner-reply-textarea" rows="5" placeholder="Type official resolution, return instructions, or staff response for customer..." title="Type agent reply" aria-label="Type agent reply"></textarea>
-            <div class="agent-reply-controls">
-              <label for="is-note-${t.id}" class="agent-note-checkbox-label">
-                <input type="checkbox" id="is-note-${t.id}" title="Toggle confidential staff note" aria-label="Toggle confidential staff note" onchange="toggleStaffNoteVisual('${t.id}', this.checked)">
-                <span>🔒 Confidential Staff Note (Internal Only)</span>
-              </label>
-              <div class="btn-group-sm">
-                <button type="button" class="btn btn-outline btn-sm" onclick="updateTicketStatus('${t.id}', 'Resolved')">
-                  <i class="fa-solid fa-check"></i> Mark Resolved
-                </button>
-                <button type="button" class="btn btn-primary btn-sm btn-glow" onclick="sendAgentMessage('${t.id}')">
-                  <i class="fa-solid fa-paper-plane"></i> Send Official Response
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-async function suggestCopilotReply(ticketId) {
-  const box = document.getElementById(`copilot-draft-${ticketId}`);
-  const txt = document.getElementById(`copilot-draft-text-${ticketId}`);
-  if (box && txt) {
-    box.classList.remove('is-hidden');
-    txt.innerHTML = '<span class="typing-cursor">Synthesizing grounded response with verified citations...</span>';
-  }
-
-  try {
-    const res = await fetch(`${AdminState.backendUrl}/api/tickets/${ticketId}/suggest-reply`, { method: 'POST' });
-    if (res.ok) {
-      const data = await res.json();
-      txt.textContent = data.suggested_reply;
+  tbody.innerHTML = '';
+  list.forEach(t => {
+    const tr = document.createElement('tr');
+    if (AdminState.selectedTicket && AdminState.selectedTicket.id === t.id) {
+      tr.className = 'row-selected';
     }
+
+    const pClass = (t.priority || 'medium').toLowerCase();
+    const stClass = t.status === 'Resolved' ? 'delivered' : t.status === 'In Progress' ? 'shipped' : 'processing';
+    const slaText = t.sla_details ? t.sla_details.label : 'SLA Active';
+
+    tr.innerHTML = `
+      <td><strong style="color:#fff; font-family:var(--font-mono);">${t.id}</strong></td>
+      <td>
+        <div style="font-weight:600; color:var(--text-main);">${escapeHtml(t.customer_name || 'Customer')}</div>
+        <div style="font-size:11px; color:var(--text-dim);">${escapeHtml(t.customer_email || '')}</div>
+      </td>
+      <td>
+        <div style="font-weight:500; color:#fff;">${escapeHtml(t.subject || 'Inquiry')}</div>
+        <div style="font-size:12px; color:var(--text-muted);">${escapeHtml((t.query || '').slice(0, 60))}${t.query && t.query.length > 60 ? '...' : ''}</div>
+      </td>
+      <td><span class="priority-badge priority-${pClass}">${t.priority || 'Medium'}</span></td>
+      <td><span class="status-badge badge-${stClass}">${t.status || 'Open'}</span></td>
+      <td><span style="font-size:11.5px; font-family:var(--font-mono); color:var(--accent-cyan);">${slaText}</span></td>
+      <td style="text-align:right;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="openTakeoverDrawer('${t.id}')">
+          <i class="fa-solid fa-headset text-cyan"></i> Takeover
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ==========================================================================
+// 3. AGENT TAKEOVER DRAWER
+// ==========================================================================
+async function openTakeoverDrawer(ticketId) {
+  const drawer = document.getElementById('agent-takeover-drawer');
+  drawer.classList.add('is-open');
+
+  try {
+    const res = await fetch(`${AdminState.backendUrl}/api/tickets/${encodeURIComponent(ticketId)}/State`, {
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) throw new Error('Failed to load ticket state');
+
+    const data = await res.json();
+    const t = data.ticket || data.state;
+    AdminState.selectedTicket = t;
+
+    // Populate drawer elements
+    document.getElementById('drawer-ticket-id').textContent = t.id;
+    document.getElementById('drawer-customer-name').textContent = t.customer_name || 'Customer';
+    document.getElementById('drawer-customer-email').textContent = t.customer_email || '';
+    document.getElementById('drawer-subject').textContent = t.subject || t.query;
+
+    const pBadge = document.getElementById('drawer-priority-badge');
+    const pClass = (t.priority || 'medium').toLowerCase();
+    pBadge.textContent = t.priority || 'Medium';
+    pBadge.className = `priority-badge priority-${pClass}`;
+
+    const stPill = document.getElementById('drawer-status-pill');
+    stPill.textContent = t.status || 'Open';
+    stPill.className = `status-badge badge-${t.status === 'Resolved' ? 'delivered' : t.status === 'In Progress' ? 'shipped' : 'processing'}`;
+
+    const slaLabel = document.getElementById('drawer-sla-label');
+    if (slaLabel && t.sla_details) {
+      slaLabel.textContent = t.sla_details.label || 'SLA Met';
+    }
+
+    const stSelect = document.getElementById('drawer-status-select');
+    if (stSelect) stSelect.value = t.status || 'Open';
+
+    renderDrawerMessages(t.messages || []);
+    renderTicketsTable();
+
   } catch (e) {
-    txt.textContent = "Could not generate copilot suggestion. Please check Gemini API key.";
+    showToast(e.message, 'error');
   }
 }
 
-function insertDraftIntoReply(ticketId) {
-  const draftTxt = document.getElementById(`copilot-draft-text-${ticketId}`)?.textContent || '';
-  const replyInput = document.getElementById(`agent-reply-text-${ticketId}`);
-  if (replyInput) replyInput.value = draftTxt;
+function closeTakeoverDrawer() {
+  document.getElementById('agent-takeover-drawer').classList.remove('is-open');
+  AdminState.selectedTicket = null;
+  renderTicketsTable();
 }
 
-async function applyMacro(ticketId, macroId) {
-  if (!macroId) return;
+function renderDrawerMessages(messages) {
+  const stream = document.getElementById('drawer-messages-stream');
+  if (!stream) return;
+  stream.innerHTML = '';
+
+  messages.forEach(m => {
+    const isStaff = m.sender !== 'Elena Rostova' && m.sender !== 'Customer' && !m.sender.toLowerCase().includes('user');
+    const isNote = Boolean(m.is_internal_note);
+
+    const div = document.createElement('div');
+    div.style.cssText = `
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 12.5px;
+      line-height: 1.5;
+      background: ${isNote ? 'rgba(245, 158, 11, 0.1)' : isStaff ? 'rgba(99, 102, 241, 0.12)' : 'var(--bg-surface)'};
+      border: 1px solid ${isNote ? 'rgba(245, 158, 11, 0.3)' : isStaff ? 'var(--primary-border)' : 'var(--border-subtle)'};
+    `;
+
+    div.innerHTML = `
+      <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:11px;">
+        <strong style="color:${isNote ? 'var(--accent-amber)' : isStaff ? 'var(--primary-light)' : '#fff'};">
+          ${isNote ? '<i class="fa-solid fa-lock"></i> Staff Note • ' : ''}${escapeHtml(m.sender)}
+        </strong>
+        <span style="color:var(--text-dim);">${m.timestamp || ''}</span>
+      </div>
+      <div>${escapeHtml(m.text || '')}</div>
+    `;
+    stream.appendChild(div);
+  });
+  stream.scrollTop = stream.scrollHeight;
+}
+
+async function generateCopilotReply() {
+  if (!AdminState.selectedTicket) return;
+  const btn = document.getElementById('btn-generate-copilot');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...';
+
   try {
-    const res = await fetch(`${AdminState.backendUrl}/api/tickets/${ticketId}/apply-macro`, {
+    const res = await fetch(`${AdminState.backendUrl}/api/tickets/${AdminState.selectedTicket.id}/suggest-reply`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) throw new Error('Copilot drafting failed');
+
+    const data = await res.json();
+    const draft = data.suggested_reply || data.draft || '';
+    document.getElementById('drawer-reply-text').value = draft;
+    showToast('Copilot draft generated');
+  } catch (e) {
+    showToast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Generate Draft';
+  }
+}
+
+async function applyMacro(macroId) {
+  if (!AdminState.selectedTicket) return;
+  try {
+    const res = await fetch(`${AdminState.backendUrl}/api/tickets/${AdminState.selectedTicket.id}/apply-macro`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
       body: JSON.stringify({ macro_id: macroId, sender: 'Support Specialist' })
     });
-    if (res.ok) {
-      await loadAdminTickets();
-    }
+    if (!res.ok) throw new Error('Macro application failed');
+
+    const data = await res.json();
+    document.getElementById('drawer-reply-text').value = data.applied_text || '';
+    showToast('Macro template applied');
   } catch (e) {
-    alert('Failed to apply macro.');
+    showToast(e.message, 'error');
   }
 }
 
-function toggleStaffNoteVisual(ticketId, isNote) {
-  const box = document.getElementById(`agent-reply-text-${ticketId}`);
-  if (!box) return;
-  if (isNote) {
-    box.classList.add('staff-note-active');
-    box.placeholder = "🔒 Internal confidential note (NOT visible to customer)...";
-  } else {
-    box.classList.remove('staff-note-active');
-    box.placeholder = "Type official resolution, return instructions, or staff response for customer...";
-  }
-}
-
-async function sendAgentMessage(ticketId) {
-  const textInput = document.getElementById(`agent-reply-text-${ticketId}`);
-  const isNoteInput = document.getElementById(`is-note-${ticketId}`);
+async function sendAgentReply() {
+  if (!AdminState.selectedTicket) return;
+  const textInput = document.getElementById('drawer-reply-text');
   const text = textInput.value.trim();
-  const isNote = Boolean(isNoteInput?.checked);
+  const isNote = document.getElementById('drawer-is-internal-note').checked;
+  const newStatus = document.getElementById('drawer-status-select').value;
   if (!text) return;
 
+  const btn = document.getElementById('btn-drawer-send-reply');
+  btn.disabled = true;
+
   try {
-    const res = await fetch(`${AdminState.backendUrl}/api/tickets/${ticketId}/messages`, {
+    const res = await fetch(`${AdminState.backendUrl}/api/tickets/${AdminState.selectedTicket.id}/reply`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({
-        sender: isNote ? 'Staff Specialist' : 'OmniDesk Agent',
+        sender: 'Support Specialist',
         text: text,
-        is_internal_note: isNote
+        is_internal_note: isNote,
+        status: newStatus
       })
     });
 
-    if (res.ok) {
-      textInput.value = '';
-      if (isNoteInput) isNoteInput.checked = false;
-      await loadAdminTickets();
-    }
+    if (!res.ok) throw new Error('Failed to post reply');
+
+    textInput.value = '';
+    showToast(isNote ? 'Internal note added' : 'Reply sent to customer');
+
+    // Reload ticket details
+    await openTakeoverDrawer(AdminState.selectedTicket.id);
+    await loadAdminTickets(true);
   } catch (e) {
-    alert('Failed to send message.');
+    showToast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
   }
 }
 
-async function updateTicketStatus(ticketId, status) {
+// ==========================================================================
+// 4. INTERNAL RAG POLICY MANAGER
+// ==========================================================================
+async function loadRagStatus() {
+  const list = document.getElementById('rag-chunks-list');
+  const editor = document.getElementById('rag-policy-editor');
+  const pathLabel = document.getElementById('rag-kb-path-label');
+  if (!list) return;
+
   try {
-    const res = await fetch(`${AdminState.backendUrl}/api/tickets/${ticketId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: status })
+    const res = await fetch(`${AdminState.backendUrl}/api/rag/status`, {
+      headers: getAuthHeaders()
     });
-    if (res.ok) {
-      await loadAdminTickets();
-    }
-  } catch (e) {
-    alert('Status update failed.');
-  }
-}
+    if (!res.ok) return;
 
-function exportTicketsData(format) {
-  window.open(`${AdminState.backendUrl}/api/tickets/export?format=${format}`, '_blank');
-}
+    const data = await res.json();
+    if (pathLabel) pathLabel.textContent = `Path: ${data.kb_path || 'knowledge_base/company_faq.txt'} (${data.total_chunks} chunks)`;
 
-// ==============================================================================
-// 4. DEFLECTION & ANALYTICS
-// ==============================================================================
-async function loadAnalyticsData() {
-  try {
-    const res = await fetch(`${AdminState.backendUrl}/api/analytics`);
-    if (res.ok) {
-      const data = await res.json();
-      document.getElementById('stat-deflection-rate').textContent = `${data.deflection_rate || 88.4}%`;
-      document.getElementById('stat-avg-latency').textContent = `${Number((data.avg_latency_s || 0.42) * 1000).toFixed(0)}ms`;
-      document.getElementById('stat-csat-score').textContent = `${data.csat_score || 4.85} / 5.0`;
-      document.getElementById('stat-csat-pos-percent').textContent = `${data.csat_positive_percent || 96.2}%`;
-
-      // Render audit logs
-      const tbody = document.getElementById('admin-audit-logs-body');
-      if (tbody && data.audit_logs) {
-        tbody.innerHTML = data.audit_logs.map(l => `
-          <tr>
-            <td>${l.timestamp}</td>
-            <td><strong>${l.query}</strong></td>
-            <td><span class="badge ${l.status.includes('100% Grounded') ? 'badge-glow-emerald' : 'badge-glow-rose'}">${l.status}</span></td>
-            <td>${l.distance || 0.0}</td>
-            <td>${l.matched || 'None'}</td>
-            <td>${l.latency_ms || 0}ms</td>
-          </tr>
-        `).join('');
-      }
-
-      // Render webhooks
-      const whContainer = document.getElementById('admin-webhooks-list');
-      if (whContainer && data.recent_webhooks) {
-        whContainer.innerHTML = data.recent_webhooks.map(w => `
-          <div class="webhook-log-item">
-            <div>
-              <div class="webhook-log-title">
-                <span class="badge badge-glow-${w.severity === 'high' ? 'rose' : 'primary'}">${w.severity.toUpperCase()}</span>
-                ${w.title}
-              </div>
-              <div class="webhook-log-dest">${w.destination} • ${w.timestamp}</div>
-            </div>
-            <span class="badge badge-glow-emerald"><i class="fa-solid fa-check"></i> Delivered</span>
-          </div>
-        `).join('');
+    // Fetch raw policy text if empty
+    if (editor && !editor.value) {
+      const polRes = await fetch(`${AdminState.backendUrl}/api/admin/rag-upload`, {
+        headers: getAuthHeaders()
+      });
+      if (polRes.ok) {
+        const polData = await polRes.json();
+        editor.value = polData.content || '';
       }
     }
-  } catch (e) {
-    console.warn('Could not load analytics:', e);
-  }
-}
 
-async function triggerTestWebhookAlert() {
-  try {
-    const res = await fetch(`${AdminState.backendUrl}/api/webhooks/test`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
+    // Render chunk preview cards
+    const chunks = data.sample_chunks || [
+      { id: 'chunk_0', title: '1. RETURN AND EXCHANGE POLICY' },
+      { id: 'chunk_1', title: '2. SHIPPING AND DELIVERY' },
+      { id: 'chunk_2', title: '3. ORDER MODIFICATION & CANCELLATION' },
+      { id: 'chunk_3', title: '4. DAMAGED OR DEFECTIVE ITEMS' },
+      { id: 'chunk_4', title: '5. ACCOUNT, BILLING & PROMOTIONS' },
+      { id: 'chunk_5', title: '6. CUSTOMER SUPPORT ESCALATION & HOURS' }
+    ];
+
+    list.innerHTML = '';
+    chunks.forEach((c, idx) => {
+      const card = document.createElement('div');
+      card.style.cssText = `
+        padding: 10px 12px;
+        background: var(--bg-surface-elevated);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      `;
+      card.innerHTML = `
+        <div>
+          <strong style="color:#fff; font-size:13px;">${escapeHtml(c.title || c.section || `Section #${idx + 1}`)}</strong>
+          <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Indexed Vector Chunk #${idx}</div>
+        </div>
+        <span class="status-badge badge-delivered" style="font-size:10px;">ChromaDB Ready</span>
+      `;
+      list.appendChild(card);
     });
-    if (res.ok) {
-      alert('🔔 Simulated incident alert delivered to Slack / PagerDuty channel!');
-      await loadAnalyticsData();
-    }
+
   } catch (e) {
-    alert('Webhook delivery test failed.');
+    console.warn('RAG status failed:', e);
   }
 }
 
-async function runSyntheticStressBenchmark() {
-  alert('🚀 Starting synthetic RAG benchmark suite across multiple query types and languages...');
-  try {
-    const res = await fetch(`${AdminState.backendUrl}/api/benchmark/simulate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ num_queries: 8 })
-    });
-    if (res.ok) {
-      const b = await res.json();
-      alert(`✅ Synthetic Benchmark Complete!\nQPS: ${b.qps} | P50: ${b.latency_p50_ms}ms | Accuracy: ${b.guardrail_accuracy_percent}%`);
-      await loadAnalyticsData();
-    }
-  } catch (e) {
-    alert('Benchmark execution error.');
-  }
-}
+function handleRagFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
 
-// ==============================================================================
-// 5. RAG PIPELINE SETTINGS
-// ==============================================================================
-async function loadPipelineSettings() {
-  try {
-    const res = await fetch(`${AdminState.backendUrl}/api/settings`);
-    if (res.ok) {
-      const s = await res.json();
-      document.getElementById('setting-threshold-slider').value = s.guardrail_threshold || 1.2;
-      document.getElementById('setting-threshold-val').textContent = s.guardrail_threshold || 1.2;
-      document.getElementById('setting-topk-slider').value = s.top_k_chunks || 2;
-      document.getElementById('setting-topk-val').textContent = s.top_k_chunks || 2;
-      document.getElementById('setting-gen-model').value = s.generation_model || 'gemini-1.5-flash';
-      document.getElementById('setting-system-prompt').value = s.system_instruction || '';
-    }
-  } catch (e) {
-    console.warn('Could not load pipeline settings:', e);
-  }
-}
-
-async function savePipelineSettings() {
-  const payload = {
-    guardrail_threshold: parseFloat(document.getElementById('setting-threshold-slider').value),
-    top_k_chunks: parseInt(document.getElementById('setting-topk-slider').value),
-    generation_model: document.getElementById('setting-gen-model').value,
-    system_instruction: document.getElementById('setting-system-prompt').value.trim()
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('rag-policy-editor').value = e.target.result;
+    showToast(`Loaded ${file.name} into editor`);
   };
+  reader.readAsText(file);
+}
+
+async function uploadAndReindexPolicy() {
+  const editor = document.getElementById('rag-policy-editor');
+  const text = editor.value.trim();
+  if (!text) {
+    alert('Please enter or paste policy content.');
+    return;
+  }
+
+  const btn = document.getElementById('btn-reindex-rag');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Re-Indexing in ChromaDB...';
 
   try {
-    const res = await fetch(`${AdminState.backendUrl}/api/settings`, {
+    const res = await fetch(`${AdminState.backendUrl}/api/admin/rag-upload`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': AdminState.apiKey
-      },
-      body: JSON.stringify(payload)
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ content: text })
     });
 
-    if (res.ok) {
-      alert('Pipeline settings saved successfully!');
-    } else {
-      alert('Error updating settings. Check Admin API key.');
-    }
+    if (!res.ok) throw new Error('Re-indexing failed');
+
+    const data = await res.json();
+    showToast(`ChromaDB Re-Indexed: ${data.total_chunks || 6} sections active`);
+    await loadRagStatus();
+    await loadTelemetry(true);
   } catch (e) {
-    alert('Failed to save pipeline settings.');
+    showToast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Re-Index in ChromaDB';
   }
 }
 
-function toggleThemeMode() {
-  if (window.ClayEngine) {
-    window.ClayEngine.toggleMode();
+// ==========================================================================
+// 5. AUDIT LOGS & ANALYTICS
+// ==========================================================================
+async function loadAuditLogs() {
+  const tbody = document.getElementById('audit-log-table-body');
+  if (!tbody) return;
+
+  try {
+    const res = await fetch(`${AdminState.backendUrl}/api/metrics`, {
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) return;
+
+    const data = await res.json();
+    const audits = data.audit_logs || [];
+
+    if (audits.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-dim);">No audit logs yet.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = '';
+    audits.slice(0, 10).forEach(a => {
+      const tr = document.createElement('tr');
+      const isDeflected = (a.status || '').includes('Resolved');
+      tr.innerHTML = `
+        <td style="color:var(--text-dim); font-size:12px;">${a.timestamp || 'Recent'}</td>
+        <td style="font-weight:500; color:#fff;">${escapeHtml(a.query || '')}</td>
+        <td><span class="status-badge ${isDeflected ? 'badge-delivered' : 'badge-processing'}">${a.status}</span></td>
+        <td style="font-family:var(--font-mono); color:var(--accent-cyan);">${a.distance != null ? a.distance : '0.42'}</td>
+        <td style="color:var(--text-muted); font-size:12px;">${escapeHtml(a.matched || 'company_faq.txt')}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+  } catch (e) {
+    console.warn('Audit logs load failed:', e);
   }
 }
 
+// ==========================================================================
+// TOAST NOTIFICATION UTILITY
+// ==========================================================================
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `
+    <i class="fa-solid ${type === 'error' ? 'fa-triangle-exclamation text-rose' : 'fa-circle-check text-emerald'}"></i>
+    <span>${escapeHtml(message)}</span>
+  `;
+
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
+
+// Utility: Escape HTML
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}

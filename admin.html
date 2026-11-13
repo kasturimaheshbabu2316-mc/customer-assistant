@@ -3,54 +3,47 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin &amp; UX Control Center | OmniDesk AI</title>
-  <meta name="description" content="Dedicated UX Feature Controls, Knowledge Base Studio, Agent Escalation Desk, and Telemetry Center for OmniDesk AI.">
-  <link rel="stylesheet" href="css/style.css?v=2.5">
+  <title>OmniDesk AI — Admin &amp; Agent Command Center (Window 2)</title>
+  <meta name="description" content="Synchronized Live Ticket &amp; Takeover Console, Internal RAG Policy Studio, and Executive KPI Telemetry.">
+  <link rel="stylesheet" href="css/style.css?v=5.0">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
-<body class="body-noscroll">
+<body>
 
-  <!-- Ambient Glow -->
-  <div class="bg-ambient-glow" aria-hidden="true">
-    <div class="glow-orb glow-orb-1 orb-app-top"></div>
-    <div class="glow-orb glow-orb-2 orb-app-bottom"></div>
-  </div>
-
-  <!-- Admin Auth Gate (Protected Access) -->
-  <div id="admin-auth-gate" class="admin-auth-overlay">
-    <div class="admin-auth-card">
-      <div class="brand-icon-box brand-icon-sm admin-auth-brand-box">
-        <i class="fa-solid fa-lock"></i>
+  <!-- =========================================================================
+       INLINE ADMIN AUTHENTICATION GATE (No external redirect)
+       ========================================================================= -->
+  <div id="admin-auth-gate" class="modal-overlay is-hidden">
+    <div class="modal-box" style="max-width: 420px; border-color: var(--primary-border);">
+      <div class="modal-header" style="background: var(--bg-surface-elevated);">
+        <span><i class="fa-solid fa-lock text-cyan"></i> Authenticate Admin Console</span>
       </div>
-      <h2 class="admin-auth-heading">UX &amp; Admin Console</h2>
-      <p class="admin-auth-desc">
-        Restricted access for UX design team, support managers, and administrators.
-      </p>
-      <form onsubmit="handleAdminLogin(event)">
-        <div class="form-group admin-auth-group">
-          <label for="admin-key-input" class="form-label">Admin Key / UX Passcode</label>
-          <input type="password" id="admin-key-input" class="form-input" placeholder="Enter secret API key (default: admin-secret-key-2026)" autocomplete="current-password" required>
-        </div>
-        <button type="submit" class="btn btn-primary btn-lg admin-auth-btn" id="btn-admin-unlock">
-          <i class="fa-solid fa-unlock"></i> Authenticate &amp; Access
-        </button>
-        <button type="button" class="btn btn-secondary btn-sm admin-auth-btn admin-auth-autofill-btn" onclick="document.getElementById('admin-key-input').value='admin-secret-key-2026'; document.getElementById('btn-admin-unlock').click();">
-          <i class="fa-solid fa-key text-cyan"></i> Auto-Fill Default Key &amp; Unlock
-        </button>
-      </form>
-      <div class="admin-auth-back-wrap">
-        <a href="app.html" class="admin-auth-back-link">
-          <i class="fa-solid fa-arrow-left"></i> Return to Customer Portal
-        </a>
+      <div class="modal-body">
+        <p style="color: var(--text-muted); font-size: 13px;">Enter the administrator passcode to access live human takeover, RAG policy studio, and customer telemetry.</p>
+        <form onsubmit="handleAdminLogin(event)">
+          <div class="form-group">
+            <label for="admin-passcode-input" class="form-label">Admin Passcode / API Key</label>
+            <input type="password" id="admin-passcode-input" class="form-input" placeholder="admin-secret-key-2026" autocomplete="current-password" required>
+          </div>
+          <div id="admin-auth-error" style="color:var(--accent-rose); font-size:12px; display:none;"></div>
+          <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+            <button type="submit" class="btn btn-primary btn-lg" id="btn-admin-submit-login">
+              <i class="fa-solid fa-unlock"></i> Authenticate &amp; Unlock
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('admin-passcode-input').value='admin-secret-key-2026'; document.getElementById('btn-admin-submit-login').click();">
+              <i class="fa-solid fa-key text-cyan"></i> Auto-Fill Default Key
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
 
   <div class="app-layout">
-    <!-- Left Navigation Sidebar -->
+    <!-- LEFT SIDEBAR -->
     <aside class="app-sidebar" id="app-sidebar">
       <a href="index.html" class="sidebar-brand">
-        <div class="brand-icon-box brand-icon-sm brand-icon-admin">
+        <div class="brand-icon-box brand-icon-admin">
           <i class="fa-solid fa-sliders"></i>
         </div>
         <span>OmniDesk<span class="brand-secondary-text">Admin</span></span>
@@ -59,471 +52,340 @@
       <!-- Navigation Views List -->
       <ul class="sidebar-nav">
         <li>
-          <button type="button" class="sidebar-item-btn active" id="btn-admin-nav-ux" onclick="switchAdminView('ux')">
-            <i class="fa-solid fa-wand-magic-sparkles"></i>
-            <span>UX &amp; Feature Studio</span>
-          </button>
-        </li>
-        <li>
-          <button type="button" class="sidebar-item-btn" id="btn-admin-nav-kb" onclick="switchAdminView('kb')">
-            <i class="fa-solid fa-book-bookmark"></i>
-            <span>Knowledge Base Studio</span>
-          </button>
-        </li>
-        <li>
-          <button type="button" class="sidebar-item-btn" id="btn-admin-nav-tickets" onclick="switchAdminView('tickets')">
+          <button type="button" class="sidebar-item-btn active" id="btn-admin-nav-tickets" onclick="switchAdminView('tickets')">
             <i class="fa-solid fa-ticket"></i>
-            <span>Escalation &amp; Agent Desk</span>
-            <span class="sidebar-badge-count" id="admin-ticket-badge">0</span>
+            <span>Live Tickets &amp; Takeover</span>
+            <span class="sidebar-badge-count" id="admin-sidebar-ticket-count">0</span>
+          </button>
+        </li>
+        <li>
+          <button type="button" class="sidebar-item-btn" id="btn-admin-nav-rag" onclick="switchAdminView('rag')">
+            <i class="fa-solid fa-book-bookmark"></i>
+            <span>RAG Policy Manager</span>
           </button>
         </li>
         <li>
           <button type="button" class="sidebar-item-btn" id="btn-admin-nav-analytics" onclick="switchAdminView('analytics')">
             <i class="fa-solid fa-chart-pie"></i>
-            <span>Deflection &amp; Analytics</span>
+            <span>Deflection &amp; CSAT</span>
           </button>
         </li>
         <li>
           <button type="button" class="sidebar-item-btn" id="btn-admin-nav-settings" onclick="switchAdminView('settings')">
             <i class="fa-solid fa-gears"></i>
-            <span>RAG Pipeline Settings</span>
+            <span>Pipeline Settings</span>
           </button>
         </li>
       </ul>
 
       <!-- Sidebar Footer -->
       <div class="sidebar-footer">
+        <a href="app.html" target="_blank" class="sidebar-btn-ext" title="Open Window 1 (Customer Support Portal) in a new tab">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          <span>Open Window 1 (Customer)</span>
+        </a>
+
         <div class="backend-status-pill">
-          <div class="nav-actions">
-            <span class="pulse-dot" id="sidebar-status-dot"></span>
-            <span id="sidebar-status-text" class="status-text">Admin Connected</span>
+          <div>
+            <span class="pulse-dot" id="admin-status-dot"></span>
+            <span id="admin-status-text" class="status-text">Admin Connected</span>
           </div>
-          <button type="button" class="btn-icon status-btn-refresh" onclick="checkBackendHealth()" title="Refresh connection" aria-label="Refresh connection">
+          <button type="button" class="btn-icon" onclick="loadAllAdminData()" title="Refresh telemetry" aria-label="Refresh telemetry">
             <i class="fa-solid fa-rotate-right"></i>
           </button>
         </div>
 
-        <a href="app.html" class="btn btn-secondary btn-sm sidebar-btn-back">
-          <i class="fa-solid fa-eye"></i> View Customer Portal
-        </a>
-        <button type="button" class="btn btn-outline btn-sm sidebar-btn-back sidebar-btn-admin-discrete" onclick="adminLogout()">
-          <i class="fa-solid fa-right-from-bracket"></i> Lock Console
+        <button type="button" class="btn btn-outline btn-sm" onclick="adminLogout()">
+          <i class="fa-solid fa-lock"></i> Lock Console
         </button>
       </div>
     </aside>
 
-    <!-- Main Admin Workspace Area -->
-    <div class="app-main">
-      <!-- Topbar Header -->
+    <!-- MAIN ADMIN WORKSPACE AREA -->
+    <main class="app-main">
+      <!-- TOPBAR -->
       <header class="app-topbar">
         <div class="topbar-title-wrap">
-          <button type="button" class="btn-icon mobile-menu-btn mobile-nav-toggle" id="app-sidebar-toggle" onclick="toggleAppSidebar()" title="Toggle Sidebar" aria-label="Toggle Sidebar">
-            <i class="fa-solid fa-bars"></i>
-          </button>
-          <div class="topbar-view-title" id="admin-current-view-title">UX &amp; Feature Studio</div>
-          <span class="badge badge-glow-primary" id="model-indicator-badge">
-            <i class="fa-solid fa-lock-open"></i> UX Admin Mode
+          <h1 class="topbar-view-title" id="admin-current-view-title">Live Tickets &amp; Agent Takeover Console</h1>
+          <span class="topbar-badge" style="background: rgba(6,182,212,0.12); color: var(--accent-cyan); border-color: rgba(6,182,212,0.3);">
+            <i class="fa-solid fa-shield-halved"></i> Window 2: Command Center
           </span>
         </div>
 
         <div class="topbar-actions">
-          <a href="app.html" target="_blank" class="btn btn-secondary btn-sm" title="Open Customer UI in new tab">
-            <i class="fa-solid fa-arrow-up-right-from-square"></i> Preview Customer Portal
+          <button type="button" class="btn btn-secondary btn-sm" onclick="loadAdminTickets()" title="Refresh ticket list">
+            <i class="fa-solid fa-rotate-right"></i> Refresh Queue
+          </button>
+          <a href="app.html" target="_blank" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-external-link"></i> Launch Customer UI
           </a>
         </div>
       </header>
 
-      <!-- =========================================================================
-           VIEW 1: UX & FEATURE CONTROLS STUDIO
-           ========================================================================= -->
-      <div class="app-view-container active-view" id="admin-view-ux">
-        <div class="view-header-bar">
-          <div>
-            <h2 class="view-title"><i class="fa-solid fa-wand-magic-sparkles text-primary"></i> UX &amp; Feature Configuration Studio</h2>
-            <p class="view-subtitle">Enable, disable, and tune customer-facing features in real time without redeploying code.</p>
-          </div>
-          <button type="button" class="btn btn-primary" onclick="saveFeatureSettings()">
-            <i class="fa-solid fa-floppy-disk"></i> Save Feature Changes
-          </button>
+      <!-- TOP KPI TELEMETRY RIBBON -->
+      <section class="kpi-telemetry-ribbon" id="kpi-ribbon">
+        <div class="kpi-card">
+          <span class="kpi-title">Total Tickets</span>
+          <div class="kpi-val" id="kpi-total-tickets">--</div>
+          <span style="font-size:11px; color:var(--text-dim);">All-time support tickets</span>
         </div>
-
-        <!-- Feature Flags Toggles Grid -->
-        <div class="ux-features-grid">
-          <!-- Toggle 1: SSE Streaming -->
-          <div class="ux-feature-card">
-            <div class="ux-feature-info">
-              <div class="ux-feature-title">
-                <i class="fa-solid fa-bolt text-amber"></i> Real-time SSE Token Streaming
-              </div>
-              <p class="ux-feature-desc">Stream AI tokens word-by-word into customer chat for sub-second perceived latency.</p>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="feat-enable-streaming" title="Toggle real-time SSE token streaming" aria-label="Toggle real-time SSE token streaming" checked>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-
-          <!-- Toggle 2: Vision Image Claim Inspection -->
-          <div class="ux-feature-card">
-            <div class="ux-feature-info">
-              <div class="ux-feature-title">
-                <i class="fa-solid fa-camera text-cyan"></i> Multi-Modal Vision Claim Uploads
-              </div>
-              <p class="ux-feature-desc">Allow customers to attach defect photos/receipts with instant Gemini Vision pre-inspection.</p>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="feat-enable-vision" title="Toggle multi-modal vision claim uploads" aria-label="Toggle multi-modal vision claim uploads" checked>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-
-          <!-- Toggle 3: Multi-Language Selector -->
-          <div class="ux-feature-card">
-            <div class="ux-feature-info">
-              <div class="ux-feature-title">
-                <i class="fa-solid fa-globe text-primary"></i> Multi-Language Selector
-              </div>
-              <p class="ux-feature-desc">Show language dropdown on the customer portal for real-time multilingual localization.</p>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="feat-enable-language" title="Toggle multi-language selector" aria-label="Toggle multi-language selector" checked>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-
-          <!-- Toggle 4: Quick FAQ Chips -->
-          <div class="ux-feature-card">
-            <div class="ux-feature-info">
-              <div class="ux-feature-title">
-                <i class="fa-solid fa-lightbulb text-amber"></i> Quick FAQ Prompt Chips
-              </div>
-              <p class="ux-feature-desc">Display 1-click popular policy question chips above the chat composer.</p>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="feat-enable-faq-chips" title="Toggle quick FAQ prompt chips" aria-label="Toggle quick FAQ prompt chips" checked>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-
-          <!-- Toggle 5: CSAT Feedback Prompting -->
-          <div class="ux-feature-card">
-            <div class="ux-feature-info">
-              <div class="ux-feature-title">
-                <i class="fa-solid fa-star text-amber"></i> CSAT Rating Prompting
-              </div>
-              <p class="ux-feature-desc">Prompt customers to submit 1-5 star feedback ratings after resolved interactions.</p>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="feat-enable-csat" title="Toggle CSAT rating prompting" aria-label="Toggle CSAT rating prompting" checked>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-
-          <!-- Toggle 6: Ticket Status Tracking -->
-          <div class="ux-feature-card">
-            <div class="ux-feature-info">
-              <div class="ux-feature-title">
-                <i class="fa-solid fa-magnifying-glass-location text-emerald"></i> Customer Ticket Lookup
-              </div>
-              <p class="ux-feature-desc">Enable customer self-service ticket status tracking with stepper timeline.</p>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="feat-enable-ticket-lookup" title="Toggle customer ticket lookup" aria-label="Toggle customer ticket lookup" checked>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-
-          <!-- Toggle 7: Announcement Banner -->
-          <div class="ux-feature-card">
-            <div class="ux-feature-info">
-              <div class="ux-feature-title">
-                <i class="fa-solid fa-bullhorn text-rose"></i> Global Customer Notice Banner
-              </div>
-              <p class="ux-feature-desc">Display an alert banner across the customer portal header.</p>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="feat-enable-announcement" title="Toggle global customer notice banner" aria-label="Toggle global customer notice banner">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-
-          <!-- Toggle 8: Auto Escalate VIP -->
-          <div class="ux-feature-card">
-            <div class="ux-feature-info">
-              <div class="ux-feature-title">
-                <i class="fa-solid fa-crown text-amber"></i> Auto-Escalate VIP &amp; Urgent Tickets
-              </div>
-              <p class="ux-feature-desc">Automatically route VIP Enterprise inquiries to high priority with Slack alerts.</p>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="feat-auto-escalate-vip" title="Toggle automatic VIP and urgent ticket escalation" aria-label="Toggle automatic VIP and urgent ticket escalation" checked>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
+        <div class="kpi-card">
+          <span class="kpi-title">Open SLA Queue</span>
+          <div class="kpi-val text-amber" id="kpi-open-tickets">--</div>
+          <span style="font-size:11px; color:var(--accent-amber);"><i class="fa-solid fa-clock"></i> Active agent queue</span>
         </div>
-
-        <!-- Text & Theme Customization Card -->
-        <div class="card customization-card">
-          <h3 class="customization-heading">
-            <i class="fa-solid fa-pen-to-square text-cyan"></i> Customer Portal Messaging &amp; Presentation
-          </h3>
-
-          <div class="form-group customization-group">
-            <label for="feat-announcement-text" class="form-label">Announcement Banner Text</label>
-            <input type="text" id="feat-announcement-text" class="form-input" placeholder="e.g. Free expedited shipping on all warranty replacements this week." value="Special Notice: Free expedited delivery on all verified warranty replacements this week.">
-          </div>
-
-          <div class="form-group customization-group">
-            <label for="feat-welcome-greeting" class="form-label">Customer Chat Welcome Greeting</label>
-            <textarea id="feat-welcome-greeting" class="form-textarea" rows="2" placeholder="Greeting displayed to customers when opening support chat...">Hello! I am your AI Customer Support Assistant, grounded exclusively in verified store policies. Ask me about returns, international shipping rates, warranty repairs, price matching, or order cancellations.</textarea>
-          </div>
+        <div class="kpi-card">
+          <span class="kpi-title">AI Resolution Rate</span>
+          <div class="kpi-val text-emerald" id="kpi-deflection-rate">88.4%</div>
+          <span style="font-size:11px; color:var(--accent-emerald);"><i class="fa-solid fa-check"></i> Policy deflected</span>
         </div>
-      </div>
+        <div class="kpi-card">
+          <span class="kpi-title">Average CSAT</span>
+          <div class="kpi-val text-cyan" id="kpi-avg-csat">4.9 / 5.0</div>
+          <span style="font-size:11px; color:var(--accent-cyan);"><i class="fa-solid fa-star"></i> Customer rating</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-title">Policy Sections</span>
+          <div class="kpi-val text-primary" id="kpi-indexed-sections">6 Chunks</div>
+          <span style="font-size:11px; color:var(--primary-light);"><i class="fa-solid fa-database"></i> ChromaDB Vectorized</span>
+        </div>
+      </section>
 
       <!-- =========================================================================
-           VIEW 2: KNOWLEDGE BASE STUDIO (ChromaDB Vector Management)
+           VIEW 1: LIVE TICKET & TAKEOVER CONSOLE (Window 2 Core)
            ========================================================================= -->
-      <div class="app-view-container" id="admin-view-kb">
-        <div class="view-header-bar">
-          <div>
-            <h2 class="view-title"><i class="fa-solid fa-book-bookmark text-primary"></i> Knowledge Base Studio</h2>
-            <p class="view-subtitle">Manage company policy vector clauses indexed in ChromaDB.</p>
-          </div>
-          <div class="header-btn-group">
-            <button type="button" class="btn btn-secondary" onclick="exportKnowledgeBaseJson()">
-              <i class="fa-solid fa-download"></i> Backup JSON
-            </button>
-            <button type="button" class="btn btn-secondary" onclick="resetDefaultKnowledgeBase()">
-              <i class="fa-solid fa-rotate-left"></i> Re-Index Default KB
-            </button>
-            <button type="button" class="btn btn-primary" onclick="openAddPolicyModal()">
-              <i class="fa-solid fa-plus"></i> Add Policy Clause
-            </button>
-          </div>
-        </div>
-
-        <div class="stats-overview-row">
-          <div class="stat-card">
-            <div class="stat-card-title">Indexed Vector Chunks</div>
-            <div class="stat-card-val" id="kb-total-chunks-count">6</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card-title">Embedding Dimension</div>
-            <div class="stat-card-val">3,072-dim</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card-title">Vector Collection</div>
-            <div class="stat-card-val kb-collection-val">support_kb</div>
-          </div>
-        </div>
-
-        <!-- Chunks Grid -->
-        <div class="kb-chunks-grid" id="kb-chunks-grid">
-          <!-- Populated by JS -->
-        </div>
-      </div>
-
-      <!-- =========================================================================
-           VIEW 3: ESCALATION & AGENT COPILOT DESK
-           ========================================================================= -->
-      <div class="app-view-container" id="admin-view-tickets">
-        <div class="view-header-bar">
-          <div>
-            <h2 class="view-title"><i class="fa-solid fa-ticket text-primary"></i> Escalation &amp; Agent Desk</h2>
-            <p class="view-subtitle">Triage escalated tickets, generate AI Copilot responses, apply 1-click Macros, and add confidential staff notes.</p>
-          </div>
-          <div class="header-btn-group">
-            <button type="button" class="btn btn-secondary" onclick="exportTicketsData('csv')">
-              <i class="fa-solid fa-file-csv"></i> Export CSV
-            </button>
-            <button type="button" class="btn btn-secondary" onclick="exportTicketsData('json')">
-              <i class="fa-solid fa-file-code"></i> Export JSON
-            </button>
-          </div>
-        </div>
-
+      <div class="app-view-container active-view" id="admin-view-tickets">
         <!-- Filter Bar -->
-        <div class="tickets-filter-bar">
-          <div class="filter-group">
-            <button type="button" class="filter-chip active" onclick="filterAdminTickets('all', this)">All Tickets</button>
-            <button type="button" class="filter-chip" onclick="filterAdminTickets('Open', this)">Open</button>
-            <button type="button" class="filter-chip" onclick="filterAdminTickets('In Progress', this)">In Progress</button>
-            <button type="button" class="filter-chip" onclick="filterAdminTickets('Resolved', this)">Resolved</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="chip-btn active" id="filter-all" onclick="filterAdminTickets('all', this)">All</button>
+            <button type="button" class="chip-btn" id="filter-open" onclick="filterAdminTickets('Open', this)">Open</button>
+            <button type="button" class="chip-btn" id="filter-inprogress" onclick="filterAdminTickets('In Progress', this)">In Progress</button>
+            <button type="button" class="chip-btn" id="filter-resolved" onclick="filterAdminTickets('Resolved', this)">Resolved</button>
+            <button type="button" class="chip-btn" id="filter-urgent" onclick="filterAdminTickets('Urgent', this)">High Priority</button>
           </div>
+          <span style="font-size:12px; color:var(--text-dim);" id="tickets-count-label">Showing tickets...</span>
         </div>
 
-        <!-- Tickets List -->
-        <div class="tickets-list-wrapper" id="admin-tickets-container">
+        <!-- Tickets Table Container -->
+        <div class="admin-table-container">
+          <table class="admin-data-table">
+            <thead>
+              <tr>
+                <th style="width: 110px;">Ticket ID</th>
+                <th style="width: 170px;">Customer</th>
+                <th>Subject &amp; Inquiry</th>
+                <th style="width: 100px;">Priority</th>
+                <th style="width: 120px;">Status</th>
+                <th style="width: 150px;">SLA Countdown</th>
+                <th style="width: 120px; text-align:right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="admin-tickets-table-body">
+              <tr>
+                <td colspan="7" style="text-align:center; padding:30px; color:var(--text-dim);">
+                  <i class="fa-solid fa-spinner fa-spin"></i> Loading live tickets...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW 2: INTERNAL RAG POLICY MANAGER
+           ========================================================================= -->
+      <div class="app-view-container" id="admin-view-rag">
+        <div class="rag-manager-workspace">
+          <!-- Active Knowledge Base Overview Card -->
+          <div class="rag-policy-editor-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h3 style="font-family: var(--font-display); font-size: 16px; font-weight: 700;">Active Knowledge Base (company_faq.txt)</h3>
+                <span style="color:var(--text-dim); font-size:12px;" id="rag-kb-path-label">Path: knowledge_base/company_faq.txt</span>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="loadRagStatus()">
+                <i class="fa-solid fa-rotate"></i> Refresh Chunks
+              </button>
+            </div>
+
+            <!-- Chunks Inspection List -->
+            <div id="rag-chunks-list" style="display:flex; flex-direction:column; gap:10px; max-height:450px; overflow-y:auto; padding-right:4px;">
+              <!-- Populated via JS -->
+            </div>
+          </div>
+
+          <!-- Hot-Reload & Upload Editor Card -->
+          <div class="rag-policy-editor-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h3 style="font-family: var(--font-display); font-size: 16px; font-weight: 700;">Policy Studio &amp; Hot-Reload</h3>
+                <span style="color:var(--text-dim); font-size:12px;">Paste updated policy text or upload a markdown/txt file</span>
+              </div>
+              <label for="rag-file-upload-input" class="btn btn-secondary btn-sm" style="cursor:pointer;">
+                <i class="fa-solid fa-upload"></i> Upload File
+              </label>
+              <input type="file" id="rag-file-upload-input" class="is-hidden" accept=".txt,.md" onchange="handleRagFileUpload(event)">
+            </div>
+
+            <textarea id="rag-policy-editor" class="rag-policy-textarea" placeholder="Paste policy markdown or numbered clauses here (e.g. 1. RETURN POLICY, 2. SHIPPING POLICY)..."></textarea>
+
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="color:var(--text-dim); font-size:12px;">Parses sections automatically on `^\d+\.\s+[A-Z]` boundaries</span>
+              <button type="button" class="btn btn-primary" id="btn-reindex-rag" onclick="uploadAndReindexPolicy()">
+                <i class="fa-solid fa-bolt"></i> Re-Index in ChromaDB
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW 3: DEFLECTION & ANALYTICS
+           ========================================================================= -->
+      <div class="app-view-container" id="admin-view-analytics">
+        <div style="display:flex; flex-direction:column; gap:20px; max-width:1000px; margin:0 auto; width:100%;">
+          <div class="order-result-card">
+            <h3 style="font-family:var(--font-display); font-size:16px; font-weight:700;">Query Audit Log Stream</h3>
+            <p style="color:var(--text-dim); font-size:12.5px;">Live audit trace showing customer queries, vector distance scores, matched clauses, and latency.</p>
+            <div class="admin-table-container" style="margin-top:10px;">
+              <table class="admin-data-table">
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Customer Query</th>
+                    <th>Status</th>
+                    <th>Distance</th>
+                    <th>Matched Section</th>
+                  </tr>
+                </thead>
+                <tbody id="audit-log-table-body">
+                  <tr>
+                    <td colspan="5" style="text-align:center; padding:20px; color:var(--text-dim);">Loading audit logs...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW 4: PIPELINE SETTINGS
+           ========================================================================= -->
+      <div class="app-view-container" id="admin-view-settings">
+        <div style="max-width:700px; margin:0 auto; width:100%; display:flex; flex-direction:column; gap:16px;">
+          <div class="order-result-card">
+            <h3 style="font-family:var(--font-display); font-size:16px; font-weight:700;">RAG Pipeline &amp; Guardrail Configuration</h3>
+            <div class="form-group" style="margin-top:10px;">
+              <label class="form-label">Distance Guardrail Threshold (Cosine Distance)</label>
+              <input type="number" id="setting-distance" class="form-input" value="1.2" step="0.1" min="0.5" max="2.0">
+              <span style="color:var(--text-dim); font-size:11.5px;">Values below threshold are considered grounded. Above triggers auto-escalation.</span>
+            </div>
+            <div class="form-group" style="margin-top:10px;">
+              <label class="form-label">Top-K Retrieved Chunks</label>
+              <input type="number" id="setting-topk" class="form-input" value="2" min="1" max="6">
+            </div>
+            <div style="display:flex; justify-content:flex-end; margin-top:12px;">
+              <button type="button" class="btn btn-primary btn-sm" onclick="showToast('Settings saved successfully')">Save Settings</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- =========================================================================
+       AGENT TAKEOVER DRAWER (Slide-Over Panel)
+       ========================================================================= -->
+  <aside class="takeover-drawer-overlay" id="agent-takeover-drawer">
+    <div class="drawer-header">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="order-id-title" id="drawer-ticket-id">TCK-1042</span>
+        <span class="priority-badge priority-urgent" id="drawer-priority-badge">Urgent</span>
+      </div>
+      <button type="button" class="btn-icon" onclick="closeTakeoverDrawer()" aria-label="Close drawer">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      <!-- Customer Meta Info -->
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--bg-canvas); border:1px solid var(--border-subtle); border-radius:var(--radius-sm);">
+        <div>
+          <strong id="drawer-customer-name" style="font-size:13px; color:var(--text-main);">Elena Rostova</strong>
+          <div id="drawer-customer-email" style="font-size:11.5px; color:var(--text-dim);">elena@enterprise.org</div>
+        </div>
+        <div style="text-align:right;">
+          <span class="status-badge badge-shipped" id="drawer-status-pill">In Progress</span>
+          <div id="drawer-sla-label" style="font-size:11px; color:var(--accent-cyan); font-family:var(--font-mono); margin-top:2px;">SLA Met</div>
+        </div>
+      </div>
+
+      <!-- Subject & Snippet -->
+      <div>
+        <strong style="font-size:12px; color:var(--text-dim); text-transform:uppercase;">Subject:</strong>
+        <p id="drawer-subject" style="font-size:13.5px; font-weight:600; margin-top:2px;">Custom enterprise bulk discount inquiry</p>
+      </div>
+
+      <!-- Quick AI Copilot Draft Button -->
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:rgba(99,102,241,0.08); border:1px solid var(--primary-border); border-radius:var(--radius-sm);">
+        <span style="font-size:12px; color:var(--primary-light); font-weight:500;">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> AI Copilot Reply Draft
+        </span>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-generate-copilot" onclick="generateCopilotReply()">
+          Generate Draft
+        </button>
+      </div>
+
+      <!-- Quick Macros Row -->
+      <div>
+        <span style="font-size:11.5px; color:var(--text-dim); font-weight:600;">1-Click Response Macros:</span>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+          <button type="button" class="chip-btn" onclick="applyMacro('macro_return_rma')">📦 Return RMA</button>
+          <button type="button" class="chip-btn" onclick="applyMacro('macro_warranty_claim')">🛡️ Warranty</button>
+          <button type="button" class="chip-btn" onclick="applyMacro('macro_price_match')">💳 Price Match</button>
+          <button type="button" class="chip-btn" onclick="applyMacro('macro_intl_ddp')">✈️ DHL DDP</button>
+        </div>
+      </div>
+
+      <!-- Conversation Thread -->
+      <div>
+        <span style="font-size:11.5px; color:var(--text-dim); font-weight:600; text-transform:uppercase;">Thread Messages:</span>
+        <div class="drawer-thread-scroll" id="drawer-messages-stream" style="margin-top:6px;">
           <!-- Populated via JS -->
         </div>
       </div>
-
-      <!-- =========================================================================
-           VIEW 4: DEFLECTION & ANALYTICS
-           ========================================================================= -->
-      <div class="app-view-container" id="admin-view-analytics">
-        <div class="view-header-bar">
-          <div>
-            <h2 class="view-title"><i class="fa-solid fa-chart-pie text-primary"></i> Deflection &amp; CSAT Telemetry</h2>
-            <p class="view-subtitle">Track query deflection rates, latency distributions, customer satisfaction, and outbound incident webhooks.</p>
-          </div>
-          <div class="header-btn-group">
-            <button type="button" class="btn btn-secondary" onclick="triggerTestWebhookAlert()">
-              <i class="fa-solid fa-paper-plane"></i> Test Slack Alert
-            </button>
-            <button type="button" class="btn btn-primary" onclick="runSyntheticStressBenchmark()">
-              <i class="fa-solid fa-vial-circle-check"></i> Run Synthetic Benchmark
-            </button>
-          </div>
-        </div>
-
-        <div class="stats-overview-row">
-          <div class="stat-card">
-            <div class="stat-card-title">AI Deflection Rate</div>
-            <div class="stat-card-val text-emerald" id="stat-deflection-rate">88.4%</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card-title">Average Latency</div>
-            <div class="stat-card-val text-cyan" id="stat-avg-latency">420ms</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card-title">Average CSAT Rating</div>
-            <div class="stat-card-val text-amber" id="stat-csat-score">4.85 / 5.0</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card-title">Positive CSAT Ratio</div>
-            <div class="stat-card-val text-primary" id="stat-csat-pos-percent">96.2%</div>
-          </div>
-        </div>
-
-        <!-- Audit Logs Table -->
-        <div class="card customization-card">
-          <h3 class="customization-heading">
-            <i class="fa-solid fa-clock-rotate-left text-cyan"></i> Query Audit Stream
-          </h3>
-          <div class="admin-table-container">
-            <table class="bench-results-table admin-data-table">
-              <thead>
-                <tr>
-                  <th>Timestamp</th>
-                  <th>Customer Query</th>
-                  <th>Grounded Status</th>
-                  <th>Distance</th>
-                  <th>Matched Clause</th>
-                  <th>Latency</th>
-                </tr>
-              </thead>
-              <tbody id="admin-audit-logs-body">
-                <!-- Populated via JS -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Outbound Webhooks Section -->
-        <div class="card">
-          <h3 class="customization-heading">
-            <i class="fa-solid fa-satellite-dish text-primary"></i> Outbound Incident Webhooks (Slack / PagerDuty)
-          </h3>
-          <div id="admin-webhooks-list">
-            <!-- Populated via JS -->
-          </div>
-        </div>
-      </div>
-
-      <!-- =========================================================================
-           VIEW 5: RAG PIPELINE & MODEL SETTINGS
-           ========================================================================= -->
-      <div class="app-view-container" id="admin-view-settings">
-        <div class="view-header-bar">
-          <div>
-            <h2 class="view-title"><i class="fa-solid fa-gears text-primary"></i> RAG Pipeline &amp; Model Settings</h2>
-            <p class="view-subtitle">Tune distance guardrails, top-k chunks, generation temperature, and system prompt constraints.</p>
-          </div>
-          <button type="button" class="btn btn-primary" onclick="savePipelineSettings()">
-            <i class="fa-solid fa-floppy-disk"></i> Save Pipeline Settings
-          </button>
-        </div>
-
-        <div class="card settings-card-constrained">
-          <div class="form-grid-2col">
-            <div class="form-group">
-              <label for="setting-threshold-slider" class="form-label">Guardrail Distance Threshold</label>
-              <div class="range-slider-wrap">
-                <input type="range" id="setting-threshold-slider" min="0.2" max="2.0" step="0.05" value="1.2" class="form-range range-slider-input" oninput="document.getElementById('setting-threshold-val').textContent = this.value" title="Guardrail distance threshold" aria-label="Guardrail distance threshold">
-                <span id="setting-threshold-val" class="range-slider-val">1.2</span>
-              </div>
-              <span class="customization-helper-text">Lower = stricter grounding (more deflections). Higher = more permissive.</span>
-            </div>
-
-            <div class="form-group">
-              <label for="setting-topk-slider" class="form-label">Top-K Retrieved Chunks</label>
-              <div class="range-slider-wrap">
-                <input type="range" id="setting-topk-slider" min="1" max="10" step="1" value="2" class="form-range range-slider-input" oninput="document.getElementById('setting-topk-val').textContent = this.value" title="Top-K retrieved chunks" aria-label="Top-K retrieved chunks">
-                <span id="setting-topk-val" class="range-slider-val-cyan">2</span>
-              </div>
-              <span class="customization-helper-text">Number of vector policy chunks passed into the LLM context.</span>
-            </div>
-          </div>
-
-          <div class="form-grid-2col settings-row-spaced">
-            <div class="form-group">
-              <label for="setting-gen-model" class="form-label">LLM Generation Model</label>
-              <select id="setting-gen-model" class="form-select" title="Select LLM generation model" aria-label="Select LLM generation model">
-                <option value="gemini-1.5-flash">Google Gemini 1.5 Flash (Recommended)</option>
-                <option value="gemini-2.0-flash">Google Gemini 2.0 Flash</option>
-                <option value="gemini-1.5-pro">Google Gemini 1.5 Pro</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="setting-emb-model" class="form-label">Vector Embedding Model</label>
-              <select id="setting-emb-model" class="form-select" title="Select vector embedding model" aria-label="Select vector embedding model">
-                <option value="text-embedding-004">text-embedding-004 (768 dims)</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group settings-row-spaced">
-            <label for="setting-system-prompt" class="form-label">Grounded System Instruction Prompt</label>
-            <textarea id="setting-system-prompt" class="form-textarea" rows="4" placeholder="System prompt instructions..." title="Grounded system instruction prompt" aria-label="Grounded system instruction prompt"></textarea>
-          </div>
-        </div>
-      </div>
-
     </div>
-  </div>
 
-  <!-- Add Policy Modal -->
-  <div class="modal-overlay is-hidden" id="add-policy-modal">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-file-circle-plus text-primary"></i> Add Vector Policy Clause</h3>
-        <button type="button" class="btn-icon" onclick="closeAddPolicyModal()" aria-label="Close modal">
-          <i class="fa-solid fa-xmark"></i>
+    <!-- Drawer Reply Footer -->
+    <div class="drawer-reply-footer">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); cursor:pointer;">
+          <input type="checkbox" id="drawer-is-internal-note">
+          <span>Private Internal Staff Note</span>
+        </label>
+        <select id="drawer-status-select" class="form-select" style="padding:4px 8px; font-size:12px;">
+          <option value="Open">Status: Open</option>
+          <option value="In Progress" selected>Status: In Progress</option>
+          <option value="Resolved">Status: Resolved</option>
+        </select>
+      </div>
+
+      <textarea id="drawer-reply-text" class="form-textarea" rows="3" placeholder="Type message to customer or confidential note..."></textarea>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeTakeoverDrawer()">Cancel</button>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-drawer-send-reply" onclick="sendAgentReply()">
+          <i class="fa-solid fa-paper-plane"></i> Send Reply &amp; Update
         </button>
       </div>
-      <div class="modal-body">
-        <form onsubmit="handleAddPolicySubmit(event)">
-          <div class="form-group">
-            <label for="new-policy-title" class="form-label">Clause Title *</label>
-            <input type="text" id="new-policy-title" class="form-input" placeholder="e.g. Section 7: Extended Holiday Return Policy" required>
-          </div>
-          <div class="form-group">
-            <label for="new-policy-content" class="form-label">Policy Content *</label>
-            <textarea id="new-policy-content" class="form-textarea" rows="5" placeholder="Detailed factual store policy wording..." required></textarea>
-          </div>
-          <div class="modal-footer-actions">
-            <button type="button" class="btn btn-secondary" onclick="closeAddPolicyModal()">Cancel</button>
-            <button type="submit" class="btn btn-primary" id="btn-submit-policy">
-              <i class="fa-solid fa-vector-square"></i> Vectorize &amp; Save
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
-  </div>
+  </aside>
 
-  <script src="js/admin.js?v=3.0"></script>
+  <!-- TOAST CONTAINER -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="js/admin.js?v=5.0"></script>
 </body>
 </html>

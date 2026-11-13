@@ -3,398 +3,261 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Customer Help &amp; Support Hub | OmniDesk AI</title>
+  <title>OmniDesk AI — Customer Support Portal (Window 1)</title>
   <meta name="description" content="24/7 Verified Customer Support Portal. Grounded in store policies for returns, warranty, shipping, and order tracking.">
-  <link rel="stylesheet" href="css/style.css?v=4.0">
+  <link rel="stylesheet" href="css/style.css?v=5.0">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
-<body class="body-noscroll">
-
-  <!-- Ambient Background Glow -->
-  <div class="bg-ambient-glow" aria-hidden="true">
-    <div class="glow-orb glow-orb-1 orb-app-top"></div>
-    <div class="glow-orb glow-orb-2 orb-app-bottom"></div>
-  </div>
-
-  <!-- Dynamic Announcement Banner (Controlled by UX Feature Engine) -->
-  <div id="customer-announcement-banner" class="customer-announcement-banner is-hidden">
-    <div class="announcement-text">
-      <i class="fa-solid fa-bullhorn"></i>
-      <span id="announcement-banner-message">Special Notice: Free expedited delivery on all verified warranty replacements this week.</span>
-    </div>
-    <button type="button" class="announcement-close-btn" onclick="dismissAnnouncementBanner()" title="Close notice" aria-label="Close notice">
-      <i class="fa-solid fa-xmark"></i>
-    </button>
-  </div>
+<body>
 
   <div class="app-layout">
-    <!-- Left Navigation Sidebar (Customer Facing) -->
+    <!-- LEFT SIDEBAR -->
     <aside class="app-sidebar" id="app-sidebar">
       <a href="index.html" class="sidebar-brand">
-        <div class="brand-icon-box brand-icon-sm">
+        <div class="brand-icon-box">
           <i class="fa-solid fa-headset"></i>
         </div>
         <span>OmniDesk<span class="brand-secondary-text">Support</span></span>
       </a>
 
-      <!-- Customer Navigation Views List -->
+      <!-- Navigation Tabs -->
       <ul class="sidebar-nav">
         <li>
           <button type="button" class="sidebar-item-btn active" id="btn-nav-chat" onclick="switchCustomerView('chat')">
-            <i class="fa-solid fa-comment-dots"></i>
-            <span>24/7 AI Support Chat</span>
+            <i class="fa-solid fa-robot"></i>
+            <span>AI Policy Assistant</span>
           </button>
         </li>
         <li>
-          <button type="button" class="sidebar-item-btn" id="btn-nav-kb" onclick="switchCustomerView('kb')">
-            <i class="fa-solid fa-book-open-reader"></i>
-            <span>Help Center &amp; Policies</span>
+          <button type="button" class="sidebar-item-btn" id="btn-nav-orders" onclick="switchCustomerView('orders')">
+            <i class="fa-solid fa-box"></i>
+            <span>Order Tracking</span>
           </button>
         </li>
         <li>
           <button type="button" class="sidebar-item-btn" id="btn-nav-tickets" onclick="switchCustomerView('tickets')">
-            <i class="fa-solid fa-magnifying-glass-location"></i>
-            <span>Track My Ticket</span>
+            <i class="fa-solid fa-ticket"></i>
+            <span>My Support Tickets</span>
+            <span class="sidebar-badge-count" id="sidebar-ticket-count" style="display:none;">0</span>
           </button>
         </li>
         <li>
           <button type="button" class="sidebar-item-btn" id="btn-nav-claim" onclick="switchCustomerView('claim')">
-            <i class="fa-solid fa-file-shield"></i>
-            <span>Submit Claim / Request</span>
+            <i class="fa-solid fa-camera-rotate"></i>
+            <span>Visual Claim Inspection</span>
           </button>
         </li>
       </ul>
 
-      <!-- Sidebar Footer -->
+      <!-- Quick Link to Window 2 (Admin Console) -->
       <div class="sidebar-footer">
+        <a href="admin.html" target="_blank" class="sidebar-btn-ext sidebar-btn-ext-highlight" title="Open Window 2 (Admin &amp; Agent Command Center) in a second window">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          <span>Open Window 2 (Admin)</span>
+        </a>
+
         <div class="backend-status-pill">
-          <div class="nav-actions">
+          <div>
             <span class="pulse-dot" id="sidebar-status-dot"></span>
             <span id="sidebar-status-text" class="status-text">Support Live (24/7)</span>
           </div>
-          <button type="button" class="btn-icon status-btn-refresh" onclick="checkBackendHealth()" title="Refresh connection" aria-label="Refresh connection">
+          <button type="button" class="btn-icon" onclick="checkBackendHealth()" title="Refresh connection" aria-label="Refresh connection">
             <i class="fa-solid fa-rotate-right"></i>
           </button>
         </div>
-
-        <a href="index.html" class="btn btn-secondary btn-sm sidebar-btn-back">
-          <i class="fa-solid fa-arrow-left"></i> Main Site
-        </a>
-
-        <!-- Discrete Staff & UX Control Access Link -->
-        <a href="admin.html" class="btn btn-outline btn-sm sidebar-btn-back sidebar-btn-admin-discrete" title="Access UX &amp; Staff Operations Console">
-          <i class="fa-solid fa-lock"></i> Staff Gateway
-        </a>
       </div>
     </aside>
 
-    <!-- Main Customer Workspace Area -->
-    <div class="app-main">
+    <!-- MAIN WORKSPACE -->
+    <main class="app-main">
       <!-- Topbar Header -->
       <header class="app-topbar">
         <div class="topbar-title-wrap">
-          <button type="button" class="btn-icon mobile-menu-btn mobile-nav-toggle" id="app-sidebar-toggle" onclick="toggleAppSidebar()" title="Toggle Sidebar" aria-label="Toggle Sidebar">
-            <i class="fa-solid fa-bars"></i>
-          </button>
-          <div class="topbar-view-title" id="current-view-title">24/7 AI Customer Support</div>
-          <span class="badge badge-glow-primary" id="model-indicator-badge">
+          <h1 class="topbar-view-title" id="current-view-title">AI Policy Assistant</h1>
+          <span class="topbar-badge">
             <i class="fa-solid fa-shield-check"></i> 100% Policy Grounded
           </span>
         </div>
 
         <div class="topbar-actions">
-          <!-- Multi-Language Localization Selector (Toggleable via UX Settings) -->
-          <div class="lang-select-wrapper" id="topbar-lang-wrapper" title="Language Localization">
-            <i class="fa-solid fa-globe"></i>
-            <select id="app-language-select" class="lang-select" title="Select Target Language" aria-label="Select Target Language" onchange="handleLanguageChange(this.value)">
-              <option value="Auto Detect">🌐 Auto Detect</option>
-              <option value="English">🇺🇸 English</option>
-              <option value="Spanish">🇪🇸 Español</option>
-              <option value="French">🇫🇷 Français</option>
-              <option value="German">🇩🇪 Deutsch</option>
-              <option value="Japanese">🇯🇵 日本語</option>
-              <option value="Portuguese">🇧🇷 Português</option>
-              <option value="Hindi">🇮🇳 हिन्दी</option>
-            </select>
+          <div class="topbar-badge" id="active-ticket-sync-indicator" style="display:none; background: rgba(6,182,212,0.15); color: var(--accent-cyan); border-color: var(--accent-cyan);">
+            <span class="pulse-dot" style="background: var(--accent-cyan);"></span>
+            <span id="sync-ticket-label">Live Sync: TCK-1042</span>
           </div>
-          <!-- Customer Account / Auth Pill -->
-          <div id="customer-auth-status" class="customer-auth-wrap">
-            <button type="button" id="btn-customer-login-link" class="btn btn-primary btn-sm" onclick="openCustomerAuthModal()">
-              <i class="fa-solid fa-user"></i> Sign In
-            </button>
-            <div id="user-profile-pill" class="user-profile-pill is-hidden">
-              <span class="user-avatar-circle" id="user-avatar-initials">AR</span>
-              <div class="user-info-text">
-                <span class="user-name-display" id="user-name-display">Alex Rivera</span>
-                <span class="user-tier-badge" id="user-tier-badge">Gold VIP</span>
-              </div>
-              <button type="button" class="btn-icon btn-logout-icon" onclick="customerLogout()" title="Sign Out" aria-label="Sign Out">
-                <i class="fa-solid fa-arrow-right-from-bracket"></i>
-              </button>
-            </div>
-          </div>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="exportChatTranscript()" id="btn-export-chat" title="Export conversation as JSON">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="exportChatTranscript()" title="Download conversation as JSON">
             <i class="fa-solid fa-download"></i> Save Chat
           </button>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="clearChatFeed()" id="btn-clear-chat" title="Clear conversation">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="clearChatFeed()" title="Reset chat session">
             <i class="fa-solid fa-rotate"></i> New Chat
           </button>
         </div>
       </header>
 
       <!-- =========================================================================
-           VIEW 1: LIVE 24/7 AI CUSTOMER SUPPORT CHAT
+           VIEW 1: AI CHAT WORKSPACE (Window 1 Core)
            ========================================================================= -->
       <div class="app-view-container active-view" id="view-chat">
-        <div class="chat-view-layout">
-          <!-- Main Chat Stream -->
-          <div class="chat-center-pane">
-            <div class="chat-scroll-feed" id="chat-feed">
-              <!-- Initial Greeting from Assistant -->
-              <div class="chat-msg-row assistant-msg">
-                <div class="avatar-badge avatar-assistant">
-                  <i class="fa-solid fa-robot"></i>
-                </div>
-                <div class="msg-content-wrapper">
-                  <div class="msg-bubble-content" id="assistant-welcome-msg">
-                    Hello! I am your AI Customer Support Assistant, grounded exclusively in verified store policies. Ask me about returns, international shipping rates, warranty repairs, price matching, or order cancellations.
-                  </div>
-                  <div class="msg-actions-bar">
-                    <button type="button" class="msg-btn-action" onclick="copyMessageText(this)">
-                      <i class="fa-solid fa-copy"></i> Copy
-                    </button>
-                    <button type="button" class="msg-btn-action" onclick="speakMessageText(this)">
-                      <i class="fa-solid fa-volume-high"></i> Read Aloud
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Instant FAQ Prompt Suggestions (Controlled by UX Feature Engine) -->
-            <div class="chat-suggestions-bar" id="chat-faq-chips-container">
-              <span class="suggestions-label"><i class="fa-solid fa-bolt"></i> Popular Questions:</span>
-              <div class="suggestions-chips-row">
-                <button type="button" class="chip-btn" onclick="sendQuickPrompt('What is your 30-day return policy and are returns free?')">
-                  📦 30-Day Return Policy
-                </button>
-                <button type="button" class="chip-btn" onclick="sendQuickPrompt('How do international shipping and customs duties work?')">
-                  ✈️ International DHL Shipping
-                </button>
-                <button type="button" class="chip-btn" onclick="sendQuickPrompt('What is covered under the 1-year manufacturer warranty?')">
-                  🛡️ 1-Year Warranty Claim
-                </button>
-                <button type="button" class="chip-btn" onclick="sendQuickPrompt('Can I cancel an order I placed 20 minutes ago?')">
-                  ⏱️ 60-Min Cancellation
-                </button>
-                <button type="button" class="chip-btn" onclick="sendQuickPrompt('Do you offer a 14-day price match guarantee?')">
-                  💳 Price Match Guarantee
-                </button>
-              </div>
-            </div>
-
-            <!-- Attached Image Preview Bar (Multi-modal Vision) -->
-            <div id="attached-image-preview-bar" class="attached-image-bar is-hidden">
-              <div class="preview-thumb-box">
-                <img id="attached-img-tag" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E" alt="Claim Attachment">
-                <span class="preview-filename" id="attached-img-name">damage_photo.jpg</span>
-              </div>
-              <button type="button" class="btn-icon btn-sm remove-attachment-btn" onclick="removeAttachedImage()" title="Remove image" aria-label="Remove image">
-                <i class="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-
-            <!-- Chat Input Area -->
-            <div class="chat-composer-area">
-              <form id="chat-input-form" onsubmit="handleChatSubmit(event)">
-                <div class="composer-box">
-                  <!-- Vision Upload Button (Controlled by UX Feature Engine) -->
-                  <div class="composer-action-left" id="composer-vision-btn-wrapper">
-                    <label for="chat-file-input" class="btn-icon composer-btn-upload" title="Attach damage photo or receipt for instant claim inspection">
-                      <i class="fa-solid fa-camera"></i>
-                    </label>
-                    <input type="file" id="chat-file-input" class="is-hidden" accept="image/jpeg,image/png,image/webp" title="Attach claim photo" aria-label="Attach claim photo" onchange="handleImageAttachment(event)">
-                  </div>
-
-                  <textarea id="chat-text-input" class="composer-textarea" rows="1" placeholder="Ask any question about our store policies, returns, or warranty..." title="Type your question" aria-label="Type your question" onkeydown="handleTextareaKeydown(event)" oninput="autoResizeTextarea(this)"></textarea>
-
-                  <div class="composer-action-right">
-                    <button type="button" class="btn-icon composer-btn-mic" id="btn-voice-input" onclick="toggleVoiceInput()" title="Voice input" aria-label="Voice input">
-                      <i class="fa-solid fa-microphone"></i>
-                    </button>
-                    <button type="submit" class="btn btn-primary composer-btn-send" id="btn-send-message" title="Send message" aria-label="Send message">
-                      <i class="fa-solid fa-paper-plane"></i>
-                    </button>
-                  </div>
-                </div>
-              </form>
-
-              <!-- Footer Quick Actions & Human Escalation -->
-              <div class="composer-footer-row">
-                <span class="composer-disclaimer">
-                  <i class="fa-solid fa-circle-info"></i> All answers strictly grounded in verified company policies.
-                </span>
-                <button type="button" class="btn-text-link" onclick="openHumanEscalationModal()">
-                  <i class="fa-solid fa-user-headset"></i> Need Human Assistance? Speak to Agent
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Right Sidebar: Live Grounding Citations & Help Card -->
-          <div class="chat-right-pane">
-            <div class="right-pane-card">
-              <div class="pane-card-header">
-                <i class="fa-solid fa-file-lines text-primary"></i>
-                <span>Verified Policy Citations</span>
-              </div>
-              <p class="pane-card-subtitle">Every answer is verified against exact clauses from our company store documentation.</p>
-
-              <div class="sources-list" id="active-sources-list">
-                <div class="source-placeholder">
-                  <i class="fa-solid fa-magnifying-glass"></i>
-                  <span>Ask a question to see real-time verified citations and distance confidence metrics.</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Customer Self-Service Quick Links Card -->
-            <div class="right-pane-card">
-              <div class="pane-card-header">
-                <i class="fa-solid fa-circle-question text-cyan"></i>
-                <span>Self-Service Links</span>
-              </div>
-              <ul class="quick-links-list">
-                <li>
-                  <button type="button" class="quick-link-btn" onclick="switchCustomerView('kb')">
-                    <i class="fa-solid fa-book-bookmark"></i> Browse All Store Policies
-                  </button>
-                </li>
-                <li>
-                  <button type="button" class="quick-link-btn" onclick="switchCustomerView('tickets')">
-                    <i class="fa-solid fa-ticket"></i> Look Up Existing Ticket
-                  </button>
-                </li>
-                <li>
-                  <button type="button" class="quick-link-btn" onclick="switchCustomerView('claim')">
-                    <i class="fa-solid fa-shield-halved"></i> Submit Warranty or Return Claim
-                  </button>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- =========================================================================
-           VIEW 2: HELP CENTER & POLICY DIRECTORY (Customer Read-Only)
-           ========================================================================= -->
-      <div class="app-view-container" id="view-kb">
-        <div class="view-header-bar">
-          <div>
-            <h2 class="view-title"><i class="fa-solid fa-book-open-reader text-primary"></i> Customer Help Center &amp; Store Policies</h2>
-            <p class="view-subtitle">Search verified company policies on returns, delivery, warranties, cancellations, and price matching.</p>
-          </div>
-        </div>
-
-        <!-- Search & Category Filters -->
-        <div class="policy-search-bar">
-          <i class="fa-solid fa-magnifying-glass policy-search-icon"></i>
-          <input type="text" id="policy-search-input" class="policy-search-input" placeholder="Search policies (e.g. 30 days, restocking fee, DHL tracking, serial number)..." title="Search policies" aria-label="Search policies" oninput="filterCustomerPolicies()">
-        </div>
-
-        <div class="policy-categories-filter" id="policy-categories-chips">
-          <button type="button" class="category-chip-btn active" onclick="filterPolicyCategory('All', this)">All Policies</button>
-          <button type="button" class="category-chip-btn" onclick="filterPolicyCategory('Return', this)">Returns &amp; Refunds</button>
-          <button type="button" class="category-chip-btn" onclick="filterPolicyCategory('Shipping', this)">Shipping &amp; Delivery</button>
-          <button type="button" class="category-chip-btn" onclick="filterPolicyCategory('Warranty', this)">Warranty &amp; Repairs</button>
-          <button type="button" class="category-chip-btn" onclick="filterPolicyCategory('Cancellation', this)">Order Cancellations</button>
-          <button type="button" class="category-chip-btn" onclick="filterPolicyCategory('Payment', this)">Payment &amp; Price Match</button>
-        </div>
-
-        <!-- Customer Policy Cards Grid -->
-        <div class="customer-policy-grid" id="customer-policies-grid">
-          <!-- Dynamically Populated via JS -->
-        </div>
-      </div>
-
-      <!-- =========================================================================
-           VIEW 3: TRACK MY TICKET
-           ========================================================================= -->
-      <div class="app-view-container" id="view-tickets">
-        <div class="ticket-track-container">
-          <div class="view-header-bar">
+        <!-- Center Chat Feed -->
+        <div class="chat-center-pane">
+          <!-- Live Escalation Polling Alert Banner -->
+          <div id="chat-escalation-banner" class="escalation-active-banner is-hidden">
             <div>
-              <h2 class="view-title"><i class="fa-solid fa-magnifying-glass-location text-primary"></i> Track Your Support Request</h2>
-              <p class="view-subtitle">Enter your Ticket ID or email address to view live status updates, resolution estimates, and agent responses.</p>
+              <i class="fa-solid fa-headset"></i>
+              <strong id="escalation-banner-text">Support Ticket Active (#TCK-1042):</strong>
+              <span id="escalation-banner-sub">Live agent takeover connected. Polling for responses...</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="switchCustomerView('tickets')">
+              View Ticket Details <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+
+          <!-- Chat Scroll Feed -->
+          <div class="chat-scroll-feed" id="chat-feed">
+            <!-- Initial Grounded Greeting -->
+            <div class="chat-msg-row assistant-msg">
+              <div class="avatar-badge avatar-assistant">
+                <i class="fa-solid fa-robot"></i>
+              </div>
+              <div class="msg-content-wrapper">
+                <div class="msg-sender-label">OmniDesk AI • Policy Assistant</div>
+                <div class="msg-bubble-content">
+                  Hello! I am your 24/7 Customer Support Assistant, grounded exclusively in official store policies. Ask me about returns, international shipping rates, warranty repairs, price matching, or order cancellations.
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Lookup Card -->
-          <div class="ticket-track-lookup-card">
-            <form onsubmit="handleCustomerTicketLookup(event)" class="ticket-lookup-form">
-              <div class="form-row-lookup">
-                <div class="input-with-icon input-flex-fill">
-                  <i class="fa-solid fa-ticket"></i>
-                  <input type="text" id="lookup-ticket-id-input" class="form-input" placeholder="Enter Ticket ID (e.g. TCK-1042) or your Email" title="Enter Ticket ID or Email" aria-label="Enter Ticket ID or Email" required>
-                </div>
-                <button type="submit" class="btn btn-primary" id="btn-lookup-ticket">
-                  <i class="fa-solid fa-search"></i> Check Status
+          <!-- Quick Action Chips -->
+          <div class="chat-suggestions-bar">
+            <button type="button" class="chip-btn" onclick="sendQuickPrompt('Track Order ORD-1002')">
+              <i class="fa-solid fa-truck-fast text-cyan"></i> Track Order ORD-1002
+            </button>
+            <button type="button" class="chip-btn" onclick="sendQuickPrompt('What is the return policy for opened items?')">
+              <i class="fa-solid fa-box-open text-emerald"></i> Return Policy for Opened Items
+            </button>
+            <button type="button" class="chip-btn" onclick="sendQuickPrompt('How do I submit a damaged package warranty claim?')">
+              <i class="fa-solid fa-shield-halved text-amber"></i> Damaged Package Claim
+            </button>
+            <button type="button" class="chip-btn" onclick="openHumanEscalationModal()">
+              <i class="fa-solid fa-user-headset text-rose"></i> Speak to Human Agent
+            </button>
+          </div>
+
+          <!-- Chat Composer Area -->
+          <div class="chat-composer-area">
+            <form id="chat-input-form" onsubmit="handleChatSubmit(event)">
+              <div class="composer-box">
+                <!-- Camera / Image Upload Icon -->
+                <label for="chat-file-input" class="btn-icon" title="Attach damage photo or receipt" style="cursor: pointer;">
+                  <i class="fa-solid fa-camera"></i>
+                </label>
+                <input type="file" id="chat-file-input" class="is-hidden" accept="image/jpeg,image/png,image/webp" onchange="handleImageAttachment(event)">
+
+                <textarea id="chat-text-input" class="composer-textarea" rows="1" placeholder="Ask about store policies, enter order number (e.g. ORD-1001), or describe an issue..." onkeydown="handleTextareaKeydown(event)" oninput="autoResizeTextarea(this)"></textarea>
+
+                <button type="submit" class="btn btn-primary btn-sm" id="btn-send-message" title="Send message">
+                  <i class="fa-solid fa-paper-plane"></i>
                 </button>
               </div>
             </form>
+
+            <div class="composer-footer-row">
+              <span><i class="fa-solid fa-shield-check text-emerald"></i> 100% Policy Grounded via ChromaDB</span>
+              <button type="button" class="btn-text-link" onclick="openHumanEscalationModal()">
+                <i class="fa-solid fa-user-headset"></i> Need Human Escalation? Connect with Agent
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Citations Pane -->
+        <aside class="chat-right-pane">
+          <div class="right-pane-card">
+            <div class="pane-card-header">
+              <i class="fa-solid fa-book-bookmark text-primary"></i>
+              <span>Active Policy Citations</span>
+            </div>
+            <p class="pane-card-subtitle">Every answer is verified against exact clauses from company_faq.txt.</p>
+            <div class="sources-list" id="active-sources-list">
+              <div class="source-item-card">
+                <h4>1. RETURN AND EXCHANGE POLICY</h4>
+                <p>30-calendar-day return window from delivery date. Full refund to original payment method.</p>
+              </div>
+              <div class="source-item-card">
+                <h4>2. SHIPPING AND DELIVERY</h4>
+                <p>Domestic DHL Standard (3-5 business days) &amp; International Delivered Duty Paid (DDP).</p>
+              </div>
+            </div>
           </div>
 
-          <!-- Ticket Details & Thread Display (Safe for customer view) -->
-          <div id="customer-ticket-result-box" class="is-hidden">
-            <div class="card ticket-details-view-card">
-              <div class="ticket-header-meta">
+          <div class="right-pane-card">
+            <div class="pane-card-header">
+              <i class="fa-solid fa-bolt text-cyan"></i>
+              <span>Quick Self-Service</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <button type="button" class="btn btn-secondary btn-sm" style="justify-content: flex-start;" onclick="switchCustomerView('orders')">
+                <i class="fa-solid fa-box text-cyan"></i> Check Order Status
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" style="justify-content: flex-start;" onclick="switchCustomerView('claim')">
+                <i class="fa-solid fa-camera-rotate text-emerald"></i> Inspect Defective Item
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" style="justify-content: flex-start;" onclick="switchCustomerView('tickets')">
+                <i class="fa-solid fa-ticket text-amber"></i> Look Up Ticket Thread
+              </button>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <!-- =========================================================================
+           VIEW 2: ORDER TRACKING PANEL
+           ========================================================================= -->
+      <div class="app-view-container" id="view-orders">
+        <div class="order-lookup-workspace">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <h2 style="font-family: var(--font-display); font-size: 20px; font-weight: 700;">Customer Order Tracking</h2>
+            <p style="color: var(--text-dim); font-size: 13px;">Instant lookup for orders ORD-1001 through ORD-1005 with real-time DHL tracking and item lists.</p>
+          </div>
+
+          <!-- Search Input -->
+          <div class="order-search-bar">
+            <i class="fa-solid fa-magnifying-glass" style="color: var(--text-dim); align-self: center;"></i>
+            <input type="text" id="order-search-input" placeholder="Enter Order ID (e.g. ORD-1001) or email address..." onkeydown="if(event.key==='Enter') lookupOrder()">
+            <button type="button" class="btn btn-primary btn-sm" onclick="lookupOrder()">Track Order</button>
+          </div>
+
+          <!-- Sample Quick Chips -->
+          <div class="order-sample-chips">
+            <span>Quick Samples:</span>
+            <button type="button" class="chip-btn" onclick="quickLookupOrder('ORD-1001')">ORD-1001 (Shipped)</button>
+            <button type="button" class="chip-btn" onclick="quickLookupOrder('ORD-1042')">ORD-1042 (Delivered)</button>
+            <button type="button" class="chip-btn" onclick="quickLookupOrder('ORD-2024')">ORD-2024 (Processing)</button>
+            <button type="button" class="chip-btn" onclick="quickLookupOrder('ORD-5521')">ORD-5521 (Delivered)</button>
+            <button type="button" class="chip-btn" onclick="quickLookupOrder('ORD-8841')">ORD-8841 (Delivered)</button>
+          </div>
+
+          <!-- Order Result Display -->
+          <div id="order-result-container">
+            <!-- Populated via JS -->
+            <div class="order-result-card">
+              <div class="order-header-row">
                 <div>
-                  <div class="ticket-id-badge" id="cust-ticket-id-display">TCK-1042</div>
-                  <h3 class="ticket-subject-title" id="cust-ticket-subject-display">Bulk discount inquiry</h3>
+                  <div class="order-id-title">ORD-1001</div>
+                  <span style="color: var(--text-dim); font-size: 12px;">Customer: Elena Rostova • Date: 2026-11-05</span>
                 </div>
-                <div class="ticket-status-pill-wrap">
-                  <span class="status-badge" id="cust-ticket-status-badge">Open</span>
-                  <span class="badge badge-glow-cyan" id="cust-ticket-sla-badge">SLA: In Progress</span>
-                </div>
+                <span class="status-badge badge-shipped">Shipped</span>
               </div>
-
-              <!-- Progress Stepper -->
-              <div class="ticket-status-stepper" id="cust-ticket-stepper">
-                <div class="stepper-step completed" id="step-submitted">
-                  <div class="stepper-dot"><i class="fa-solid fa-check"></i></div>
-                  <span class="stepper-label">Submitted</span>
-                </div>
-                <div class="stepper-step active" id="step-review">
-                  <div class="stepper-dot"><i class="fa-solid fa-user-clock"></i></div>
-                  <span class="stepper-label">In Review</span>
-                </div>
-                <div class="stepper-step" id="step-resolved">
-                  <div class="stepper-dot"><i class="fa-solid fa-flag-checkered"></i></div>
-                  <span class="stepper-label">Resolved</span>
-                </div>
+              <div>
+                <strong style="font-size: 13px; color: var(--text-muted);">Items:</strong>
+                <p style="margin-top: 4px; font-size: 13.5px;">OmniDesk Pro Smart Standing Desk (Oak / White Frame), ErgoArm Dual Monitor Mount</p>
               </div>
-
-              <!-- Public Conversation Thread -->
-              <div class="ticket-thread-section">
-                <h4 class="thread-section-title"><i class="fa-solid fa-comments"></i> Conversation History</h4>
-                <div class="ticket-messages-feed" id="cust-ticket-messages-feed">
-                  <!-- Messages populated via JS -->
+              <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-subtle); padding-top:12px;">
+                <div>
+                  <span style="color: var(--text-dim); font-size: 12px;">Tracking Number:</span>
+                  <span style="font-family: var(--font-mono); color: var(--accent-cyan); font-weight: 600; margin-left: 6px;">TRK-982341-DHL</span>
                 </div>
-
-                <!-- Customer Reply Box -->
-                <form id="cust-ticket-reply-form" onsubmit="handleCustomerTicketReply(event)" class="ticket-reply-box">
-                  <div class="ticket-reply-box-header">
-                    <span class="reply-box-title"><i class="fa-solid fa-reply text-primary"></i> Customer Follow-Up Response</span>
-                    <span class="reply-box-hint">Ask a question or upload additional details for the support team</span>
-                  </div>
-                  <textarea id="cust-reply-input" class="form-textarea cust-reply-textarea" rows="4" placeholder="Reply or provide additional information regarding your ticket..." title="Customer reply input" aria-label="Customer reply input" required></textarea>
-                  <div class="reply-actions-row">
-                    <button type="submit" class="btn btn-primary btn-sm btn-glow" id="btn-cust-send-reply">
-                      <i class="fa-solid fa-paper-plane"></i> Send Follow-Up Reply
-                    </button>
-                  </div>
-                </form>
+                <div style="font-size: 16px; font-weight: 700; color: #fff;">$749.00</div>
               </div>
             </div>
           </div>
@@ -402,183 +265,164 @@
       </div>
 
       <!-- =========================================================================
-           VIEW 4: SUBMIT CLAIM / WARRANTY REQUEST
+           VIEW 3: MY SUPPORT TICKETS PANEL
            ========================================================================= -->
-      <div class="app-view-container" id="view-claim">
-        <div class="claim-submit-card">
-          <div class="view-header-bar">
-            <div>
-              <h2 class="view-title"><i class="fa-solid fa-file-shield text-primary"></i> Submit a Support Claim or Request</h2>
-              <p class="view-subtitle">Need a return authorization, warranty replacement, or price adjustment? Submit your details below for expedited processing.</p>
-            </div>
+      <div class="app-view-container" id="view-tickets">
+        <div class="order-lookup-workspace">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <h2 style="font-family: var(--font-display); font-size: 20px; font-weight: 700;">My Support Tickets &amp; Live Agent Sync</h2>
+            <p style="color: var(--text-dim); font-size: 13px;">View real-time agent updates, SLA timers, and reply directly to open tickets.</p>
           </div>
 
-          <form id="customer-claim-form" onsubmit="handleCustomerClaimSubmit(event)">
-            <div class="form-grid-2col">
-              <div class="form-group">
-                <label for="claim-cust-name" class="form-label">Full Name *</label>
-                <input type="text" id="claim-cust-name" class="form-input" placeholder="Alex Morgan" required>
-              </div>
-              <div class="form-group">
-                <label for="claim-cust-email" class="form-label">Email Address *</label>
-                <input type="email" id="claim-cust-email" class="form-input" placeholder="alex.morgan@example.com" required>
-              </div>
-            </div>
+          <!-- Lookup Ticket Form -->
+          <div class="order-search-bar">
+            <i class="fa-solid fa-ticket" style="color: var(--text-dim); align-self: center;"></i>
+            <input type="text" id="cust-ticket-input" placeholder="Enter Ticket ID (e.g. TCK-1042) or your Email address..." onkeydown="if(event.key==='Enter') lookupCustomerTicket()">
+            <button type="button" class="btn btn-primary btn-sm" onclick="lookupCustomerTicket()">Find Ticket</button>
+          </div>
 
-            <div class="form-grid-2col">
-              <div class="form-group">
-                <label for="claim-order-num" class="form-label">Order # / Serial Number</label>
-                <input type="text" id="claim-order-num" class="form-input" placeholder="e.g. ORD-98234 or SN-88412">
+          <!-- Ticket Thread & Stepper Container -->
+          <div id="cust-ticket-details-box" class="is-hidden" style="display:flex; flex-direction:column; gap:16px;">
+            <div class="order-result-card">
+              <div class="order-header-row">
+                <div>
+                  <div class="order-id-title" id="cust-ticket-display-id">TCK-1042</div>
+                  <h3 id="cust-ticket-display-subject" style="font-size: 14px; font-weight: 500; color: var(--text-muted); margin-top: 4px;">Bulk volume discount inquiry</h3>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                  <span class="status-badge badge-processing" id="cust-ticket-status-pill">Open</span>
+                  <span class="topbar-badge" id="cust-ticket-sla-pill">SLA Active</span>
+                </div>
               </div>
-              <div class="form-group">
-                <label for="claim-category-select" class="form-label">Request Type *</label>
-                <select id="claim-category-select" class="form-select" title="Select request type" aria-label="Select request type" required>
-                  <option value="Return & Refund">📦 30-Day Return &amp; Refund</option>
-                  <option value="Warranty & Claims">🛡️ 1-Year Manufacturer Warranty Claim</option>
-                  <option value="Shipping & Logistics">✈️ Shipping &amp; Delivery Issue</option>
-                  <option value="Billing & Payment">💳 Price Match or Billing Credit</option>
-                  <option value="Order Modification">⏱️ Order Cancellation / Modification</option>
-                  <option value="General Inquiry">💬 General Support Inquiry</option>
-                </select>
+
+              <!-- Message History -->
+              <div>
+                <h4 style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.05em; margin-bottom: 8px;">Ticket Conversation</h4>
+                <div id="cust-ticket-messages-stream" style="display:flex; flex-direction:column; gap:10px; max-height: 280px; overflow-y:auto; padding:10px; background:var(--bg-canvas); border-radius:var(--radius-sm); border:1px solid var(--border-subtle);">
+                  <!-- Populated via JS -->
+                </div>
               </div>
-            </div>
 
-            <div class="form-group">
-              <label for="claim-subject-input" class="form-label">Subject *</label>
-              <input type="text" id="claim-subject-input" class="form-input" placeholder="Brief summary of your request" required>
+              <!-- Customer Reply Box -->
+              <form id="cust-reply-form" onsubmit="sendCustomerTicketReply(event)" style="display:flex; flex-direction:column; gap:8px;">
+                <textarea id="cust-reply-text" class="form-textarea" rows="2" placeholder="Send follow-up message to the support agent..." required></textarea>
+                <div style="display:flex; justify-content: flex-end;">
+                  <button type="submit" class="btn btn-primary btn-sm" id="btn-cust-reply">
+                    <i class="fa-solid fa-paper-plane"></i> Send Reply
+                  </button>
+                </div>
+              </form>
             </div>
-
-            <div class="form-group">
-              <label for="claim-description-input" class="form-label">Detailed Description *</label>
-              <textarea id="claim-description-input" class="form-textarea" rows="4" placeholder="Please describe what happened, any defects noticed, or details of your inquiry..." title="Detailed description" aria-label="Detailed description" required></textarea>
-            </div>
-
-            <!-- Optional Image Upload for Claims with Gemini Vision pre-inspection -->
-            <div class="form-group">
-              <label for="claim-photo-input" class="form-label"><i class="fa-solid fa-camera"></i> Attach Photo (Hardware defect, damage, or receipt)</label>
-              <div class="file-drop-zone" onclick="document.getElementById('claim-photo-input').click()">
-                <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
-                <span class="drop-text" id="claim-photo-drop-text">Click or drag photo here (JPEG, PNG, WebP)</span>
-                <input type="file" id="claim-photo-input" class="is-hidden" accept="image/jpeg,image/png,image/webp" title="Attach photo" aria-label="Attach photo" onchange="handleClaimPhotoSelect(event)">
-              </div>
-              <div id="claim-photo-preview" class="claim-preview-box">
-                <img id="claim-photo-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E" alt="Claim Photo Preview" class="claim-preview-img">
-              </div>
-            </div>
-
-            <div class="form-actions-bar claim-actions-row">
-              <button type="submit" class="btn btn-primary btn-lg" id="btn-submit-claim-form">
-                <i class="fa-solid fa-paper-plane"></i> Submit Request
-              </button>
-            </div>
-          </form>
+          </div>
         </div>
       </div>
 
-    </div>
+      <!-- =========================================================================
+           VIEW 4: VISUAL CLAIM INSPECTION PANEL
+           ========================================================================= -->
+      <div class="app-view-container" id="view-claim">
+        <div class="claim-workspace">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <h2 style="font-family: var(--font-display); font-size: 20px; font-weight: 700;">Visual Claim &amp; Defect Inspection</h2>
+            <p style="color: var(--text-dim); font-size: 13px;">Upload photos of damaged or defective items for instant Gemini Vision inspection, warranty verification, and 1-click replacement filing.</p>
+          </div>
+
+          <!-- Drag and Drop Zone -->
+          <div class="drop-zone-card" id="claim-drop-zone" onclick="document.getElementById('claim-file-input').click()">
+            <input type="file" id="claim-file-input" class="is-hidden" accept="image/jpeg,image/png,image/webp" onchange="handleClaimFileSelect(event)">
+            <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
+            <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">Click or Drag Defect Photo Here</h3>
+            <p style="color: var(--text-dim); font-size: 12.5px;">Supports JPEG, PNG, WebP up to 5MB</p>
+          </div>
+
+          <!-- Image Preview -->
+          <div id="claim-preview-container" class="is-hidden" style="display:flex; align-items:center; gap:14px; padding:12px; background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">
+            <img id="claim-preview-img" src="" alt="Claim preview" style="width:70px; height:70px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border-medium);">
+            <div style="flex:1;">
+              <div id="claim-preview-filename" style="font-weight:600; font-size:13px;">damage_photo.jpg</div>
+              <span style="color:var(--accent-emerald); font-size:12px;"><i class="fa-solid fa-circle-check"></i> Ready for Vision analysis</span>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="clearClaimAttachment()">Remove</button>
+          </div>
+
+          <!-- Claim Description -->
+          <div class="form-group">
+            <label for="claim-desc-input" class="form-label">Explain Damage or Defect *</label>
+            <textarea id="claim-desc-input" class="form-textarea" rows="3" placeholder="e.g. Tabletop cracked during unboxing, glass shattered on right corner..." required></textarea>
+          </div>
+
+          <!-- Run Inspection Button -->
+          <button type="button" class="btn btn-primary btn-lg" id="btn-run-vision" onclick="submitVisualClaim()">
+            <i class="fa-solid fa-brain"></i> Inspect Damage with Gemini Vision
+          </button>
+
+          <!-- Diagnosis Result Box -->
+          <div id="claim-diagnosis-card" class="diagnosis-result-card is-hidden">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <h3 style="font-family: var(--font-display); font-size: 16px; font-weight: 700; color: #fff;">
+                <i class="fa-solid fa-microscope text-cyan"></i> AI Damage Assessment
+              </h3>
+              <span class="priority-badge priority-urgent" id="diagnosis-severity-badge">High Severity</span>
+            </div>
+
+            <div id="diagnosis-text-content" style="font-size: 13.5px; line-height: 1.6; color: var(--text-main);">
+              <!-- Populated via JS -->
+            </div>
+
+            <!-- One-Click Priority Replacement Filing -->
+            <div style="border-top:1px solid var(--border-subtle); padding-top:14px; display:flex; justify-content:space-between; align-items:center;">
+              <span style="color:var(--text-dim); font-size:12.5px;">1-Year Limited Warranty verified</span>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-file-replacement" onclick="filePriorityReplacementTicket()">
+                <i class="fa-solid fa-box-open"></i> File Priority Replacement Ticket
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
   </div>
 
   <!-- Human Escalation Modal -->
   <div class="modal-overlay is-hidden" id="escalation-modal">
     <div class="modal-box">
       <div class="modal-header">
-        <h3><i class="fa-solid fa-user-headset text-primary"></i> Connect with Human Support</h3>
+        <span><i class="fa-solid fa-user-headset text-primary"></i> Connect with Human Support</span>
         <button type="button" class="btn-icon" onclick="closeHumanEscalationModal()" aria-label="Close modal">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
       <div class="modal-body">
-        <p class="modal-desc">
-          Our AI assistant will transfer your chat transcript directly to our support desk for human review.
-        </p>
+        <p style="color: var(--text-muted); font-size: 13px;">Our AI assistant will immediately transfer your inquiry to the live escalation queue in Window 2 for human agent takeover.</p>
         <form onsubmit="handleEscalationModalSubmit(event)">
           <div class="form-group">
-            <label for="esc-name" class="form-label">Your Name</label>
-            <input type="text" id="esc-name" class="form-input" placeholder="Jane Doe" required>
+            <label for="esc-name" class="form-label">Customer Name</label>
+            <input type="text" id="esc-name" class="form-input" placeholder="Your Name" value="Elena Rostova" required>
           </div>
           <div class="form-group">
-            <label for="esc-email" class="form-label">Your Email</label>
-            <input type="email" id="esc-email" class="form-input" placeholder="jane.doe@example.com" required>
+            <label for="esc-email" class="form-label">Email Address</label>
+            <input type="email" id="esc-email" class="form-input" placeholder="elena@enterprise.org" value="elena@enterprise.org" required>
           </div>
           <div class="form-group">
-            <label for="esc-priority" class="form-label">Urgency Level</label>
-            <select id="esc-priority" class="form-select" title="Select urgency level" aria-label="Select urgency level">
-              <option value="Medium">Medium (Standard Inquiry)</option>
-              <option value="High">High (Impacting Orders)</option>
-              <option value="Urgent">Urgent (Immediate assistance needed)</option>
+            <label for="esc-priority" class="form-label">Priority</label>
+            <select id="esc-priority" class="form-select">
+              <option value="Urgent">Urgent (SLA: 60 mins)</option>
+              <option value="High">High (SLA: 4 hours)</option>
+              <option value="Medium" selected>Medium (SLA: 24 hours)</option>
             </select>
           </div>
-          <div class="modal-footer-actions">
+          <div class="form-group">
+            <label for="esc-query" class="form-label">Message / Inquiry</label>
+            <textarea id="esc-query" class="form-textarea" rows="3" placeholder="Explain your request for the agent..." required>I need urgent assistance with an international delivery tracking update.</textarea>
+          </div>
+          <div style="display:flex; justify-content: flex-end; gap:8px; margin-top:8px;">
             <button type="button" class="btn btn-secondary" onclick="closeHumanEscalationModal()">Cancel</button>
-            <button type="submit" class="btn btn-primary" id="btn-submit-escalation">
-              <i class="fa-solid fa-paper-plane"></i> Submit &amp; Create Ticket
-            </button>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Escalate Ticket</button>
           </div>
         </form>
       </div>
     </div>
   </div>
 
-  <!-- CSAT Feedback Modal -->
-  <div class="modal-overlay is-hidden" id="csat-modal">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-star text-amber"></i> Rate Your Experience</h3>
-        <button type="button" class="btn-icon" onclick="closeCsatModal()" aria-label="Close modal">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-      <div class="modal-body">
-        <p class="modal-desc">How was your support conversation today?</p>
-        <div class="star-rating-row" id="star-rating-container">
-          <button type="button" class="star-btn" onclick="setCsatRating(1)" title="1 Star" aria-label="1 Star"><i class="fa-solid fa-star"></i></button>
-          <button type="button" class="star-btn" onclick="setCsatRating(2)" title="2 Stars" aria-label="2 Stars"><i class="fa-solid fa-star"></i></button>
-          <button type="button" class="star-btn" onclick="setCsatRating(3)" title="3 Stars" aria-label="3 Stars"><i class="fa-solid fa-star"></i></button>
-          <button type="button" class="star-btn" onclick="setCsatRating(4)" title="4 Stars" aria-label="4 Stars"><i class="fa-solid fa-star"></i></button>
-          <button type="button" class="star-btn active" onclick="setCsatRating(5)" title="5 Stars" aria-label="5 Stars"><i class="fa-solid fa-star"></i></button>
-        </div>
-        <div class="form-group customization-group">
-          <label for="csat-comment-input" class="form-label">Comments</label>
-          <textarea id="csat-comment-input" class="form-textarea" rows="2" placeholder="Optional comments or suggestions..." title="Optional comments" aria-label="Optional comments"></textarea>
-        </div>
-        <div class="modal-footer-actions">
-          <button type="button" class="btn btn-secondary" onclick="closeCsatModal()">Skip</button>
-          <button type="button" class="btn btn-primary" onclick="submitCsatFeedback()">Submit Feedback</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Customer Sign In Modal -->
-  <div class="modal-overlay is-hidden" id="customer-auth-modal">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-user text-primary"></i> Customer Sign In</h3>
-        <button type="button" class="btn-icon" onclick="closeCustomerAuthModal()" aria-label="Close modal">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-      <div class="modal-body">
-        <p class="modal-desc">Sign in to access your priority tickets, order history, and VIP support benefits.</p>
-        <form onsubmit="handleCustomerLoginSubmit(event)">
-          <div class="form-group customization-group">
-            <label for="customer-email-input" class="form-label">Email Address</label>
-            <input type="email" id="customer-email-input" class="form-input" placeholder="e.g. customer@example.com" value="customer@example.com" required>
-          </div>
-          <div class="form-group customization-group">
-            <label for="customer-password-input" class="form-label">Password</label>
-            <input type="password" id="customer-password-input" class="form-input" placeholder="Enter password" value="demo12345" autocomplete="current-password" required>
-          </div>
-          <div id="customer-auth-error" class="auth-error-message is-hidden"></div>
-          <div class="modal-footer-actions">
-            <button type="button" class="btn btn-secondary" onclick="closeCustomerAuthModal()">Cancel</button>
-            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <script src="js/app.js?v=4.0"></script>
+  <script src="js/app.js?v=5.0"></script>
 </body>
 </html>
