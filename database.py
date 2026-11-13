@@ -729,9 +729,9 @@ DEFAULT_FEATURE_FLAGS = {
     "enable_csat_popup": True,
     "enable_ticket_lookup": True,
     "enable_announcement_banner": False,
-    "announcement_banner_text": "Special Announcement: Free expedited delivery on all warranty claims this week.",
+    "announcement_banner_text": "Special Notice: Free expedited delivery on all verified warranty replacements this week.",
     "welcome_greeting": "Hello! I am your AI Customer Support Assistant, grounded exclusively in verified store policies. Ask me about returns, international shipping rates, warranty repairs, price matching, or order cancellations.",
-    "theme_mode": "clay_porcelain",
+    "theme_mode": "cyber_dark",
     "auto_escalate_vip": True
 }
 
@@ -774,6 +774,16 @@ def update_feature_flags(updates: dict[str, Any]) -> dict[str, Any]:
     conn.commit()
     conn.close()
     return get_feature_flags()
+
+# Aliases for UX feature methods
+get_ux_features = get_feature_flags
+update_ux_features = update_feature_flags
+
+def get_tickets_by_customer(identifier: str) -> list[dict[str, Any]]:
+    """Retrieve all tickets belonging to a customer by customer_id, customer_email, or name."""
+    if not identifier:
+        return []
+    return get_all_tickets(search=identifier.strip())
 
 def get_customer_safe_ticket(ticket_id: str) -> dict[str, Any] | None:
     """Fetches a ticket and strips internal confidential staff notes for customer privacy."""

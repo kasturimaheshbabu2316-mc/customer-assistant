@@ -816,6 +816,32 @@ def list_tickets(
         "tickets": enriched
     }
 
+@app.get("/api/tickets/lookup")
+def lookup_tickets(
+    query: str | None = Query(None, description="Ticket ID, Customer ID, or customer email"),
+    id: str | None = Query(None, description="Ticket ID or Customer ID"),
+    email: str | None = Query(None, description="Customer email")
+):
+    identifier = query or id or email or ""
+    identifier = identifier.strip()
+    if not identifier:
+        return {"total": 0, "tickets": []}
+    
+    if identifier.upper().startswith("TCK-"):
+        single = database.get_ticket_by_id(identifier.upper())
+        if single:
+            t_copy = dict(single)
+            t_copy["sla_details"] = calculate_sla_details(single)
+            return {"total": 1, "tickets": [t_copy]}
+            
+    tickets = database.get_tickets_by_customer(identifier)
+    enriched = []
+    for t in tickets:
+        t_copy = dict(t)
+        t_copy["sla_details"] = calculate_sla_details(t)
+        enriched.append(t_copy)
+    return {"total": len(enriched), "tickets": enriched}
+
 @app.post("/api/tickets")
 def create_ticket(req: CreateTicketRequest):
     ticket_id = None
